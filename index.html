@@ -3,6 +3,8 @@
 <html>
 <head>
 <meta name="google-site-verification" content="64yvLnoiyLMUpmBlNZ0o6SUOF84GCxrd2qdb2jqiZGA" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+
 <!-- Global site tag (gtag.js) - Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=UA-160067927-1"></script>
 <script>
@@ -26,15 +28,73 @@
 	display: table-cell;
 	background-color: green;
 }
+
+.div_table
+{
+	width: 100%;
+		/*display:table; */
+}
+.div_table_row
+{
+	/*display:table-row;*/
+}
+.div_table_cell
+{
+	/*display : table-cell;*/
+	float:left;
+/*	width:20%;*/
+}
+
+.div_footer
+{
+	position:fixed;
+	left:0;
+	bottom:0;
+	width:100%;
+	text-align:center;
+	background-color:#aaaaaa;
+}
+
+.div_cookie_consent
+{
+	position: fixed;
+	left:0;
+	bottom:0;
+	width:100%;
+	text-align:center;
+	display:table-cell;
+	vertical-align:middle;
+	background-color:#888888;
+	z-index = 1;
+}
+
+.consentbutton
+{
+	background-color:#aaaaaa;
+	width:20em;
+	margin:0 auto;
+}
+
 </style>
 
+<script src="cookie.js"></script>
+<script src="agree.js"></script>
 
 </head>
 <body>
 <div class="navbar">
 	<div class="navitem"><img src="images/panda_small.png" alt="small logo image"></div>
 </div>
-<h1> Hello World </h1>
+<div class="div_table">
+	<div class="div_table_row">
+		<div class ="div_table_cell">space</div>
+		<div class ="div_table_cell">Game 1</div>
+		<div class ="div_table_cell">space</div>
+		<div class ="div_table_cell">Game 1</div>
+		<div class ="div_table_cell">space</div>
+	</div>
+</div>
+<h1> Hello World !</h1>
 Note : I've got google analytics set up with this just so I can track number of visitors to this page.
 
 .. I'm not collecting any data other than that.. (firefox blocks tracking anyway..) 
@@ -57,7 +117,15 @@ upload online game.. probably breakout or something simple to start with.
 <br>
 
 - Nick.
-)
+
+
+<!-- <div class="div_footer">We use cookies and other tracking technologies to improve your browsing experience on our site, show personalized content and targeted ads, analyze site traffic, and understand where our audiences come from. To learn more or opt-out, read our <a href="cookie.html">Cookie Policy.</a> Please also read our <a href="privacy.html" Privacy Policy></a>
+-->
+By choosing I Accept, you consent to our use of cookies and other tracking technologies.<a href="privacy.html">Privacy Policy</a><br><a href="cookie.html">Cookie Policy</a><br>Contact : bigfatpanda70 #~NOSPAM~#. @ gmail dot com</div>
+
+<script>
+		ConsentPopup();
+</script>
 </body>
 </html>
 
