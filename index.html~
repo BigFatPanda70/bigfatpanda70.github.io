@@ -14,6 +14,21 @@
 </script>
 <script data-ad-client="ca-pub-5028916604386126" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
 
+<style type="text/css">
+.navbar
+{
+	display: table;
+	width: 100%;
+	background-color: red;
+}
+.navitem
+{
+	display: table-cell;
+	background-color: green;
+}
+</style>
+
+
 </head>
 <body>
 <h1> Hello World </h1>
