@@ -1,4 +1,9 @@
-
+/* Frustratingly, my mobile device has a bigger screen area than my desktop,
+  but the font it uses is also correspondingly bigger.. */
+/* */
+/* */
+/* */
+/* */
 .navbar
 {
 	display: table;
@@ -134,7 +139,7 @@ html, body
 {
 	background-color:#ffffff;
 	float: left;
-	width: 20%; /* The width is 20%, by default */
+/*	width: 20%;*/ /* The width is 20%, by default */
 	margin-top:7px;
 }
 
@@ -143,14 +148,14 @@ html, body
 	margin-top:7px;
 	background-color:#ffffff;
 	float: left;
-	width: 60%;  /* The width is 60%, by default */
+/*	width: 60%;  */ /* The width is 60%, by default */
 }
 
 .right 
 {
 	background-color:#ffffff;
 	float: left;
-	width: 20%; /* The width is 20%, by default */
+/*	width: 20%;*/  /* The width is 20%, by default */
 	margin-top:7px;
 }
 
