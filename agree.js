@@ -25,6 +25,8 @@ var CONSENT_DIV_CLASS="div_cookie_consent";
 
 function CloseConsentDiv()
 {
+		// by clicking on accept, we can enable cookies.
+
 	var item;
 	
 	item = document.getElementById (CONSENT_DIV_ID);
@@ -32,6 +34,8 @@ function CloseConsentDiv()
 	{
 		item.style.display = "none";
 	}
+	AllowCookies = true;	// 
+
 }
 
 /*
