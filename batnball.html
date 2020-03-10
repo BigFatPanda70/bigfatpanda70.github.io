@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+
+<!--
+
+
+
+
+
+-->
+
+<html>
+<head>
+<style>
+
+body 
+{
+	background-color:black;
+}
+
+.outer
+{
+	width:100%;
+	height:100%;
+	background-color:black;
+	text-align:center;
+}
+.container
+{
+	width:50%;
+	height:100%;
+	background-color:red;
+	margin: 0 auto;
+}
+
+.gamecanvas
+{
+	background-color:#ffccee;
+	width:100%;					/* width = container width */
+	height:100%;				/* height = container height */
+}
+
+.left
+{
+	float:left;
+	height:100%;
+	width:20%;
+	background-color:#eeccaa;
+}
+.right
+{
+	float:left;
+	height:100%;
+	width:20%;
+	background-color:#bbddff;
+}
+
+</style>
+
+<script>
+	
+var Ctx;
+
+function BigCanvas()
+{
+	// you don't scale the canvas, but scale the outer container.
+	// scale canvas square to fit 
+	var w;
+	var h;
+	
+	var item;
+
+	w = window.innerWidth;
+	h = window.innerHeight;
+	
+	item = document.getElementById ("area");
+	if (w > h)
+	{
+		item.style.width= h + "px";
+		item.style.height= h + "px";
+	}
+	else
+	{
+		item.style.width = w + "px";
+		item.style.height = w + "px";
+	}
+	
+//	item.width = 640;
+//	item.height= 640;
+/*	
+	w = window.innerWidth;
+	h = window.innerHeight;
+	if (w > h)
+	{
+		Ctx.canvas.width  =h;
+		Ctx.canvas.height =h;
+	}
+	else
+	{
+		Ctx.canvas.width  =w;
+		Ctx.canvas.height =w;
+	}
+*/
+}
+
+
+function DoInits()
+{
+	var item;
+	
+	item = document.getElementById("gc");
+	Ctx = item.getContext("2d");
+	
+	BigCanvas();
+	
+	Ctx.beginPath();
+	Ctx.moveTo (10,10);
+	Ctx.lineTo (100,100);
+	Ctx.moveTo (512,512);
+	Ctx.lineTo (400,400);
+	Ctx.moveTo (900,512);
+	Ctx.lineTo (400,400);
+	Ctx.stroke();
+}
+
+</script>
+
+
+</head>
+<body onload ="DoInits();">
+<!--
+	<div class="left">hahahahahaha</div>
+-->
+	<div class="outer">
+		<div class="container" id="area">
+			<canvas class="gamecanvas" id="gc" width="384px;" height="384px;"></canvas>
+		</div>
+	</div>		
+<!--
+	<div class="right">hohoho</div>
+-->
+</body>
+</html>

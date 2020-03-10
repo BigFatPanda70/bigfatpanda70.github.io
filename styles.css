@@ -8,7 +8,7 @@
 .navitem
 {
 	display: table-cell;
-	background-color: green;
+	background-color: white;
 }
 
 .div_table
@@ -121,7 +121,7 @@ html, body
 
 .row
 {
-	background-color:red;
+	background-color:#ffffff;
 }
 
 .row:after {
@@ -132,7 +132,7 @@ html, body
 
 .left
 {
-	background-color:#e5e5e5;
+	background-color:#ffffff;
 	float: left;
 	width: 20%; /* The width is 20%, by default */
 	margin-top:7px;
@@ -141,16 +141,30 @@ html, body
 .main 
 {
 	margin-top:7px;
-	background-color:#e5e5e5;
+	background-color:#ffffff;
 	float: left;
 	width: 60%;  /* The width is 60%, by default */
 }
 
 .right 
 {
-	background-color:#e5e5e5;
+	background-color:#ffffff;
 	float: left;
 	width: 20%; /* The width is 20%, by default */
 	margin-top:7px;
 }
 
+.leftbox
+{
+	border-color:#aa8866;
+	border-style:solid;
+	background-color: #ffeedd;
+}
+
+.rightbox
+{
+	border-color:#aa8866;
+	border-style:solid;
+	background-color: #ffeedd;
+	height :20%;
+}
