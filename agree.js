@@ -27,8 +27,6 @@ function CloseConsentDiv()
 {
 	var item;
 	
-	console.log ("CLOSE");
-	
 	item = document.getElementById (CONSENT_DIV_ID);
 	if (item != null)
 	{
@@ -36,6 +34,7 @@ function CloseConsentDiv()
 	}
 }
 
+/*
 function ConsentPopup()
 {
 	var allow;
@@ -65,3 +64,4 @@ function ConsentPopup()
 	div.innerHTML = str;
 	document.body.appendChild(div); 
 }
+*/

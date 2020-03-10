@@ -4,6 +4,9 @@
 
 	Cookies can only be stored if the user has given permission,
 
+	Cookies should expire after around 7 days.. i don't want to
+	keep cookies around any longer than necessary.
+
 */
 
 var AllowCookies = false;	// default is false, unless user consents.
@@ -52,13 +55,13 @@ function Cookies_getCookie(cname)
 function Cookies_Enable()
 {
 	AllowCookies = true;
-	_BFP_setCookie (NAME_ALLOW_COOKIE, "true", 365*10);	// expires after 10 years !
+	_BFP_setCookie (NAME_ALLOW_COOKIE, "true", 7);	// expires after 7 days !
 }
 
 function Cookies_Disable()
 {
 	AllowCookies = true;
-	_BFP_setCookie (NAME_ALLOW_COOKIE, "false", 365*10);	// expires after 10 years !
+	_BFP_setCookie (NAME_ALLOW_COOKIE, "false", 7);	// expires after 7 days !
 	AllowCookies = false;
 }
 
