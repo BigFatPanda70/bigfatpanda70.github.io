@@ -36,6 +36,7 @@ function CloseConsentDiv()
 	}
 	AllowCookies = true;	// 
 
+	_BFP_setCookie (NAME_ALLOW_COOKIE, "true", 7);	// expires after 7 days !
 }
 
 /*
