@@ -21,6 +21,18 @@
 <script src="cookie.js"></script>
 <script src="agree.js"></script>
 
+<script>
+
+function test()
+{
+	var info = document.getElementById ("info");
+	var item;
+	
+	info.innerHTML = "w:" + window.innerWidth;
+}
+
+</script>
+
 </head>
 <body>
 <div id="wrap">
@@ -59,10 +71,12 @@
 			<div class="rightbox">Adverts to go here</div>
 		</div>
 
+	<div id="info"></div>
 
 
 	</div> <!-- main -->
 </div>	<!-- wrap -->
+
 
 
 
@@ -91,6 +105,7 @@ If you agree to the cookie and privacy policy, please close this message and con
 
 <script>
 	//CheckCookieConsent();
+	test();
 </script>
 </body>
 </html>
