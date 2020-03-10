@@ -94,24 +94,63 @@ html, body
 
 
 /* responsive design stuff from w3schools */
+/* design for mobile first */
 
-.left, .right 
+/* Use a media query to add a breakpoint at 800px: */
+
+.left, .main, .right 
 {
-  float: left;
-  width: 20%; /* The width is 20%, by default */
+	width: 100%; /* The width is 100%, when the viewport is 800px or smaller */
+}
+
+@media only screen and (min-width: 800px) 
+{
+	.left
+	{
+		width: 20%;
+	}
+	.main
+	{
+		width: 60%;
+	}
+	.right
+	{
+		width: 20%;
+	}
+}
+
+.row
+{
+	background-color:red;
+}
+
+.row:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+.left
+{
+	background-color:#e5e5e5;
+	float: left;
+	width: 20%; /* The width is 20%, by default */
+	margin-top:7px;
 }
 
 .main 
 {
-  float: left;
-  width: 60%; /* The width is 60%, by default */
+	margin-top:7px;
+	background-color:#e5e5e5;
+	float: left;
+	width: 60%;  /* The width is 60%, by default */
 }
 
-/* Use a media query to add a breakpoint at 800px: */
-@media screen and (max-width: 800px) 
+.right 
 {
-  .left, .main, .right 
-  {
-    width: 100%; /* The width is 100%, when the viewport is 800px or smaller */
-  }
+	background-color:#e5e5e5;
+	float: left;
+	width: 20%; /* The width is 20%, by default */
+	margin-top:7px;
 }
+
