@@ -108,7 +108,7 @@ html, body
 	width: 100%; /* The width is 100%, when the viewport is 800px or smaller */
 }
 
-@media only screen and (min-width: 800px) 
+@media screen and (min-width: 800px) 
 {
 	.left
 	{
