@@ -20,6 +20,9 @@ something that works.
 	triangles into z order. This is the biggest bottleneck of all,
 	especially for large objects.
 
+	z order drawing is completely reversed ! (don't know why!), something to do with the opengl matrix spec i think.
+	
+	 
 -->
 
 <html>
@@ -150,16 +153,17 @@ var faces =
 	4,5,6,
 	6,7,4,
 	
-	8,9,10,
+	9,10,8,
 	10,11,8,
 	
 	12,13,14,
-	12,15,14,
+	12,14,15,
 	
 	16,17,18,
-	16,19,18,
+	16,18,19,
 	
-	20,21,22
+	20,21,22,
+	23,20,22
 
 ];
 
@@ -214,23 +218,29 @@ function ClearDrawList()
 	DrawList_FreeItem = 0;	// reuse draw list, don't  waste memory.
 }
 
+
 function DrawList_AddItem (object_index, object_z, x0,y0,x1,y1,x2,y2, rgbhex)
 {
 	var b;		// bucket hash value (0 to MAXBUCKETS)
 	var i;
 	var idx;		// index of new drawlist item
 
-	if ((object_z < near_z) || (object_z >= far_z))
-	{
-//		console.log ("z out of range");
-		return;
-	}
+//	if ((object_z < near_z) || (object_z >= far_z))
+//	{
+//		return;
+//	}
 
 	b= ((object_z - near_z) * DRAWLIST_MAXBUCKETS) / (far_z - near_z);
 	b = Math.floor(b);
 
+	if (b < 0)
+	{
+		b *= -1;
+	}
+
 	if ((b < 0) || (b >= DRAWLIST_MAXBUCKETS))
 	{
+		console.log ("b bad");
 		return;		// should never get here.
 	}
 
@@ -273,7 +283,6 @@ function DrawList_AddItem (object_index, object_z, x0,y0,x1,y1,x2,y2, rgbhex)
 
 	// this is the bottle neck for large numbers of items with a similar z value.
 
-//	console.log ("i:" + i + " object_z" + object_z);
 	while (object_z < DrawList[i].zindex)
 	{
 		if (DrawList[i].next_idx == DRAWLIST_INVALID_IDX)
@@ -285,7 +294,6 @@ function DrawList_AddItem (object_index, object_z, x0,y0,x1,y1,x2,y2, rgbhex)
 			return;
 		}
 		i = DrawList[i].next_idx;
-//		console.log ("next i:" + i);
 		if ((i < 0) || (i >= DrawList.length))
 		{
 //			console.log ("i out of range");		// error checking.
@@ -316,11 +324,13 @@ function Draw_DrawList()
 	var i;
 	var d;
 	
-	for (b = DrawList_BucketArray.length-1; b >= 0; b--)
+	for (b = DrawList_BucketArray.length-1; b >= 0; b--)	
+//	for (b = 0; b < DrawList_BucketArray.length; b++)
 	{
 		if (DrawList_BucketArray[b] != DRAWLIST_INVALID_IDX)
 		{
 			i = DrawList_BucketArray[b];
+//			console.log ("i" + i);
 			while (i != DRAWLIST_INVALID_IDX)
 			{
 				d = DrawList[i];
@@ -373,8 +383,8 @@ Model3D.prototype.transform = function (tx,ty,tz, rx,ry,rz, sx,sy,sz)
 	
 //	console.log ("identity ");
 //	console.log (m);
-	m = MatrixRotate (m, rx,ry,rz);
 	m = MatrixScale (m, sx,sy,sz);
+	m = MatrixRotate (m, rx,ry,rz);
 	m = MatrixTranslate (m, tx,ty,tz);
 	
 	MatrixVectorArrayMultiply (m, this.initial_verts, this.vertices);
@@ -424,6 +434,9 @@ function CreateDrawList(object_array)
 	var y1;
 	var x2;
 	var y2;
+	var z0;
+	var z1;
+	var z2;
 	var z;
 	
 	var ox;
@@ -432,46 +445,34 @@ function CreateDrawList(object_array)
 	var halfwidth;
 	var halfheight;
 	
+	var c;
+	
 	halfwidth = 192;
 	halfheight = 192;
 	ox = halfwidth;
 	oy = halfheight;
 	
-//	console.log ("Create drawList");
-//	console.log ("object array len " + object_array.length);
-
 		// creates the draw list from the array of objects provided.
 	ClearDrawList();
 
 	for (i = 0; i < object_array.length; i++)
 	{
-//		console.log ("drawing object :" + i);
 		p = object_array[i];
 		m = p.model_ref;
 			// need to transform all the model points
 			
-//		console.log ("model:");
-//		console.log (m);
-		
 		m.transform (
 					p.x, p.y, p.z, 
 					p.rx, p.ry, p.rz, 
 					p.sx, p.sy, p.sz);
 
-//		console.log ("model transformed");
-//		console.log (m);
-
 			// do projection matrix.
 		MatrixVectorArrayMultiply ( ProjectionMatrix, m.vertices, m.vertices);
 		
-//		console.log ("projected");
-//		console.log (m);
-	
 			// finally do divide by w 	
 		for (k = 0; k < m.vertices.length; k += 4)
 		{
 			w = m.vertices[k+3];
-//			console.log ("w " + w);
 			if (w != 0)
 			{
 				m.vertices[k+0] /= w;
@@ -481,28 +482,34 @@ function CreateDrawList(object_array)
 		}
 	
 			// convert to screen coords.
+		c = 0;
 		for (k = 0; k < m.faces.length; k += 3)
 		{
 			v0 = m.faces[k+0] * 4;
 			v1 = m.faces[k+1] * 4;
 			v2 = m.faces[k+2] * 4;
 			
-			z = 0;
+//			z = 0;
 			x0 = ox + (halfwidth * m.vertices[v0]);
 			y0 = oy + (halfheight* m.vertices[v0+1]);
-			z += m.vertices[v0+2];
+			z0 = m.vertices[v0+2];
 
 			x1 = ox + (halfwidth *m.vertices[v1]);
 			y1 = oy + (halfheight*m.vertices[v1+1]);
-			z += m.vertices[v1+2];
+			z1 = m.vertices[v1+2];
 			
 			x2 = ox + (halfwidth * m.vertices[v2]);
 			y2 = oy + (halfheight *m.vertices[v2+1]);
-			z += m.vertices[v2+2];
-			
-			z /= 3;
-			
-			DrawList_AddItem (i, z, x0,y0,x1,y1,x2,y2, colours[k&7]);
+			z2 = m.vertices[v2+2];
+
+//			console.log ("z0 " + z0 + " z1 " + z1 + " z2 " + z2);
+			z = (z0 + z1 + z2)/3;			
+
+			if ( _BackfaceCullCheck (x0,y0,x1,y1,x2,y2) > 0)
+			{
+				DrawList_AddItem (i, z, x0,y0,x1,y1,x2,y2, colours[c]);
+			}
+			c = (c + 1) & 7;
 
 		}
  	}
@@ -511,6 +518,7 @@ function CreateDrawList(object_array)
 var busy = false;
 function UpdateGame()
 {
+	var i;
 	if (busy == true)
 	{
 		return;
@@ -522,9 +530,13 @@ function UpdateGame()
 	if (!Ctx)	return;
 
 	Ctx.clearRect(0,0,Canvas.width, Canvas.height);
-	TestObjects[0].z = 10;	//+= 0.05;
-	TestObjects[0].ry += 0.5;
-	TestObjects[0].rx += 0.5;
+	
+	for (i = 0; i < TestObjects.length; i++)
+	{
+		TestObjects[i].ry += (i/3);
+		TestObjects[i].rx += (1/2);
+	}
+
 	CreateDrawList(TestObjects);
 	Draw_DrawList();
 	busy = false;
@@ -568,6 +580,8 @@ function DoInits()
 	var h;
 	Canvas = document.getElementById("gc");
 	Ctx = Canvas.getContext("2d");
+
+	var i;
 	
 	BigCanvas();
 	
@@ -592,18 +606,25 @@ function DoInits()
 			);
 
 	TestModel = new Model3D (vertices, faces);
-	TestObjects[0] = new Object3D (TestModel);
+	
+	for (i = 0; i < 100; i++)
+	{
+		TestObjects[i] = new Object3D (TestModel);
+		TestObjects[i].x = -2 + (Math.random() * 4);
+		TestObjects[i].y = -2 + (Math.random() * 4);
+		TestObjects[i].z = -15 - (Math.random() * 40);
+	}
 
 
 	
-	ClearDrawList();
-	DrawList_AddItem (0, 10, 10,10, 50,50, 30,270, "#ff0000"); //  DrawList_AddItem (object_index, object_z, x0,y0,x1,y1,x2,y2, rgbhex)
-	DrawList_AddItem (0, 20, 20,10, 240,50, 30,90, "#00ff00");
-	DrawList_AddItem (0, 40, 30,10, 120,240, 30,90, "#00ffff");
+//	ClearDrawList();
+//	DrawList_AddItem (0, 10, 10,10, 50,50, 30,270, "#ff0000"); //  DrawList_AddItem (object_index, object_z, x0,y0,x1,y1,x2,y2, rgbhex)
+//	DrawList_AddItem (0, 20, 20,10, 240,50, 30,90, "#00ff00");
+//	DrawList_AddItem (0, 40, 30,10, 120,240, 30,90, "#00ffff");
 
-	CreateDrawList(TestObjects);
+//	CreateDrawList(TestObjects);
 
-	Draw_DrawList();
+//	Draw_DrawList();
 	
 	UpdateGame();	
 }
