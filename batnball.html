@@ -4,8 +4,13 @@
 
 <!--
 
+Title	:	Self contained game .
 
+Info	:	Version 0.0	10th March 2020
 
+Author	:	Nick Fleming
+
+Updated	:	10th March 2020
 
 
 -->
@@ -56,11 +61,283 @@ body
 	background-color:#bbddff;
 }
 
+.topcornerimage
+{
+	position:absolute;
+	left:10px;
+	top:10px;
+	z-index:1;
+}
+
+
 </style>
+
+<script src="matrix.js"></script>
 
 <script>
 	
+var INVALID_IDX = -1;
+var DRAWLIST_MAXBUCKETS = 512;
+
+var near_z = 1.0;
+var far_z = 100;
+
 var Ctx;
+
+
+	// the vertices for each cube face are stored separately
+	// so each cube face can have different vertex colours/textures/fx.
+
+var vertices[] =
+{
+	-1, 1,-1,		// front 4 vertices
+	 1, 1,-1,
+	 1,-1,-1,
+	-1,-1,-1,
+
+	 1, 1, 1,		// back vertices.,0,0,
+	-1, 1, 1,
+	-1,-1, 1,
+	 1,-1, 1,
+
+	-1, 1, 1,		// left faces
+	-1, 1,-1,
+	-1,-1,-1,
+	-1,-1, 1,
+	
+	 1, 1,-1,		// right faces
+	 1, 1, 1,
+	 1,-1, 1,
+	 1,-1,-1,
+	
+	-1, 1, 1,		// top faces
+	 1, 1, 1,
+	 1, 1,-1,
+	-1, 1,-1,
+	
+	// bottom faces
+	-1,-1,-1,
+	 1,-1,-1,
+	 1,-1, 1,
+	-1,-1, 1
+}
+
+var faces[] =
+{
+	0,1,2,
+	2,3,0,
+
+	4,5,6,
+	6,7,4,
+	
+	8,9,10,
+	10,11,8
+	
+}
+
+var ProjectionMatrix;
+
+var TestObjects[];
+var TestModel;
+
+
+function _BackfaceCullCheck (x0,y0,x1,y1,x2,y2)
+{
+	// this can determine whether a triangle is front or back facing.
+	// pinched from https://cboard.cprogramming.com/game-programming/1057-backface-culling-lesson10-nehegl-tutorials.html
+
+	var z=((x1-x0)*(y2-y0)) - ((y1-y0)*(x2-x0));
+	return z; 
+}
+
+	// --------------------------------------------
+	//		Drawing order / Drawlist stuff
+	// --------------------------------------------
+
+var DrawList = [];
+var DrawList_BucketArray = [];
+var DrawList_FreeItem;
+
+function DrawListItem()
+{
+	this.object_index;
+	this.next_idx;
+	this.zindex;
+}
+
+function ClearDrawList()
+{
+	var i;
+	
+	for (i = 0; i < DRAWLIST_MAXBUCKETS; i++)
+	{
+		DrawList_BucketArray[i] = INVALID_IDX;
+	}
+	DrawList_FreeItem = 0;	// reuse draw list, don't  waste memory.
+}
+
+function DrawList_AddItem (object_index, object_z)
+{
+	var b;
+	var i;
+
+	b= ((z - this.zmin) * this.max_buckets) / (this.zmax - this.zmin);
+	b = Math.floor(b);
+	
+	if ((object_z < near_z) || (object_z > far_z))
+	{
+		return;
+	}
+
+	if ((b < 0) || (b > DRAWLIST_MAXBUCKETS))
+	{
+		return;		// should never get here.
+	}
+
+	i = DrawList_FreeItem++;
+	if (i == DrawList.length)
+	{
+		DrawList[i] = new DrawListItem();
+	}
+	DrawList[i].object_index = object_index;
+	DrawList[i].zindex = object_z;
+	DrawList[i].next_idx = INVALID_IDX;
+
+	if (DrawList_BucketArray[i] == INVALID_IDX)
+	{
+		// empty bucket.. add new item.
+		DrawList_BucketArray[b] = i;
+		return;
+	}
+
+	// bucket is used, so need to insert sort into this z list.
+	// z values are sorted largest first to smallest (i.e. in required drawing order)
+	
+	i = this.bucket_list[b];		// get draw list index of first item in z list
+
+	if ((i < 0) || (i >= this.draw_list.length))
+	{
+//		console.log ("first i out of range");
+	}
+
+	// this is the bottle neck for large numbers of items with a similar z value.
+
+	while (z < DrawList[i].zindex)
+	{
+		if (DrawList[i].next_idx == DRAWLIST_INVALID_INDEX)
+		{
+			// reached the end of the list, so just add item.
+			idx = this.draw_list.length;
+			this.draw_list[i].next_idx = idx;
+
+			this.draw_list[idx] = new DrawListItem (data, z);
+			this.draw_list[idx].previous_idx = i;
+			this.draw_list[idx].next_idx = DRAWLIST_INVALID_INDEX;
+ 
+			return;
+		}
+		i = this.draw_list[i].next_idx;
+		
+		if ((i < 0) || (i >= this.draw_list.length))
+		{
+			console.log ("i out of range");
+		}
+	}
+	
+	// z >= current item, so insert before it.
+	idx = this.draw_list.length;
+	this.draw_list[idx] = new DrawListItem (data, z);
+	this.draw_list[idx].previous_idx = this.draw_list[i].previous_idx;
+	this.draw_list[idx].next_idx = i;
+
+	this.draw_list[i].previous_idx = idx;
+
+	if (this.draw_list[idx].previous_idx == DRAWLIST_INVALID_INDEX)
+	{
+		// new item is at start of list, so update bucket list.
+		this.bucket_list[b] = idx;
+	}
+	else
+	{
+		// update previous z item
+		this.draw_list[this.draw_list[idx].previous_idx].next_idx = idx;
+	}
+
+	
+}
+
+	// -------------- end of draw list stuff -----------------
+
+function Model3D (vertex_array, face_array)
+{
+		// creates a 3D model from vertex and face data.
+
+	var i;
+	var lp;
+
+	this initial_verts[];
+	this.v[];
+	this.faces[];
+
+	i = 0;
+	for (lp = 0; lp < vertex_array.length; lp += 3)
+	{
+		this.initial_verts[i++] = vertex_array[lp];		// x
+		this.initial_verts[i++] = vertex_array[lp+1];	// y
+		this.initial_verts[i++] = vertex_array[lp+2];	// z
+		this.initial_verts[i++] = 1;				// w
+	}
+	
+	for (lp = 0; lp < face_array.length; lp++)
+	{
+		this.faces[lp] = face_array[lp];
+	}
+}
+
+Model3D.prototype.transform (tx,ty,tz, rx,ry,rz, sx,sy,sz)
+{
+	var m;
+	
+	m = MatrixIdentity();
+	m = MatrixTranslate (m, tx,ty,tz);
+	m = MatrixRotate (m, rx,ry,rz);
+	m = MatrixScale (m, sx,sy,sz);
+	
+	MatrixVectorArrayMultiply (m, this.initial_verts, this.v);
+
+}
+
+function Object3D(ref_model_3d)
+{
+	this.x;
+	this.y;
+	this.z;
+	this.rx;
+	this.ry;
+	this.rz;
+	this.sx;
+	this.sy;
+	this.sz;
+	this.model_ref = ref_model_3d;	// pointer to model data.
+}
+
+Object3D.prototype.Draw(ctx)
+{
+	var i;
+
+	this.model_ref.transform (
+			this.x, this.y, this.z,
+			this.rx, this.ry, this.rz,
+			this.sx, this.sy, this.sz);
+			
+	this.
+}
+
+
+function InitInputs()
+{
+	// TO DO : Keyboard, mouse, touchscreen, joystics
+}
 
 function BigCanvas()
 {
@@ -85,43 +362,37 @@ function BigCanvas()
 		item.style.width = w + "px";
 		item.style.height = w + "px";
 	}
-	
-//	item.width = 640;
-//	item.height= 640;
-/*	
-	w = window.innerWidth;
-	h = window.innerHeight;
-	if (w > h)
-	{
-		Ctx.canvas.width  =h;
-		Ctx.canvas.height =h;
-	}
-	else
-	{
-		Ctx.canvas.width  =w;
-		Ctx.canvas.height =w;
-	}
-*/
 }
-
 
 function DoInits()
 {
-	var item;
+	var canvas;
 	
-	item = document.getElementById("gc");
-	Ctx = item.getContext("2d");
+	canvas = document.getElementById("gc");
+	Ctx = canvas.getContext("2d");
 	
 	BigCanvas();
+	
+	InitInputs();
 	
 	Ctx.beginPath();
 	Ctx.moveTo (10,10);
 	Ctx.lineTo (100,100);
-	Ctx.moveTo (512,512);
-	Ctx.lineTo (400,400);
-	Ctx.moveTo (900,512);
-	Ctx.lineTo (400,400);
+
+	Ctx.moveTo (380,380);
+	Ctx.lineTo (200,200);
 	Ctx.stroke();
+
+	ProjectionMatrix = Matrix_CreatePerspectiveProjectionMatrix
+			(canvas.width, canvas.height, 
+				30,			//field_of_view, 
+				1,			//z_near, 
+				100			// z_far)
+			);
+
+	TestModel = new Model3D (vertices, faces);
+	TestObject[0] = new Object3D (TestModel);
+	
 }
 
 </script>
@@ -129,16 +400,11 @@ function DoInits()
 
 </head>
 <body onload ="DoInits();">
-<!--
-	<div class="left">hahahahahaha</div>
--->
+	<div class="topcornerimage"><a href="index.html"><img src="images/panda_small.png"></a></div>
 	<div class="outer">
 		<div class="container" id="area">
 			<canvas class="gamecanvas" id="gc" width="384px;" height="384px;"></canvas>
 		</div>
 	</div>		
-<!--
-	<div class="right">hohoho</div>
--->
 </body>
 </html>
