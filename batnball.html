@@ -96,6 +96,15 @@ var far_z = 1000;
 var Canvas;
 var Ctx;
 
+var TestMap =
+[
+	0,1,1,1,1,1,1,1,1,0,
+	1,1,1,1,1,1,1,1,1,1,
+	1,1,1,1,1,1,1,1,1,1,
+	1,1,1,1,1,1,1,1,1,1,
+	0,1,1,0,1,1,0,1,1,0
+]
+
 var colours =
 [
 	"#000000",
@@ -534,7 +543,7 @@ function UpdateGame()
 	for (i = 0; i < TestObjects.length; i++)
 	{
 		TestObjects[i].ry += (i/30);
-		TestObjects[i].rx += (1/20);
+		TestObjects[i].rx += (1/2);
 	}
 
 	CreateDrawList(TestObjects);
@@ -572,7 +581,31 @@ function BigCanvas()
 	}
 }
 
-
+function InitMap()
+{
+	var x;
+	var y;
+	var i;
+	
+	x = 0;
+	y = -10;
+	for (i = 0; i < TestMap.length; i++)
+	{
+		TestObjects[i] = new Object3D (TestModel);
+		TestObjects[i].x = -4.5 + (x);
+		TestObjects[i].y = y*0.5;
+		TestObjects[i].z = -20;
+		TestObjects[i].sz = 0.08;
+		TestObjects[i].sy = 0.25;
+		TestObjects[i].sx = 0.5;
+		x++;
+		if (x >= 10)
+		{
+			x = 0;
+			y++;
+		}
+	}
+}
 
 function DoInits()
 {
@@ -606,15 +639,20 @@ function DoInits()
 			);
 
 	TestModel = new Model3D (vertices, faces);
-	
-	for (i = 0; i < 100; i++)
+
+	InitMap();
+/*
+	for (i = 0; i < 30; i++)
 	{
 		TestObjects[i] = new Object3D (TestModel);
-		TestObjects[i].x = -2 + (Math.random() * 4);
-		TestObjects[i].y = -2 + (Math.random() * 4);
+		TestObjects[i].x = -3 + (Math.random() * 6);
+		TestObjects[i].y = -3 + (Math.random() * 6);
 		TestObjects[i].z = -15 - (Math.random() * 40);
+		TestObjects[i].sx = 0.1 + (Math.random());
+		TestObjects[i].sy = 0.1 + (Math.random());
+		TestObjects[i].sz = 0.1 + (Math.random());
 	}
-
+*/
 
 	
 //	ClearDrawList();
