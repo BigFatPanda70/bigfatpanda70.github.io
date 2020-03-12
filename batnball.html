@@ -10,7 +10,7 @@ Info	:	Version 0.0	10th March 2020
 
 Author	:	Nick Fleming
 
-Updated	:	11th March 2020
+Updated	:	12th March 2020
 
  11th March :
 ----------------
@@ -21,6 +21,11 @@ something that works.
 	especially for large objects.
 
 	z order drawing is completely reversed ! (don't know why!), something to do with the opengl matrix spec i think.
+
+ 12th March 2020
+-----------------
+	Adding camera matrix, fixing issues with z direction for draw buffer.
+	
 	
 	 
 -->
@@ -84,6 +89,8 @@ body
 
 <script src="frame_counter.js"></script>
 <script src="matrix.js"></script>
+<script src="vector.js"></script>
+<script src="camera.js"></script>
 
 <script>
 	
@@ -161,7 +168,8 @@ var faces =
 
 	4,5,6,
 	6,7,4,
-	
+
+	/*
 	9,10,8,
 	10,11,8,
 	
@@ -173,10 +181,13 @@ var faces =
 	
 	20,21,22,
 	23,20,22
-
+*/
 ];
 
 var ProjectionMatrix;
+var Camera;
+var CameraAngle = 0;
+var cam_dist = 40;
 
 var TestObjects = [];
 var TestModel;
@@ -233,19 +244,18 @@ function DrawList_AddItem (object_index, object_z, x0,y0,x1,y1,x2,y2, rgbhex)
 	var b;		// bucket hash value (0 to MAXBUCKETS)
 	var i;
 	var idx;		// index of new drawlist item
+	
+	// object_z should be directed into the screen (so bigger z = further away.)
 
 //	if ((object_z < near_z) || (object_z >= far_z))
 //	{
 //		return;
 //	}
 
+//	console.log ("object z" + object_z);
+	
 	b= ((object_z - near_z) * DRAWLIST_MAXBUCKETS) / (far_z - near_z);
 	b = Math.floor(b);
-
-	if (b < 0)
-	{
-		b *= -1;
-	}
 
 	if ((b < 0) || (b >= DRAWLIST_MAXBUCKETS))
 	{
@@ -396,6 +406,8 @@ Model3D.prototype.transform = function (tx,ty,tz, rx,ry,rz, sx,sy,sz)
 	m = MatrixRotate (m, rx,ry,rz);
 	m = MatrixTranslate (m, tx,ty,tz);
 	
+	//m = MatrixMultiply (Camera.cam_matrix, m);
+	
 	MatrixVectorArrayMultiply (m, this.initial_verts, this.vertices);
 	
 //	console.log ("verts");
@@ -466,6 +478,7 @@ function CreateDrawList(object_array)
 
 	for (i = 0; i < object_array.length; i++)
 	{
+		console.log ("object " + i);
 		p = object_array[i];
 		m = p.model_ref;
 			// need to transform all the model points
@@ -475,8 +488,10 @@ function CreateDrawList(object_array)
 					p.rx, p.ry, p.rz, 
 					p.sx, p.sy, p.sz);
 
+		
 			// do projection matrix.
 		MatrixVectorArrayMultiply ( ProjectionMatrix, m.vertices, m.vertices);
+//		MatrixVectorArrayMultiply ( m.vertices,ProjectionMatrix, m.vertices);
 		
 			// finally do divide by w 	
 		for (k = 0; k < m.vertices.length; k += 4)
@@ -511,17 +526,57 @@ function CreateDrawList(object_array)
 			y2 = oy + (halfheight *m.vertices[v2+1]);
 			z2 = m.vertices[v2+2];
 
-//			console.log ("z0 " + z0 + " z1 " + z1 + " z2 " + z2);
+			console.log ("k:" + k + " z0 " + z0 + " z1 " + z1 + " z2 " + z2 + " ink:" + colours[c]);
 			z = (z0 + z1 + z2)/3;			
 
 			if ( _BackfaceCullCheck (x0,y0,x1,y1,x2,y2) > 0)
 			{
+//				z = z;		// convert z to draw list range. 
 				DrawList_AddItem (i, z, x0,y0,x1,y1,x2,y2, colours[c]);
 			}
 			c = (c + 1) & 7;
 
 		}
  	}
+}
+
+function MoveCameraTest()
+{
+	var r;
+
+	var x;
+	var y;
+	var z;
+
+	var cos_a;
+	var sin_a;
+	var a;
+
+	r = 10;
+
+	a = (CameraAngle * Math.PI)/180;
+	cos_a = r * Math.cos (a);
+	sin_a = r * Math.sin (a);
+
+	x = r * cos_a;
+	y = 0;
+	z = r * sin_a;
+	
+	x = 0;
+	y = 0;
+	z = -50;
+
+//	x = 0;
+//	y = r * cos_a;
+//	z = r * sin_a;
+
+	CameraAngle += 0.25;
+	while (CameraAngle >= 360)
+	{
+		CameraAngle -= 360;
+	}
+
+	Camera.setCamera (x,y,z, 0,0,0);
 }
 
 var busy = false;
@@ -538,16 +593,17 @@ function UpdateGame()
 
 	if (!Ctx)	return;
 
-	Ctx.clearRect(0,0,Canvas.width, Canvas.height);
+//	Ctx.clearRect(0,0,Canvas.width, Canvas.height);
 	
-	for (i = 0; i < TestObjects.length; i++)
+	for (i = 1; i < TestObjects.length; i++)
 	{
 		TestObjects[i].ry += (i/30);
 		TestObjects[i].rx += (1/2);
 	}
 
-	CreateDrawList(TestObjects);
-	Draw_DrawList();
+//	MoveCameraTest();
+//	CreateDrawList(TestObjects);
+//	Draw_DrawList();
 	busy = false;
 }
 
@@ -589,7 +645,60 @@ function InitMap()
 	
 	x = 0;
 	y = -10;
-	for (i = 0; i < TestMap.length; i++)
+
+	i = 0;
+	TestObjects[i] = new Object3D (TestModel);
+	TestObjects[i].x = 0;
+	TestObjects[i].y = 0;
+	TestObjects[i].z = 10;
+	i++;
+
+/*
+	TestObjects[i] = new Object3D (TestModel);
+	TestObjects[i].x = 4;
+	TestObjects[i].y = 4;
+	TestObjects[i].z = 0;
+	i++;
+
+	TestObjects[i] = new Object3D (TestModel);
+	TestObjects[i].x = 9;
+	TestObjects[i].y = 2;
+	TestObjects[i].z = 0;
+	i++;
+*/
+
+//	TestObjects[i] = new Object3D (TestModel);
+//	TestObjects[i].x = -5;
+//	TestObjects[i].y = 0;
+//	TestObjects[i].z = 0;
+//	i++;
+
+/*
+	TestObjects[i] = new Object3D (TestModel);
+	TestObjects[i].x = 0;
+	TestObjects[i].y = 5;
+	TestObjects[i].z = 0;
+	i++;
+
+	TestObjects[i] = new Object3D (TestModel);
+	TestObjects[i].x = 0;
+	TestObjects[i].y = -5;
+	TestObjects[i].z = 0;
+	i++;
+
+	TestObjects[i] = new Object3D (TestModel);
+	TestObjects[i].x = 0;
+	TestObjects[i].y = 0;
+	TestObjects[i].z = 5;
+	i++;
+
+	TestObjects[i] = new Object3D (TestModel);
+	TestObjects[i].x = 0;
+	TestObjects[i].y = 0;
+	TestObjects[i].z = -5;
+	i++;
+*/
+/*	for (i = 0; i < TestMap.length; i++)
 	{
 		TestObjects[i] = new Object3D (TestModel);
 		TestObjects[i].x = -4.5 + (x);
@@ -605,6 +714,7 @@ function InitMap()
 			y++;
 		}
 	}
+*/
 }
 
 function DoInits()
@@ -630,13 +740,17 @@ function DoInits()
 
 	w = Canvas.width;
 	h = Canvas.height;
-	console.log ("w:" + w + " h:" + h);
 	ProjectionMatrix = Matrix_CreatePerspectiveProjectionMatrix
 			(w, h, 
 				30,			//field_of_view, 
-				1,			//z_near, 
-				100			// z_far)
+				near_z,			//z_near, 
+				far_z			// z_far)
 			);
+
+	Camera = new Cam3D(
+							0,0,-40,
+							0,1,0,
+							0,0,0);
 
 	TestModel = new Model3D (vertices, faces);
 
@@ -654,15 +768,14 @@ function DoInits()
 	}
 */
 
-	
-//	ClearDrawList();
-//	DrawList_AddItem (0, 10, 10,10, 50,50, 30,270, "#ff0000"); //  DrawList_AddItem (object_index, object_z, x0,y0,x1,y1,x2,y2, rgbhex)
-//	DrawList_AddItem (0, 20, 20,10, 240,50, 30,90, "#00ff00");
-//	DrawList_AddItem (0, 40, 30,10, 120,240, 30,90, "#00ffff");
+	ClearDrawList();
+	DrawList_AddItem (0, 10, 10,10, 50,50, 30,270, "#ff0000"); //  DrawList_AddItem (object_index, object_z, x0,y0,x1,y1,x2,y2, rgbhex)
+	DrawList_AddItem (0, 20, 20,10, 240,50, 30,90, "#00ff00");
+	DrawList_AddItem (0, 40, 30,10, 120,240, 30,90, "#00ffff");
 
-//	CreateDrawList(TestObjects);
+	CreateDrawList(TestObjects);
 
-//	Draw_DrawList();
+	Draw_DrawList();
 	
 	UpdateGame();	
 }
