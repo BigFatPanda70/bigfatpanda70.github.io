@@ -25,9 +25,12 @@ something that works.
  12th March 2020
 -----------------
 	Adding camera matrix, fixing issues with z direction for draw buffer.
-	
-	
-	 
+
+ 13th March 2020
+-----------------
+	Been Coronovirus shopping.. the world has gone mad.
+
+	ok.. supplies are in.. got work to do.
 -->
 
 <html>
@@ -93,6 +96,8 @@ body
 <script src="camera.js"></script>
 
 <script>
+	
+var once = 0;
 	
 var DRAWLIST_INVALID_IDX = -1;
 var DRAWLIST_MAXBUCKETS = 512;
@@ -192,12 +197,17 @@ var cam_dist = 40;
 var TestObjects = [];
 var TestModel;
 
+var BackfaceCullEnabled = false;
 
 function _BackfaceCullCheck (x0,y0,x1,y1,x2,y2)
 {
 	// this can determine whether a triangle is front or back facing.
 	// pinched from https://cboard.cprogramming.com/game-programming/1057-backface-culling-lesson10-nehegl-tutorials.html
 
+	if (BackfaceCullEnabled == false)
+	{
+		return 1;
+	}
 	var z=((x1-x0)*(y2-y0)) - ((y1-y0)*(x2-x0));
 	return z; 
 }
@@ -478,7 +488,7 @@ function CreateDrawList(object_array)
 
 	for (i = 0; i < object_array.length; i++)
 	{
-		console.log ("object " + i);
+		if (once == 0)	console.log ("object " + i);
 		p = object_array[i];
 		m = p.model_ref;
 			// need to transform all the model points
@@ -526,16 +536,15 @@ function CreateDrawList(object_array)
 			y2 = oy + (halfheight *m.vertices[v2+1]);
 			z2 = m.vertices[v2+2];
 
-			console.log ("k:" + k + " z0 " + z0 + " z1 " + z1 + " z2 " + z2 + " ink:" + colours[c]);
+			if (once == 0) console.log ("k:" + k + " z0 " + z0 + " z1 " + z1 + " z2 " + z2 + " ink:" + colours[c]);
 			z = (z0 + z1 + z2)/3;			
 
 			if ( _BackfaceCullCheck (x0,y0,x1,y1,x2,y2) > 0)
 			{
-//				z = z;		// convert z to draw list range. 
+				z = z;		// convert z to draw list range. 
 				DrawList_AddItem (i, z, x0,y0,x1,y1,x2,y2, colours[c]);
 			}
 			c = (c + 1) & 7;
-
 		}
  	}
 }
@@ -580,6 +589,7 @@ function MoveCameraTest()
 }
 
 var busy = false;
+
 function UpdateGame()
 {
 	var i;
@@ -593,18 +603,19 @@ function UpdateGame()
 
 	if (!Ctx)	return;
 
-//	Ctx.clearRect(0,0,Canvas.width, Canvas.height);
+	Ctx.clearRect(0,0,Canvas.width, Canvas.height);
 	
-	for (i = 1; i < TestObjects.length; i++)
+	for (i = 0; i < TestObjects.length; i++)
 	{
 		TestObjects[i].ry += (i/30);
 		TestObjects[i].rx += (1/2);
 	}
 
 //	MoveCameraTest();
-//	CreateDrawList(TestObjects);
-//	Draw_DrawList();
+	CreateDrawList(TestObjects);
+	Draw_DrawList();
 	busy = false;
+	once = 1;
 }
 
 function InitInputs()
@@ -650,7 +661,7 @@ function InitMap()
 	TestObjects[i] = new Object3D (TestModel);
 	TestObjects[i].x = 0;
 	TestObjects[i].y = 0;
-	TestObjects[i].z = 10;
+	TestObjects[i].z = 7;
 	i++;
 
 /*
