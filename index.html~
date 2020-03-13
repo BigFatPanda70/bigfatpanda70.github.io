@@ -45,7 +45,7 @@ function test()
 		<div class="left">
 			<div class="vmenu">
 				<a href="games.html">My Games</a>
-				<a href="tech.html">Tech stuff</a>
+				<a href="tech stuff">Tech stuff</a>
 			</div>
 			<!--
 			<div class="leftbox">Test 1 2 3 </div>

@@ -16,6 +16,20 @@
 	background-color: white;
 }
 
+	/* left side menu */
+.vmenu a
+{
+	color: black;
+	background-color: #ffffdd;
+	text-decoration: none;
+	padding:1em;
+	display: block;
+}
+.vmenu a:hover
+{
+	background-color: #ccbbaa;
+}
+
 .div_table
 {
 	width: 100%;

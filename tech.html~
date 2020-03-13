@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<html>
+<head>
+<meta name="google-site-verification" content="64yvLnoiyLMUpmBlNZ0o6SUOF84GCxrd2qdb2jqiZGA" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+
+<link rel="stylesheet" href="styles.css">
+
+
+</head>
+<body>
+
+<div id="wrap">
+	<div id="main">
+		<div class="navbar">
+			<div class="navitem"><a class="navlink" href="https://bigfatpanda70.github.io"><img src="images/panda_small.png" alt="small logo image"></a></div>
+		</div>
+
+		<div class="row">
+		<div class="left">
+			&nbsp;
+			<div class="vmenu">
+				<a href="games">My Games</a>
+				<a href="tech stuff">Tech stuff</a>
+			</div>
+		</div>
+
+		<div class="main">
+			<br>If you don't like maths, look away now..</br>
+			<h1> Tech stuff:</h1>
+
+			<h2> z ordering issues. </h2>
+			<p> Rather than write a relatively simple version of breakout, I thought I'd be clever and go full 3D with this one.</p>
+			<p>The problem is that I've used the same projection matrix that I'd use for opengl based 3D rendering, which uses a 
+			coordinate system so that the z axis comes 'out' of the screen (negative z into the screen, positive z outwards) but using 
+			the reverse coordinate system for everything else..</p>
+			<p>I am using a html canvas to draw all the triangles which means there is no z buffer to do per pixel depth checks. 
+			 This means I have to use a draw list buffer to order all the triangles before drawing. It sounds like a lot of extra work 
+			 but modern pc's are fast enough to handle the overhead with a bit of creative buffer use without slowing to a crawl. </p>
+			<p> My drawing buffer orders things in positive z order. So small z values (near the screen) are drawn last, while large z 
+			values (far, far away) are drawn first.</p>
+			
+			<br>
+			<br>
+			<h2> Avoiding WebGL like the Coronovirus... </h2>
+			<p>Don't get me wrong.. I <u>like</u> WebGl.. it's a cool technology for doing modern 3D rendering in a browser. and that is <i> very cool</i> but..</p>
+			<p>The thing is, sometime last year, people started blacklisting various older graphics cards, so that webgl just won't run anymore. I'd invested a lot of time 
+			on it and suddenly none of my code would run. </p>
+			<p>Which is annoying as I've got a perfectly good pc which will run OpenGl (another cool 3D tech). I only want to be able to draw 
+			stuff, use a z buffer and texture mapping. Is it too much just to allow <i>some</i> sort of 3D browser rendering? </p>
+			<p>So for the bat n ball project, I've abandoned webgl for now, and using good ol' reliable html 5 canvas, which seems to run just
+			fine thanks on my old and creaky hardware. </p>
+			<br>
+			<br>
+			<br>
+			<br>
+			<br>
+			- Nick.
+		</div>  <!-- class main -->
+
+		<div class="right">
+			<div class="rightbox"><u>Unchecked facts:</u><br>Cows moo with regional accents.</div>
+		</div>
+
+
+	</div>
+	<div id="info"></div>
+
+	</div> <!-- main -->
+</div>	<!-- wrap -->
+
+
+<div id="footer">
+	<div id="footercell">
+		<p>Website by Nick Fleming : Last updated 2020/03/10 <a href="cookie.html">Cookies</a>&nbsp<a href="privacy.html">Privacy</a></p>
+	</div>
+</div>
+
+</body>
+</html>

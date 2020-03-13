@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<html>
+<head>
+<meta name="google-site-verification" content="64yvLnoiyLMUpmBlNZ0o6SUOF84GCxrd2qdb2jqiZGA" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+
+<link rel="stylesheet" href="styles.css">
+
+
+</head>
+<body>
+
+<div id="wrap">
+	<div id="main">
+		<div class="navbar">
+			<div class="navitem"><a class="navlink" href="https://bigfatpanda70.github.io"><img src="images/panda_small.png" alt="small logo image"></a></div>
+		</div>
+
+		<div class="row">
+		<div class="left">
+			&nbsp;
+			<div class="vmenu">
+				<a href="games">My Games</a>
+				<a href="tech stuff">Tech stuff</a>
+			</div>
+		</div>
+
+		<div class="main">
+			<h1> My Games:</h1>
+
+			<h2> bat n ball game </h2>
+			<p> I am currently in the process of adding a bat and ball type game to this site, but I am currently running into problems with
+			 some of the 3D calculations. What the drawing code is currently doing is drawing everthing in the wrong order.
+			 There's a lot of maths, and I've probably just got a sign wrong somewhere..  			
+			<br>
+			<br>
+			<br>
+			<br>
+			<br>
+			<br>
+			- Nick.
+		</div>  <!-- class main -->
+
+		<div class="right">
+			<div class="rightbox"><u>Unchecked facts:</u><br>Cows moo with regional accents.</div>
+		</div>
+
+
+	</div>
+	<div id="info"></div>
+
+	</div> <!-- main -->
+</div>	<!-- wrap -->
+
+
+<div id="footer">
+	<div id="footercell">
+		<p>Website by Nick Fleming : Last updated 2020/03/10 <a href="cookie.html">Cookies</a>&nbsp<a href="privacy.html">Privacy</a></p>
+	</div>
+</div>
+
+</body>
+</html>

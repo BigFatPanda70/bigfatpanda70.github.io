@@ -1,4 +1,9 @@
-
+/* Frustratingly, my mobile device has a bigger screen area than my desktop,
+  but the font it uses is also correspondingly bigger.. */
+/* */
+/* */
+/* */
+/* */
 .navbar
 {
 	display: table;
@@ -8,7 +13,21 @@
 .navitem
 {
 	display: table-cell;
-	background-color: green;
+	background-color: white;
+}
+
+	/* left side menu */
+.vmenu a
+{
+	color: black;
+	background-color: #ffffdd;
+	text-decoration: none;
+	padding:1em;
+	display: block;
+}
+.vmenu a:hover
+{
+	background-color: #bbaa99;
 }
 
 .div_table
@@ -134,9 +153,8 @@ html, body
 {
 	background-color:#ffffff;
 	float: left;
-	width: 18%; /* The width is 20%, by default */
+/*	width: 20%;*/ /* The width is 20%, by default */
 	margin-top:7px;
-	padding-right:1%;
 }
 
 .main 
@@ -144,25 +162,29 @@ html, body
 	margin-top:7px;
 	background-color:#ffffff;
 	float: left;
-	width: 58%;  /* The width is 60%, by default */
-	padding-left: 1%;
-	padding-right: 1%;
+/*	width: 60%;  */ /* The width is 60%, by default */
 }
 
 .right 
 {
 	background-color:#ffffff;
 	float: left;
-	width: 20%; /* The width is 20%, by default */
+/*	width: 20%;*/  /* The width is 20%, by default */
 	margin-top:7px;
 }
 
-/*===== other bits ==== */
-
 .leftbox
 {
-	background-color:#ffeedd;
-	border-color:red;
+	border-color:#aa8866;
 	border-style:solid;
-
+	background-color: #ffeedd;
 }
+
+.rightbox
+{
+	border-color:#aa8866;
+	border-style:solid;
+	background-color: #ffeedd;
+	height :20%;
+}
+
