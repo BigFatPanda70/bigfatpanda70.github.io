@@ -58,7 +58,7 @@ function _cam3d_setcamera (px,py,pz, lx,ly,lz)
 	m_combined = MatrixTranslate (m_combined, -px, -py, -pz);
 
 		// rotate around y axis.
-/*
+
 	sin_a = lv.x;
 	cos_a = lv.z;
 	m = MatrixIdentity();
@@ -67,7 +67,12 @@ function _cam3d_setcamera (px,py,pz, lx,ly,lz)
 	m[8] = -sin_a;
 	m[10]= cos_a;
 	m_combined = MatrixMultiply (m_combined, m);
-*/	
+	
+	if (once == 0)
+	{
+		console.log ("lvx:" + lv.x + " lvy:" + lv.y + " lvz:" + lv.z);
+	}
+	
 		// rotate around the x axis.
 /*	m = MatrixIdentity();
 	cos_a = lv.z;
@@ -116,7 +121,93 @@ function Cam3D (pos_x, pos_y, pos_z, up_x, up_y, up_z, look_at_x, look_at_y, loo
 }
 
 
+
+Cam3D.prototype.gluLookAt(eyex, eyey, eyez,
+			 			centerx, centery, centerz,
+					  upx, upy, upz)
+{
+	// being lazy.. copied from https://stackoverflow.com/questions/13166135/how-does-glulookat-work
+	// and https://www.khronos.org/opengl/wiki/GluLookAt_code
+
+	var forward;
+	var side;
+	var up;
+	var m =[];				//     GLfloat m[4][4];
+
+	var dx;
+	var dy;
+	var dz;
+
+	up = new Vector (upx, upy, upz);
+
+	// ----------------------------
+	dx = centerx - eyex;
+	dy = centery - eyey;
+	dz = centerz - eyez;
+	forward = new Vector (dx,dy,dz);
+	forward.normalise();
+	// -----------------------------
+
+	// side = forward x up
+	side = CrossProduct (forward, up);
+	side.normalise();
+
+   //* Recompute up as: up = side x forward
+   up = CrossProduct (side, forward);
+
+	this.cam_matrix = MatrixIdentity();
+	m = this.cam_matrix; 
+ 
+ 	m[0] = side.x;		//[0];
+   m[4] = side.y;		//[1];
+   m[8] = side.z;		//[2];
+   m[12] = 0.0;
+   // --------------------
+   m[1] = up.x;		//[0];
+   m[5] = up.y;		//[1];
+   m[9] = up.z;		//[2];
+   m[13] = 0.0;
+   // --------------------
+   m[2] = -forward.x;	//[0];
+   m[6] = -forward.y;	//[1];
+   m[10] = -forward.z;	//[2];
+   m[14] = 0.0;
+
+    __gluMakeIdentityf(&m[0][0]);
+    m[0][0] = side[0];
+    m[1][0] = side[1];
+    m[2][0] = side[2];
+
+    m[0][1] = up[0];
+    m[1][1] = up[1];
+    m[2][1] = up[2];
+
+    m[0][2] = -forward[0];
+    m[1][2] = -forward[1];
+    m[2][2] = -forward[2];
+
+    glMultMatrixf(&m[0][0]);
+    glTranslated(-eyex, -eyey, -eyez);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Cam3D.prototype.setCamera = function (x,y,z, lx,ly,lz)
 {
 	this.setPos (x,y,z, lx,ly,lz);
 }
+
+
+
+

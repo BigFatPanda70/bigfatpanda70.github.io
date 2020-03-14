@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<html>
+<head>
+<meta name="google-site-verification" content="64yvLnoiyLMUpmBlNZ0o6SUOF84GCxrd2qdb2jqiZGA" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+
+<link rel="stylesheet" href="styles.css">
+
+
+</head>
+<body>
+
+<div id="wrap">
+	<div id="main">
+		<div class="navbar">
+			<div class="navitem"><a class="navlink" href="https://bigfatpanda70.github.io"><img src="images/panda_small.png" alt="small logo image"></a></div>
+		</div>
+
+		<div class="row">
+		<div class="left">
+			&nbsp;
+			<div class="vmenu">
+				<a href="games">My Games</a>
+				<a href="tech stuff">Tech stuff</a>
+			</div>
+		</div>
+
+		<div class="main">
+			<h1> A fast Javascript draw list implementation</h1>
+			<h2> Why use a draw list</h2>
+			<p> Most modern smartphones, tablets and pc's can easily handle full 3D with a hardware z buffer. However some pc's, although capable of 3D rendering 
+			have 3D rendering disabled in the browser. So you need a fallback to another way of ordering your 3D triangles.</p>
+			<p>The way I see it, you have two options either do a software z-buffer, or create a draw list which will render your 
+			triangle data in the right order for drawing (draw furthest away first).</p>  			
+			<p>A quick note on the coordinate system used: y is up and down, x is left to right, z goes <i>into</i> the screen.
+			The z axis is the opposite from the one used by opengl, but I find it more natural to have my positive z values go into the screen </p>
+			<p> triangles are to be sorted on z value. To get the z-sort value, just find the average 
+			<p>Ordering triangles by z values means that there needs to be a way to sort triangle data fast. To achieve this I've used 2 data structures.</p>
+			<p>the first one is a 'bucket' list, which is a fixed size array, and all the z values between the near and far clip planes 
+			are scaled to fit within this range.</p>
+			<p>
+				<code>
+					b = ((object_z - near_z) * MAXBUCKETS) / (far_z - near_z);<br>
+					b = Math.floor(b);
+					</code>
+			</p>
+			<p> b will be an integer in the range from 0 to max buckets. This means that every triangle with similar z values will be grouped together. 
+			  
+			</p>
+			<br>
+			<br>
+			<br>
+			<br>
+			<br>
+			
+			
+			<h2> Why not to use a draw list</h2>
+			<p> A draw list will solve a limited set of rendering problems. With careful design of 3D objects it is perfectly
+			possible to write 3D renderers with them. However, it is not a complete solution to the painters algorithm problem -
+			overlapping triangles, or triangles close together will still not be rendered properly. 
+
+			- Nick.
+		</div>  <!-- class main -->
+
+		<div class="right">
+			<div class="rightbox"><u>Unchecked facts:</u><br>Cows moo with regional accents.</div>
+		</div>
+
+
+	</div>
+	<div id="info"></div>
+
+	</div> <!-- main -->
+</div>	<!-- wrap -->
+
+
+<div id="footer">
+	<div id="footercell">
+		<p>Website by Nick Fleming : Last updated 2020/03/10 <a href="cookie.html">Cookies</a>&nbsp<a href="privacy.html">Privacy</a></p>
+	</div>
+</div>
+
+</body>
+</html>
