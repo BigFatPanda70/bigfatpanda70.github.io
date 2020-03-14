@@ -220,7 +220,12 @@ function MatrixVectorArrayMultiply (m, v, r)
 		
 		// note tx,ty,tz and tw are used so that v and r could be the same 
 		// array if required. 
-		
+
+	//	m[0]  m[4]  m[ 8]  m[12]
+	//	m[1]  m[5]  m[ 9]  m[13]
+	//	m[2]  m[6]  m[10]  m[14]
+	// 	m[3]  m[7]  m[11]  m[15]
+
 
 	var x;
 	var y;
@@ -233,6 +238,11 @@ function MatrixVectorArrayMultiply (m, v, r)
 	var tz;
 	var tw;
 
+//	if (once == 0)
+//	{
+//		console.log ("<MMMMMM>");
+//		console.log (m);
+//	}
 	for (i = 0; i < v.length; i += 4)
 	{
 		x = v[i]
@@ -244,6 +254,9 @@ function MatrixVectorArrayMultiply (m, v, r)
 		ty = (m[1] * x) + (m[5] * y) + (m[9] * z) + (m[13] * w);
 		tz = (m[2] * x) + (m[6] * y) + (m[10]* z) + (m[14] * w);
 		tw = (m[3] * x) + (m[7] * y) + (m[11]* z) + (m[15] * w);
+
+//	if (once == 0) console.log ("i:" + i + " x:" + x + " y:" + y + " z:" + z + " w:" + w);
+//	if (once == 0) console.log ("i:" + i + " tx:" + tx + " ty:" + ty + " tz:" + tz + " tw:" + tw);
 
 		r[i+0] = tx;
 		r[i+1] = ty;
@@ -324,6 +337,11 @@ function MatrixAdd (ma, mb)
 function Matrix_CreatePerspectiveProjectionMatrix(canvas_width, 
 						canvas_height, field_of_view, z_near, z_far)
 {
+	//	m[0]  m[4]  m[ 8]  m[12]
+	//	m[1]  m[5]  m[ 9]  m[13]
+	//	m[2]  m[6]  m[10]  m[14]
+	// 	m[3]  m[7]  m[11]  m[15]
+
 	// field_of_view = 30.0 for most common views.
   // 10/11/11 - transposed m[11] and m[14] - its a bit of a hack but it
   // works.. hate opengl column major matrices !!!
@@ -386,13 +404,12 @@ function Matrix_CreatePerspectiveProjectionMatrix(canvas_width,
 
 	m[8] = (right + left) / (right - left);
 	m[9] = (top+bottom) / (top - bottom);
-//	m[10] = -(z_far + z_near) / (z_far - z_near);
-	m[10] = (-z_far - z_near) / (z_far - z_near);
+	m[10] = (-z_far - z_near) / (z_far - z_near);	//	m[10] = -(z_far + z_near) / (z_far - z_near);
 	m[11] = -1;
 
 	m[12] = 0;
 	m[13] = 0;
-	m[14] = -((2 * z_far * z_near) / (z_far - z_near));
+	m[14] = -((2 * z_far * z_near) / (z_far - z_near));		//	m[14] = ((2 * z_far * z_near) / (z_far - z_near));
 	m[15] = 0;
 
 	return new Float32Array(m);
