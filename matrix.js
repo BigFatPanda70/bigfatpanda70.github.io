@@ -65,12 +65,13 @@
 
 function MatrixIdentity()
 {
-
-
-	return new Array (	1.0, 0.0, 0.0, 0.0, 
+	return new Array
+	(
+				1.0, 0.0, 0.0, 0.0, 
 				0.0, 1.0, 0.0, 0.0, 
 				0.0, 0.0, 1.0, 0.0,
-				0.0, 0.0, 0.0, 1.0);
+				0.0, 0.0, 0.0, 1.0
+	);
 }
 
 function MatrixTranslate (m_in, tx, ty, tz)
