@@ -200,7 +200,7 @@ var faces =
 var ProjectionMatrix;
 var Camera;
 var CameraAngle = 0;
-var cam_dist = 40;
+var cam_dist = 20;
 var EnableCamera = true;
 
 var TestObjects = [];
@@ -274,8 +274,8 @@ function DrawList_AddItem (object_index, object_z, x0,y0,x1,y1,x2,y2, rgbhex)
 
 	if ((b < 0) || (b >= DRAWLIST_MAXBUCKETS))
 	{
-		console.log ("b bad");
-		return;		// should never get here.
+			// reject any objects that can't be viewed.
+		return;
 	}
 
 		// create drawlist item.
@@ -432,7 +432,9 @@ Model3D.prototype.transform = function (tx,ty,tz, rx,ry,rz, sx,sy,sz)
 */	
 	if (EnableCamera == true)
 	{
-		m = MatrixMultiply (Camera.cam_matrix, m);
+//		m = MatrixMultiply (Camera.cam_matrix, m);
+		m = MatrixRotate (m, 0,90,0);
+
 	}
 	
 	MatrixVectorArrayMultiply (m, this.initial_verts, this.vertices);
@@ -528,10 +530,12 @@ function CreateDrawList(object_array)
 			// need to transform all the model points
 			
 
-		m.transform (
-					p.x, p.y, p.z, 
-					p.rx, p.ry, p.rz, 
-					p.sx, p.sy, p.sz);
+		m.transform
+		(
+			p.x, p.y, p.z, 
+			p.rx, p.ry, p.rz, 
+			p.sx, p.sy, p.sz
+		);
 
 /*
 		if (once == 0)
@@ -641,7 +645,7 @@ function MoveCameraTest()
 	var sin_a;
 	var a;
 
-	r = 10;
+	r = cam_dist;
 
 	a = (CameraAngle * Math.PI)/180;
 	cos_a = r * Math.cos (a);
@@ -651,9 +655,9 @@ function MoveCameraTest()
 	y = 0;
 	z = r * sin_a;
 	
-	x = 0;
-	y = 0;
-	z = -50;
+//	x = 0;
+//	y = 0;
+//	z = -50;
 
 //	x = 0;
 //	y = r * cos_a;
@@ -665,7 +669,47 @@ function MoveCameraTest()
 		CameraAngle -= 360;
 	}
 
-	Camera.setCamera (x,y,z, 0,0,0);
+//	x = Camera.pos.x;
+//	y = Camera.pos.y;
+//	z = Camera.pos.z -= 0.2;
+//	z = Camera.pos.z;
+	Camera.setCamera (x,y,z, 0, 0, 0);
+}
+
+function OverheadView()
+{
+	var ox;
+	var oy;
+	var i;
+	var c;
+	
+	ox = 192;
+	oy = 192;
+
+	Ctx.beginPath();
+	Ctx.fillStyle="#ffffff";
+	Ctx.rect (ox , oy , 3,3);
+	Ctx.fill();
+
+	Ctx.beginPath();
+	Ctx.fillStyle="#000000";
+	Ctx.rect (ox + Camera.pos.x, oy - Camera.pos.z, 3,3);
+	Ctx.fill();
+	
+	Ctx.beginPath();
+	Ctx.strokeStyle="#ffff00";
+	Ctx.moveTo (ox + Camera.pos.x, oy - Camera.pos.z);
+	Ctx.lineTo (ox,oy);
+	Ctx.stroke();
+	
+	c = 0;
+	for (i = 0; i < TestObjects.length; i++)
+	{
+		Ctx.beginPath();
+		Ctx.fillStyle = colours[c];
+		Ctx.rect (ox + TestObjects[i].x, oy - TestObjects[i].z, 3,3);
+		Ctx.fill();
+	}
 }
 
 var busy = false;
@@ -694,6 +738,9 @@ function UpdateGame()
 //	MoveCameraTest();
 	CreateDrawList(TestObjects);
 	Draw_DrawList();
+	
+	OverheadView();
+
 	busy = false;
 	once = 1;
 }
@@ -759,7 +806,7 @@ function InitMap()
 	TestObjects[i] = new Object3D (TestModel);
 	TestObjects[i].x = 0;
 	TestObjects[i].y = 5;
-	TestObjects[i].z = 10;
+	TestObjects[i].z = 0;
 	i++;
 
 	TestObjects[i] = new Object3D (TestModel);
@@ -808,8 +855,14 @@ function DoInits()
 	Ctx = Canvas.getContext("2d");
 
 	var i;
+	var m;
 
 	MatrixTest();
+	
+	m = MatrixIdentity();
+	m = MatrixRotate (m, 0,90,0);
+	console.log ("m:");
+	console.log (m);
 	
 	BigCanvas();
 	
@@ -837,26 +890,16 @@ function DoInits()
 	if (EnableCamera == true)
 	{
 		Camera = new Cam3D(
-							0,0,cam_dist,
+							cam_dist,0,0,
 							0,1,0,
-							0,0,20);
+							0,0,0);
+
+//		Camera.setCamera (0,5,cam_dist, 0,0,0);	//gluLookAt (5,0,cam_dist, 0,0,20);
 	}
 
 	TestModel = new Model3D (vertices, faces);
 
 	InitMap();
-/*
-	for (i = 0; i < 30; i++)
-	{
-		TestObjects[i] = new Object3D (TestModel);
-		TestObjects[i].x = -3 + (Math.random() * 6);
-		TestObjects[i].y = -3 + (Math.random() * 6);
-		TestObjects[i].z = -15 - (Math.random() * 40);
-		TestObjects[i].sx = 0.1 + (Math.random());
-		TestObjects[i].sy = 0.1 + (Math.random());
-		TestObjects[i].sz = 0.1 + (Math.random());
-	}
-*/
 
 	ClearDrawList();
 //	DrawList_AddItem (0, 10, 10,10, 50,50, 30,270, "#ff0000"); //  DrawList_AddItem (object_index, object_z, x0,y0,x1,y1,x2,y2, rgbhex)

@@ -103,6 +103,16 @@ Cam3D.prototype.gluLookAt = function (eyex, eyey, eyez,
 	m[6] = -forward.y;	//[1];
 	m[10] = -forward.z;	//[2];
 	m[14] = 0.0;
+	
+	if (once == 0)
+	{
+		console.log ("m after :" );
+		console.log (side);
+		console.log (up);
+		console.log (forward);
+		console.log (m);
+		
+	}
 
 	this.cam_matrix = MatrixTranslate (m, -eyex, -eyey, -eyez);
 }

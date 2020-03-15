@@ -200,7 +200,7 @@ var faces =
 var ProjectionMatrix;
 var Camera;
 var CameraAngle = 0;
-var cam_dist = 40;
+var cam_dist = 20;
 var EnableCamera = true;
 
 var TestObjects = [];
@@ -433,6 +433,8 @@ Model3D.prototype.transform = function (tx,ty,tz, rx,ry,rz, sx,sy,sz)
 	if (EnableCamera == true)
 	{
 		m = MatrixMultiply (Camera.cam_matrix, m);
+//		m = MatrixRotate (m, 0,90,0);
+
 	}
 	
 	MatrixVectorArrayMultiply (m, this.initial_verts, this.vertices);
@@ -643,7 +645,7 @@ function MoveCameraTest()
 	var sin_a;
 	var a;
 
-	r = 8;
+	r = cam_dist;
 
 	a = (CameraAngle * Math.PI)/180;
 	cos_a = r * Math.cos (a);
@@ -681,8 +683,8 @@ function OverheadView()
 	var i;
 	var c;
 	
-	ox = 100;
-	oy = 100;
+	ox = 192;
+	oy = 192;
 
 	Ctx.beginPath();
 	Ctx.fillStyle="#ffffff";
@@ -733,7 +735,7 @@ function UpdateGame()
 		TestObjects[i].rx += (1/3);
 	}
 
-	MoveCameraTest();
+//	MoveCameraTest();
 	CreateDrawList(TestObjects);
 	Draw_DrawList();
 	
@@ -853,8 +855,14 @@ function DoInits()
 	Ctx = Canvas.getContext("2d");
 
 	var i;
+	var m;
 
 	MatrixTest();
+	
+	m = MatrixIdentity();
+	m = MatrixRotate (m, 0,90,0);
+	console.log ("m:");
+	console.log (m);
 	
 	BigCanvas();
 	
@@ -882,7 +890,7 @@ function DoInits()
 	if (EnableCamera == true)
 	{
 		Camera = new Cam3D(
-							0,0,cam_dist,
+							cam_dist,0,0,
 							0,1,0,
 							0,0,0);
 
