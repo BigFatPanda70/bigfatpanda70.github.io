@@ -42,7 +42,30 @@ something that works.
 
  16th March 2020
 ------------------
-	Doing camera tests till.. this is HARD to get right.
+	Doing camera tests still.. this is HARD to get right. 
+	
+	.. think I've finally got it working !! 
+	
+	The order that the camera is mulitiplied with the camera translation
+	matrix makes a great deal of difference. The camera rotations will
+	not work otherwise.
+	
+	Example.
+	
+	camera pos {2,0,3}
+	look at {0,0,0}
+	
+	(column major matrix used)
+
+	camera rotate & translate matrix should be:
+	{
+		0.832	0   -0.554    0
+		0       1    0        0
+		0.554   0    0.832    -3.605
+		0       0    0        1
+	}
+	
+	if the wrong order is used, the -3.605 value will be wrong.
 
 -->
 
@@ -895,7 +918,7 @@ function DoInits()
 	if (EnableCamera == true)
 	{
 		Camera = new Cam3D(
-							0,0,50,
+							2,0,3,
 							0,1,0,
 							0,0,0);
 
