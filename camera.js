@@ -112,9 +112,19 @@ Cam3D.prototype.gluLookAt = function (eyex, eyey, eyez,
 		console.log (forward);
 		console.log (m);
 		
+		console.log ("eyex:" + eyex + " eyey:" + eyey +" eyez:" + eyez);
 	}
 
-	this.cam_matrix = MatrixTranslate (m, -eyex, -eyey, -eyez);
+	this.cam_matrix = MatrixIdentity();
+	this.cam_matrix = MatrixTranslate (this.cam_matrix, -eyex, -eyey, -eyez);
+
+	this.cam_matrix = MatrixMultiply (m, this.cam_matrix);		// NOTE : THE MULTIPLY ORDER MATTERS A GREAT DEAL.
+	
+	if (once == 0)
+	{
+		console.log ("cam_matrix");
+		console.log (this.cam_matrix);
+	}
 }
 
 Cam3D.prototype.setCamera = function (x,y,z, lx,ly,lz)

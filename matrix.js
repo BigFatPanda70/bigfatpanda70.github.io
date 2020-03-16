@@ -36,7 +36,7 @@
 
   function MatrixMultiply (a, b)
   {
-	  // note most of matrix work will be done on the gpu where possible.
+	  // note most of matrix work should be done on the gpu where possible. - 16/03/2020 - not sure if this is right
 	  // http://www.intmath.com/matrices-determinants/matrix-multiplication-flash.php
 
 	  //	m[0]  m[4]  m[ 8]  m[12]		note the layout (column major -> its a bit weird really...).
@@ -78,6 +78,8 @@ function MatrixTranslate (m_in, tx, ty, tz)
 {
 	var m = new Array (1,0,0,0, 0,1,0,0, 0,0,1,0, tx,ty,tz,1);
 
+
+//	return MatrixMultiply(m_in, m);
 	return MatrixMultiply(m, m_in);
 }
 
