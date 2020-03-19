@@ -46,9 +46,9 @@ something that works.
 	
 	.. think I've finally got it working !! 
 	
-	The order that the camera is mulitiplied with the camera translation
-	matrix makes a great deal of difference. The camera rotations will
-	not work otherwise.
+	The order that the camera rotation matrix is mulitiplied with the
+	camera translation matrix makes a great deal of difference.
+	The camera rotations will not work otherwise.
 	
 	Example.
 	
@@ -80,18 +80,19 @@ body
 
 .outer
 {
-	width:100%;
 	height:100%;
 	background-color:black;
 	text-align:center;
 }
-.container
+
+/*.container
 {
 	width:50%;
 	height:100%;
 	background-color:red;
 	margin: 0 auto;
 }
+*/
 
 .gamecanvas
 {
@@ -107,9 +108,11 @@ body
 	width:20%;
 	background-color:#eeccaa;
 }
+
 .right
 {
 	float:left;
+	height:100%;
 	height:100%;
 	width:20%;
 	background-color:#bbddff;
@@ -542,8 +545,11 @@ function CreateDrawList(object_array)
 	
 	var backface_cull = false;
 
-	halfwidth = 192;
-	halfheight = 192;
+//	halfwidth = 192;
+//	halfheight = 192;
+
+	halfwidth = Canvas.width >> 1;
+	halfheight = Canvas.height >> 1;
 	ox = halfwidth;
 	oy = halfheight;
 	
@@ -710,9 +716,14 @@ function OverheadView()
 	var oy;
 	var i;
 	var c;
+
+//	ox = window.innerWidth >> 1;
+//	oy = window.innerHeight >> 1;
+
+	ox = Canvas.width >> 1;
+	oy = Canvas.height >> 1;
 	
-	ox = 192;
-	oy = 192;
+//	console.log ("w:" + ox + " h" + oy);
 
 	Ctx.beginPath();
 	Ctx.fillStyle="#ffffff";
@@ -768,6 +779,14 @@ function UpdateGame()
 	Draw_DrawList();
 	
 	OverheadView();
+	
+	Ctx.beginPath();
+	Ctx.moveTo (10,10);
+	Ctx.lineTo (500,10);
+	Ctx.lineTo (500,380);
+	Ctx.lineTo (10,380);
+	Ctx.lineTo (10,10);
+	Ctx.stroke();
 
 	busy = false;
 	once = 1;
@@ -801,6 +820,20 @@ function BigCanvas()
 		item.style.width = w + "px";
 		item.style.height = w + "px";
 	}
+}
+
+function FullSizeCanvas()
+{
+	var w;
+	var h;
+
+	w = window.innerWidth;
+	h = window.innerHeight;
+	
+	item = document.getElementById ("area");
+	item.style.width = w + "px";
+	item.style.height = h + "px";
+	
 }
 
 function InitMap()
@@ -892,7 +925,8 @@ function DoInits()
 	console.log ("m:");
 	console.log (m);
 	
-	BigCanvas();
+//	BigCanvas();
+	FullSizeCanvas();
 	
 	InitInputs();
 	
@@ -949,12 +983,11 @@ function DoInits()
 </head>
 <body onload ="DoInits();">
 <p id="fps">X</p>
-<!--	<div class="topcornerimage"><a href="index.html"><img src="images/panda_small.png"></a></div> -->
-	<div class="outer">
-		<div class="container" id="area">
-			<canvas class="gamecanvas" id="gc" width="384px;" height="384px;"></canvas>
-		</div>
-	</div>
-	
+<br>
+
+<div class="outer" id="area">
+	<canvas class="gamecanvas" id="gc" width="512;" height="384;"></canvas>
+</div>	
+
 </body>
 </html>
