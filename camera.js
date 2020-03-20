@@ -66,8 +66,8 @@ Cam3D.prototype.gluLookAt = function (eyex, eyey, eyez,
 	
 	if (once == 0)
 	{
-		console.log ("forward");
-		console.log (forward);
+//		console.log ("forward");
+//		console.log (forward);
 	}
 
 	// side = forward x up
@@ -76,7 +76,7 @@ Cam3D.prototype.gluLookAt = function (eyex, eyey, eyez,
 
 	if (once == 0)
 	{
-		console.log (side);
+//		console.log (side);
 	}
 
    //* Recompute up as: up = side x forward
@@ -84,7 +84,7 @@ Cam3D.prototype.gluLookAt = function (eyex, eyey, eyez,
 
 	if (once == 0)
 	{
-		console.log (up);
+//		console.log (up);
 	}
 
 	m = MatrixIdentity();
@@ -106,13 +106,13 @@ Cam3D.prototype.gluLookAt = function (eyex, eyey, eyez,
 	
 	if (once == 0)
 	{
-		console.log ("m after :" );
-		console.log (side);
-		console.log (up);
-		console.log (forward);
-		console.log (m);
+//		console.log ("m after :" );
+//		console.log (side);
+//		console.log (up);
+//		console.log (forward);
+//		console.log (m);
 		
-		console.log ("eyex:" + eyex + " eyey:" + eyey +" eyez:" + eyez);
+//		console.log ("eyex:" + eyex + " eyey:" + eyey +" eyez:" + eyez);
 	}
 
 	this.cam_matrix = MatrixIdentity();
@@ -122,8 +122,8 @@ Cam3D.prototype.gluLookAt = function (eyex, eyey, eyez,
 	
 	if (once == 0)
 	{
-		console.log ("cam_matrix");
-		console.log (this.cam_matrix);
+//		console.log ("cam_matrix");
+//		console.log (this.cam_matrix);
 	}
 }
 
