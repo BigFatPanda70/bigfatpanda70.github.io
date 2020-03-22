@@ -122,7 +122,8 @@ body
 
 .gamecanvas
 	{
-	background-color:#ffccee;
+/*	background-color:#ffccee;*/
+	background-color:#000000;
 	width:100%;					/* width = container width */
 	height:100%;				/* height = container height */
 }
@@ -299,6 +300,7 @@ var EnableCamera = true;
 
 var TestObjects = [];
 var TestModel;
+var TestModel2;
 
 var BackfaceCullEnabled = true;
 
@@ -514,8 +516,8 @@ function Model3D (vertex_array, face_array)
 	this.ia = 0.4;			// intensity of ambient light level
 
 	this.red = 1.0;			// default object colour.
-	this.green = 1.0;
-	this.blue = 1.0;
+	this.green = 0.0;
+	this.blue = 0.0;
 
 	this.r = [];		// per face colours
 	this.g = [];
@@ -556,107 +558,6 @@ Model3D.prototype.initNormals = function()
 
 	// https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
 	// newells method ???
-/*
-	var i;
-	var lp;
-
-	var v0;
-	var v1;
-	var v2;
-	
-	var x0;
-	var y0;
-	var z0;
-	var x1;
-	var y1;
-	var z1;
-	var x2;
-	var y2;
-	var z2;
-
-	var ux;
-	var uy;
-	var uz;
-
-	var vx;
-	var vy;
-	var vz;
-
-	var nx;
-	var ny;
-	var nz;
-
-	if (once == 0)
-	{
-		console.log (this.initial_verts);
-	}
-
-	i = 0;
-	for (lp = 0; lp < this.faces.length; lp += 3)
-	{
-		v0 = this.faces[lp+0] * 4;
-		v1 = this.faces[lp+1] * 4;
-		v2 = this.faces[lp+2] * 4;
-		
-		x0 = this.initial_verts[v0+0];
-		y0 = this.initial_verts[v0+1];
-		z0 = this.initial_verts[v0+2];
-
-		x1 = this.initial_verts[v1+0];
-		y1 = this.initial_verts[v1+1];
-		z1 = this.initial_verts[v1+2];
-
-		x2 = this.initial_verts[v2+0];
-		y2 = this.initial_verts[v2+1];
-		z2 = this.initial_verts[v2+2];
-		
-		if (once == 0)
-		{
-			console.log ("i:" + i + " v0:" + v0 + " x0:" + x0 + " y0:" + y0 + " z0:" + z0);
-			console.log ("i:" + i + " v1:" + v1 + " x1:" + x1 + " y1:" + y1 + " z1:" + z1);
-			console.log ("i:" + i + " v2:" + v2 + " x2:" + x2 + " y2:" + y2 + " z2:" + z2);
-		}
-
-
-			// U = p1 - p0
-		ux = x1 - x0;	//this.initial_verts[v1+0] - this.initial_verts[v0+0];
-		uy = y1 - y0;	//this.initial_verts[v1+1] - this.initial_verts[v0+1];
-		uz = z1 - z0;	//this.initial_verts[v1+2] - this.initial_verts[v0+2];
-		
-		if (once == 0)
-		{
-			console.log ("i:" + i + " ux:" + ux + " uy:" + uy + " uz:" + uz);
-		}
-
-
-			// V = p2 = p0
-		vx = x2 - x0;	//this.initial_verts[v2+0] - this.initial_verts[v0+0];
-		vy = y2 - y0;	//this.initial_verts[v2+1] - this.initial_verts[v0+1];
-		vz = z2 - z0;	//this.initial_verts[v2+2] - this.initial_verts[v0+2];
-
-		if (once == 0)
-		{
-			console.log ("i:" + i + " vx:" + vx + " vy:" + vy + " vz:" + vz);
-		}
-
-			// normal is cross product of two edge  vectors N = U X V
-		nx = (uy*vz)-(uz*vy);	// Nx = UyVz - UzVy
-		ny = (uz*vx)-(ux*vz);	// Ny = UzVx - UxVz
-		nz = (ux*vy)-(uy*vx);	// Nz = UxVy - UyVx
-
-		this.initial_normal[i] = new NormalVector (nx,ny,nz);
-		this.initial_normal[i].normalise();
-		
-		if (once == 0)
-		{
-			console.log ("i:" + i + " x:" + this.initial_normal[i].x);
-			console.log ("i:" + i + " y:" + this.initial_normal[i].y);
-			console.log ("i:" + i + " z:" + this.initial_normal[i].z);
-		}
-		
-		i++;
-	}
-*/
 
 	console.log ("init normals");
 
@@ -757,8 +658,6 @@ Model3D.prototype.initNormals = function()
 			ny /= d;
 			nz /= d;
 		}
-//		this.initial_normal[i] = new NormalVector (nx,ny,nz);
-//		this.initial_normal[i].normalise();
 		
 		this.initial_normal[i++] = nx;
 		this.initial_normal[i++] = ny;
@@ -766,16 +665,10 @@ Model3D.prototype.initNormals = function()
 		this.initial_normal[i++] = w;
 		if (once == 0)
 		{
-//			console.log ("i:" + i + " x:" + this.initial_normal[i].x);
-//			console.log ("i:" + i + " y:" + this.initial_normal[i].y);
-//			console.log ("i:" + i + " z:" + this.initial_normal[i].z);
-
 			console.log ("i:" + i + " nx:" + nx);
 			console.log ("i:" + i + " ny:" + ny);
 			console.log ("i:" + i + " nz:" + nz);
 		}
-		
-//		i++;
 	}
 }
 
@@ -788,11 +681,6 @@ Model3D.prototype.rotateNormals = function (rx,ry,rz)
 	m = MatrixIdentity();
 	m = MatrixRotate (m,rx,ry,rz);
 	MatrixVectorArrayMultiply (m, this.initial_normal, this.normal);
-	
-//	for (i = 0; i < this.initial_normal.length; i++)
-//	{
-//		this.normal[i] = this.initial_normal[i];
-//	}
 }
 
 Model3D.prototype.calcLighting = function (light_x, light_y, light_z)
@@ -856,15 +744,9 @@ Model3D.prototype.calcLighting = function (light_x, light_y, light_z)
 	k =0.5;		// k = diffuse intensity
 
 
-//*** TO DO ***
-
 	i = 0;
 	for (n = 0; n < this.normal.length; n += 4)
 	{
-//		nx = this.initial_normal[i].x;
-//		ny = this.initial_normal[i].y;
-//		nz = this.initial_normal[i].z;
-
 		nx = this.normal[n+0];
 		ny = this.normal[n+1];
 		nz = this.normal[n+2];
@@ -958,6 +840,9 @@ function Object3D(ref_model_3d)
 	this.sx = 1;
 	this.sy = 1;
 	this.sz = 1;
+	this.red = 1;
+	this.green = 1;
+	this.blue = 1;
 	this.model_ref = ref_model_3d;	// pointer to model data.
 
 	this.left;
@@ -1123,6 +1008,9 @@ function CreateDrawList(object_array)
 //		if (once == 0)	console.log ("object " + i);
 		p = object_array[i];
 		m = p.model_ref;
+		m.red = p.red;
+		m.green = p.green;
+		m.blue = p.blue;
 			// need to transform all the model points
 
 		m.rotateNormals (p.rx, p.ry, p.rz);
@@ -1284,7 +1172,7 @@ function MoveCameraTest()
 //	y = r * cos_a;
 //	z = r * sin_a;
 
-//	CameraAngle += 0.25;
+	CameraAngle += 0.25;
 	while (CameraAngle >= 360)
 	{
 		CameraAngle -= 360;
@@ -1395,8 +1283,8 @@ function UpdateGame()
 	Ctx.beginPath();
 	Ctx.moveTo (10,10);
 	Ctx.lineTo (500,10);
-	Ctx.lineTo (500,380);
-	Ctx.lineTo (10,380);
+	Ctx.lineTo (500,480);
+	Ctx.lineTo (10,480);
 	Ctx.lineTo (10,10);
 	Ctx.stroke();
 
@@ -1453,7 +1341,9 @@ function InitMap()
 
 	var x;
 	var y;
+	var z;
 	var i;
+	var lp;
 
 	x = 0;
 	y = -10;
@@ -1463,30 +1353,45 @@ function InitMap()
 	TestObjects[i].x = 0;
 	TestObjects[i].y = 0;
 	TestObjects[i].z = 0;
+	TestObjects[i].red = 1;
+	TestObjects[i].green = 0;
+	TestObjects[i].blue = 0;
 	i++;
 
 	TestObjects[i] = new Object3D (TestModel);
 	TestObjects[i].x = 7;
 	TestObjects[i].y = 0;
 	TestObjects[i].z = 0;
+	TestObjects[i].red = 0;
+	TestObjects[i].green = 1;
+	TestObjects[i].blue = 0;
 	i++;
 
 	TestObjects[i] = new Object3D (TestModel);
 	TestObjects[i].x = -5;
 	TestObjects[i].y = 0;
 	TestObjects[i].z = 0;
+	TestObjects[i].red = 0;
+	TestObjects[i].green = 0;
+	TestObjects[i].blue = 1;
 	i++;
 
 	TestObjects[i] = new Object3D (TestModel);
 	TestObjects[i].x = 0;
 	TestObjects[i].y = 5;
 	TestObjects[i].z = 0;
+	TestObjects[i].red = 1;
+	TestObjects[i].green = 0;
+	TestObjects[i].blue = 1;
 	i++;
 
 	TestObjects[i] = new Object3D (TestModel);
 	TestObjects[i].x = 0;
 	TestObjects[i].y = -5;
 	TestObjects[i].z = 0;
+	TestObjects[i].red = 1;
+	TestObjects[i].green = 1;
+	TestObjects[i].blue = 0;
 	i++;
 
 
@@ -1494,14 +1399,43 @@ function InitMap()
 	TestObjects[i].x = 0;
 	TestObjects[i].y = 0;
 	TestObjects[i].z = 5;
+	TestObjects[i].red = 1;
+	TestObjects[i].green = 1;
+	TestObjects[i].blue = 1;
 	i++;
 
 	TestObjects[i] = new Object3D (TestModel);
 	TestObjects[i].x = 0;
 	TestObjects[i].y = 0;
 	TestObjects[i].z = -5;
+	TestObjects[i].red = 0;
+	TestObjects[i].green = 1;
+	TestObjects[i].blue = 1;
 	i++;
 
+	x = -20;
+	y = 0;
+	z = -20;
+	for (lp = 0; lp < 150; lp++)
+	{
+		TestObjects[i] = new Object3D (TestModel2);
+		TestObjects[i].x = x;
+		TestObjects[i].y = y;
+		TestObjects[i].z = z;
+		TestObjects[i].red = lp / 10;
+		TestObjects[i].green = (lp/30);
+		TestObjects[i].blue = lp / 150;
+		
+		
+		x += 3;
+		if (x > 10)
+		{
+			x = -20;
+			z += 3;
+		}
+		i++;
+	}
+		
 }
 
 function file_load_callback (txt_file)
@@ -1568,10 +1502,12 @@ function DoInits()
 //		Camera.setCamera (0,10,30, 0, 0, 0);
 	}
 
-//	TestModel = new Model3D (vertices, faces);
+	TestModel = new Model3D (vertices, faces);
 
 	CreateIcosahedron (IcoVerts, IcoFaces);
-	TestModel = new Model3D (IcoVerts, IcoFaces);
+	TestModel2 = new Model3D (IcoVerts, IcoFaces);
+	TestModel2.initNormals();
+	TestModel2.rotateNormals(0,0,0);
 
 
 	TestModel.initNormals();
@@ -1599,12 +1535,10 @@ function DoInits()
 
 </head>
 <body onload ="DoInits();">
-<p id="fps">X</p>
-<br>
-
 <div class="outer" id="area">
 	<canvas class="gamecanvas" id="gc" width="512;" height="512;"></canvas>
 </div>
+<p id="fps">X</p>
 
 </body>
 </html>
