@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <!--
 
@@ -31,30 +31,30 @@ something that works.
 	Been Coronovirus shopping.. the world has gone mad.
 
 	ok.. supplies are in.. got work to do.
-	
+
  14th March 2020
 -------------------
 	OpenGl projection matrix is the mirror image of one where the z goes into the screen .
 	So ..
 		backface cull check has to be reversed.
 		Check -x is to the left and +y is towards the top of the screen (use either oy +y or oy-y accordingly).
-	
+
 
  16th March 2020
 ------------------
-	Doing camera tests still.. this is HARD to get right. 
-	
-	.. think I've finally got it working !! 
-	
+	Doing camera tests still.. this is HARD to get right.
+
+	.. think I've finally got it working !!
+
 	The order that the camera rotation matrix is mulitiplied with the
 	camera translation matrix makes a great deal of difference.
 	The camera rotations will not work otherwise.
-	
+
 	Example.
-	
+
 	camera pos {2,0,3}
 	look at {0,0,0}
-	
+
 	(column major matrix used)
 
 	camera rotate & translate matrix should be:
@@ -64,23 +64,37 @@ something that works.
 		0.554   0    0.832    -3.605
 		0       0    0        1
 	}
-	
+
 	if the wrong order is used, the -3.605 value will be wrong.
 
 	 20th March 2020
 	-----------------
 		Coronovirus panic buying in full swing.. supermarkets cannot
 	get supplies in fast enough.. the world has gone mad.
-	
+
 	Trying to get isosphere object working.. for some reason it won't
 	display
+
+
+	 21st March 2020
+	------------------
+		Ambient Lighting calculations:
+
+	ambient_amount = [0..1]
+	light_colour = [0..1]
+	object_colour = [0..1]
+
+	ambient = ambient_amount * light_colour;
+
+	colour = ambient * object_colour;
+
 -->
 
 <html>
 <head>
 <style>
 
-body 
+body
 {
 	background-color:white;
 }
@@ -102,7 +116,7 @@ body
 */
 
 .gamecanvas
-{
+	{
 	background-color:#ffccee;
 	width:100%;					/* width = container width */
 	height:100%;				/* height = container height */
@@ -140,14 +154,12 @@ body
 <script src="js/vector.js"></script>
 <script src="js/camera.js"></script>
 <script src="js/joystick.js"></script>
-<script src="js/obj_to_raw.js"></script>
-<script src="js/readfile.js"></script>
 <script src="js/icosphere.js"></script>
 
 <script>
-	
+
 var once = 0;
-	
+
 var DRAWLIST_INVALID_IDX = -1;
 var DRAWLIST_MAXBUCKETS = 512;
 
@@ -198,17 +210,17 @@ var vertices =
 	-1, 1,-1,
 	-1,-1,-1,
 	-1,-1, 1,
-	
+
 	 1, 1,-1,		// right faces
 	 1, 1, 1,
 	 1,-1, 1,
 	 1,-1,-1,
-	
+
 	-1, 1, 1,		// top faces
 	 1, 1, 1,
 	 1, 1,-1,
 	-1, 1,-1,
-	
+
 	// bottom faces
 	-1,-1,-1,
 	 1,-1,-1,
@@ -224,18 +236,22 @@ var faces =
 	4,5,6,
 	6,7,4,
 
-
 	9,10,8,
 	10,11,8,
-	
+
+//	10,11,8,
+//	12,13,14
+
+
 	12,13,14,
 	12,14,15,
-	
+
 	16,17,18,
 	16,18,19,
-	
+
 	20,21,22,
 	23,20,22
+
 ];
 
 var IcoVerts = [];
@@ -260,7 +276,7 @@ function _BackfaceCullCheck (x0,y0,x1,y1,x2,y2)
 	// pinched from https://cboard.cprogramming.com/game-programming/1057-backface-culling-lesson10-nehegl-tutorials.html
 
 	var z=((x1-x0)*(y2-y0)) - ((y1-y0)*(x2-x0));
-	return z; 
+	return z;
 }
 
 	// --------------------------------------------
@@ -277,7 +293,7 @@ function DrawListItem()
 	this.previous_idx;
 	this.next_idx;
 	this.zindex;
-	
+
 		// draw list 2D triangle
 	this.rgbhex;
 	this.x0;
@@ -291,7 +307,7 @@ function DrawListItem()
 function ClearDrawList()
 {
 	var i;
-	
+
 	for (i = 0; i < DRAWLIST_MAXBUCKETS; i++)
 	{
 		DrawList_BucketArray[i] = DRAWLIST_INVALID_IDX;
@@ -305,7 +321,7 @@ function DrawList_AddItem (object_index, object_z, x0,y0,x1,y1,x2,y2, rgbhex)
 	var b;		// bucket hash value (0 to MAXBUCKETS)
 	var i;
 	var idx;		// index of new drawlist item
-	
+
 	// object_z should be directed into the screen (so bigger z = further away.)
 
 //	if ((object_z < near_z) || (object_z >= far_z))
@@ -314,7 +330,7 @@ function DrawList_AddItem (object_index, object_z, x0,y0,x1,y1,x2,y2, rgbhex)
 //	}
 
 //	console.log ("object z" + object_z);
-	
+
 	b= ((object_z - near_z) * DRAWLIST_MAXBUCKETS) / (far_z - near_z);
 	b = Math.floor(b);
 
@@ -352,7 +368,7 @@ function DrawList_AddItem (object_index, object_z, x0,y0,x1,y1,x2,y2, rgbhex)
 
 	// bucket is used, so need to insert sort into this z list.
 	// z values are sorted largest first to smallest (i.e. in required drawing order)
-	
+
 	i = DrawList_BucketArray[b];		// get draw list index of first item in z list
 
 	if ((i < 0) || (i >= DrawList.length))
@@ -379,7 +395,7 @@ function DrawList_AddItem (object_index, object_z, x0,y0,x1,y1,x2,y2, rgbhex)
 //			console.log ("i out of range");		// error checking.
 		}
 	}
-	
+
 	// z >= current item, so insert before it.
 	DrawList[idx].previous_idx = DrawList[i].previous_idx;
 	DrawList[idx].next_idx = i;
@@ -403,8 +419,8 @@ function Draw_DrawList()
 	var b;
 	var i;
 	var d;
-	
-	for (b = DrawList_BucketArray.length-1; b >= 0; b--)	
+
+	for (b = DrawList_BucketArray.length-1; b >= 0; b--)
 //	for (b = 0; b < DrawList_BucketArray.length; b++)
 	{
 		if (DrawList_BucketArray[b] != DRAWLIST_INVALID_IDX)
@@ -429,6 +445,25 @@ function Draw_DrawList()
 
 	// -------------- end of draw list stuff -----------------
 
+function NormalVector (x,y,z)
+{
+	this.x = x;
+	this.y = y;
+	this.z = z;
+}
+NormalVector.prototype.normalise = function()
+{
+	var d;
+
+	d = Math.sqrt((this.x*this.x) + (this.y*this.y)+(this.z*this.z));
+	if (d != 0)
+	{
+		this.x /= d;
+		this.y /= d;
+		this.z /= d;
+	}
+}
+
 function Model3D (vertex_array, face_array)
 {
 		// creates a 3D model from vertex and face data.
@@ -437,8 +472,20 @@ function Model3D (vertex_array, face_array)
 	var lp;
 
 	this.initial_verts =[];
-	this.vertices =[];						// current (transformed) vertices 
+	this.vertices =[];						// current (transformed) vertices
 	this.faces =[];
+	this.initial_normal = [];
+	this.normals = [];
+
+	this.ia = 0.4;			// intensity of ambient light level
+
+	this.red = 1.0;			// default object colour.
+	this.green = 1.0;
+	this.blue = 1.0;
+
+	this.r = [];		// per face colours
+	this.g = [];
+	this.b = [];
 
 	i = 0;
 	for (lp = 0; lp < vertex_array.length; lp += 3)
@@ -448,23 +495,226 @@ function Model3D (vertex_array, face_array)
 		this.initial_verts[i++] = vertex_array[lp+2];	// z
 		this.initial_verts[i++] = 1;							// w should be 1
 	}
-	
+
 	for (lp = 0; lp < face_array.length; lp++)
 	{
 		this.faces[lp] = face_array[lp];
 	}
-	
+
+	i = 0;
+	for (lp = 0; lp < face_array.length; lp += 3)
+	{
+		this.r[i] = this.ia;
+		this.g[i] = this.ia;
+		this.b[i] = this.ia;
+		i++;
+	}
+
 	console.log (this.initial_verts);
 	console.log ("num v:" + this.initial_verts.length);
 	console.log ("num f:" + this.faces.length);
 }
 
+Model3D.prototype.calcNormals = function()
+{
+	// calculates the normals for each face.
+	// should only have to do this once, hopefully.
+
+	// https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
+	// newells method ???
+
+	var i;
+	var lp;
+
+	var v0;
+	var v1;
+	var v2;
+	
+	var x0;
+	var y0;
+	var z0;
+	var x1;
+	var y1;
+	var z1;
+	var x2;
+	var y2;
+	var z2;
+
+	var ux;
+	var uy;
+	var uz;
+
+	var vx;
+	var vy;
+	var vz;
+
+	var nx;
+	var ny;
+	var nz;
+
+	if (once == 0)
+	{
+		console.log (this.initial_verts);
+	}
+
+	i = 0;
+	for (lp = 0; lp < this.faces.length; lp += 3)
+	{
+		v0 = this.faces[lp+0] * 4;
+		v1 = this.faces[lp+1] * 4;
+		v2 = this.faces[lp+2] * 4;
+		
+		x0 = this.initial_verts[v0+0];
+		y0 = this.initial_verts[v0+1];
+		z0 = this.initial_verts[v0+2];
+
+		x1 = this.initial_verts[v1+0];
+		y1 = this.initial_verts[v1+1];
+		z1 = this.initial_verts[v1+2];
+
+		x2 = this.initial_verts[v2+0];
+		y2 = this.initial_verts[v2+1];
+		z2 = this.initial_verts[v2+2];
+		
+		if (once == 0)
+		{
+			console.log ("i:" + i + " v0:" + v0 + " x0:" + x0 + " y0:" + y0 + " z0:" + z0);
+			console.log ("i:" + i + " v1:" + v1 + " x1:" + x1 + " y1:" + y1 + " z1:" + z1);
+			console.log ("i:" + i + " v2:" + v2 + " x2:" + x2 + " y2:" + y2 + " z2:" + z2);
+		}
+
+
+			// U = p1 - p0
+		ux = x1 - x0;	//this.initial_verts[v1+0] - this.initial_verts[v0+0];
+		uy = y1 - y0;	//this.initial_verts[v1+1] - this.initial_verts[v0+1];
+		uz = z1 - z0;	//this.initial_verts[v1+2] - this.initial_verts[v0+2];
+		
+		if (once == 0)
+		{
+			console.log ("i:" + i + " ux:" + ux + " uy:" + uy + " uz:" + uz);
+		}
+
+
+			// V = p2 = p0
+		vx = x2 - x0;	//this.initial_verts[v2+0] - this.initial_verts[v0+0];
+		vy = y2 - y0;	//this.initial_verts[v2+1] - this.initial_verts[v0+1];
+		vz = z2 - z0;	//this.initial_verts[v2+2] - this.initial_verts[v0+2];
+
+		if (once == 0)
+		{
+			console.log ("i:" + i + " vx:" + vx + " vy:" + vy + " vz:" + vz);
+		}
+
+			// normal is cross product of two edge  vectors N = U X V
+		nx = (uy*vz)-(uz*vy);	// Nx = UyVz - UzVy
+		ny = (uz*vx)-(ux*vz);	// Ny = UzVx - UxVz
+		nz = (ux*vy)-(uy*vx);	// Nz = UxVy - UyVx
+
+		this.initial_normal[i] = new NormalVector (nx,ny,nz);
+		this.initial_normal[i].normalise();
+		
+		if (once == 0)
+		{
+			console.log ("i:" + i + " x:" + this.initial_normal[i].x);
+			console.log ("i:" + i + " y:" + this.initial_normal[i].y);
+			console.log ("i:" + i + " z:" + this.initial_normal[i].z);
+		}
+		
+		i++;
+	}
+}
+
+Model3D.prototype.calcLighting = function (light_x, light_y, light_z)
+{
+	// calculates surface lighting using light vector (lx,ly,lz)
+
+	//  light vector *MUST* be normalised.
+
+	// lx = objectx - lightx;
+	// ly = objecty - lighty;
+
+	// L = unit vector to light
+	// n = unit surface normal
+	// k = diffuse intensity
+
+	// cos_0 = I . n
+
+	// Id
+
+	var lx;
+	var ly;
+	var lz;
+	var dl;
+
+	var diffuse;
+	var i;
+
+	var nx;
+	var ny;
+	var nz;
+	var cos_a;
+
+	var k;
+
+	var l;
+
+	var r;
+	var g;
+	var b;
+
+	lx = light_x;
+	ly = light_y;
+	lz = light_z;
+	dl = Math.sqrt ((lx*lx) + (ly*ly) + (lz*lz));
+	if (dl != 0)
+	{
+		lx /= dl;
+		ly /= dl;
+		lz /= dl;
+	}
+
+	if (once == 0)
+	{
+		console.log ("lx:" + lx + " ly:" + ly + " lz:" + lz);
+	}
+
+	k =0.5;		// k = diffuse intensity
+
+
+	for (i = 0; i < this.initial_normal.length; i++)
+	{
+		nx = this.initial_normal[i].x;
+		ny = this.initial_normal[i].y;
+		nz = this.initial_normal[i].z;
+
+		diffuse = k * ((nx * lx) + (ny * ly) + (nz * lz));
+
+		if (once == 0)
+		{
+			console.log ("i:" + i + " d:" + diffuse);
+		}
+
+		if (diffuse < 0)	{	diffuse = 0; }
+		if (diffuse > 1)	{ diffuse = 1;}
+
+
+		l = diffuse + this.ia;	//ambient;
+		if (l > 1)	l = 1;
+
+		this.r[i] = l * this.red;
+		this.g[i] = l * this.green;
+		this.b[i] = l * this.blue;
+
+	}
+
+}
+
 Model3D.prototype.transform = function (tx,ty,tz, rx,ry,rz, sx,sy,sz)
 {
 	var m;
-	
+
 	m = MatrixIdentity();
-	
+
 //	console.log ("identity ");
 //	console.log (m);
 	m = MatrixScale (m, sx,sy,sz);
@@ -486,7 +736,7 @@ Model3D.prototype.transform = function (tx,ty,tz, rx,ry,rz, sx,sy,sz)
 //		m = MatrixRotate (m, 0,90,0);
 
 	}
-	
+
 	MatrixVectorArrayMultiply (m, this.initial_verts, this.vertices);
 
 /*	if (once == 0)
@@ -503,7 +753,7 @@ Model3D.prototype.transform = function (tx,ty,tz, rx,ry,rz, sx,sy,sz)
 		console.log ("z3:" + this.vertices[30]);
 	}
 */
-	
+
 //	console.log ("verts");
 //	console.log (this.vertices);
 }
@@ -521,14 +771,14 @@ function Object3D(ref_model_3d)
 	this.sy = 1;
 	this.sz = 1;
 	this.model_ref = ref_model_3d;	// pointer to model data.
-	
+
 	this.left;
 	this.right;
 	this.top;
 	this.bottom;
 	this.near;
 	this.far;
-	
+
 	this.vx = 0;
 	this.vy = 0;
 	this.vz = 0;
@@ -578,7 +828,7 @@ Object3D.prototype.aabb = function (dt)
 		if (y > this.bottom)	this.bottom = y;
 		if (z < this.near)	this.near = z;
 		if (z > this.far)	this.far = z;
-		
+
 		x += this.vx * dt;
 		y += this.vy * dt;
 		z += this.vz * dt;
@@ -661,8 +911,13 @@ function CreateDrawList(object_array)
 	var halfheight;
 
 	var c;
-	
+
 	var backface_cull = false;
+
+	var rgbhex;
+	var r;
+	var g;
+	var b;
 
 //	halfwidth = 192;
 //	halfheight = 192;
@@ -671,7 +926,7 @@ function CreateDrawList(object_array)
 	halfheight = Canvas.height >> 1;
 	ox = halfwidth;
 	oy = halfheight;
-	
+
 		// creates the draw list from the array of objects provided.
 	ClearDrawList();
 
@@ -681,16 +936,15 @@ function CreateDrawList(object_array)
 		p = object_array[i];
 		m = p.model_ref;
 			// need to transform all the model points
-			
 
 		m.transform
 		(
-			p.x, p.y, p.z, 
-			p.rx, p.ry, p.rz, 
+			p.x, p.y, p.z,
+			p.rx, p.ry, p.rz,
 			p.sx, p.sy, p.sz
 		);
 
-
+/*
 		if (once == 0)
 		{
 			console.log ("----- before projection matrix");
@@ -706,12 +960,12 @@ function CreateDrawList(object_array)
 		console.log ("z2:" + m.vertices[26]);
 		console.log ("z3:" + m.vertices[30]);
 		}
-		
+*/
 			// do projection matrix.
 		MatrixVectorArrayMultiply ( ProjectionMatrix, m.vertices, m.vertices);
 //		MatrixVectorArrayMultiply ( m.vertices,ProjectionMatrix, m.vertices);
-		
-		
+
+/*
 		if (once == 0)
 		{
 			console.log ("----- after projection matrix");
@@ -725,9 +979,9 @@ function CreateDrawList(object_array)
 		console.log ("z1:" + m.vertices[22]);
 		console.log ("z2:" + m.vertices[26]);
 		console.log ("z3:" + m.vertices[30]);
-		}		
-		
-			// finally do divide by w 	
+		}
+*/
+			// finally do divide by w
 		for (k = 0; k < m.vertices.length; k += 4)
 		{
 			w = m.vertices[k+3];
@@ -740,23 +994,24 @@ function CreateDrawList(object_array)
 //			if (once == 0) console.log ("k:" + k + " w:" + w + " z:" + z + " z/w:" + m.vertices[k+2]);
 			}
 		}
-	
+
 			// convert to screen coords.
-			
-		if (once == 0)
-		{
-			console.log ("num verts :" + m.vertices.length);
-			console.log ("num faces :" + m.faces.length);
-		}
+
+//		if (once == 0)
+//		{
+//			console.log ("num verts :" + m.vertices.length);
+//			console.log ("num faces :" + m.faces.length);
+//		}
 
 		c = 0;
+		i = 0;
 		for (k = 0; k < m.faces.length; k += 3)
 		{
 			v0 = m.faces[k+0] * 4;
 			v1 = m.faces[k+1] * 4;
 			v2 = m.faces[k+2] * 4;
 
-			
+
 //			z = 0;
 			x0 = ox + (halfwidth * m.vertices[v0]);
 			y0 = oy - (halfheight* m.vertices[v0+1]);
@@ -771,7 +1026,7 @@ function CreateDrawList(object_array)
 			z2 = m.vertices[v2+2];
 
 			z = (z0 + z1 + z2)/3;
-			
+
 /*			if (ytytyt == 0)
 			{
 				console.log ("k:" + k + " v0:" + v0 + " v1:" + v1 + " v2:" + v2);
@@ -794,11 +1049,16 @@ function CreateDrawList(object_array)
 
 			if (backface_cull == false)
 			{
-//				z = z;		// convert z to draw list range. 
-			
-				DrawList_AddItem (i, z, x0,y0,x1,y1,x2,y2, colours[c]);
+//				z = z;		// convert z to draw list range.
+				r = Math.floor (255 * m.r[i]);
+				g = Math.floor (255 * m.g[i]);
+				b = Math.floor (255 * m.b[i]);
+
+				rgbhex = "rgb(" +  r + ","+ g + "," + b + ")";
+				DrawList_AddItem (i, z, x0,y0,x1,y1,x2,y2, rgbhex);	//colours[c]);
 			}
 			c = (c + 1) & 7;
+			i++;
 		}
  	}
  	ytytyt = 1;
@@ -816,7 +1076,7 @@ function MoveCameraTest()
 	var sin_a;
 	var a;
 
-	r = 10;	//cam_dist;
+	r = 5;	//cam_dist;
 
 	a = (CameraAngle * Math.PI)/180;
 	cos_a = r * Math.cos (a);
@@ -825,7 +1085,7 @@ function MoveCameraTest()
 	x = r * cos_a;
 	y = 0;
 	z = r * sin_a;
-	
+
 //	x = 0;
 //	y = 0;
 //	z = -50;
@@ -834,7 +1094,7 @@ function MoveCameraTest()
 //	y = r * cos_a;
 //	z = r * sin_a;
 
-	CameraAngle += 0.25;
+//	CameraAngle += 0.25;
 	while (CameraAngle >= 360)
 	{
 		CameraAngle -= 360;
@@ -902,7 +1162,7 @@ function OverheadView()
 			Ctx.beginPath();
 			x = TestObjects.length.vertices[j];
 			z = TestObjects.length.vertices[j+3];
-			
+
 			Ctx.rect (ox+x, oy-y, 3,3);
 			Ctx.fill();
 		}
@@ -925,19 +1185,22 @@ function UpdateGame()
 	if (!Ctx)	return;
 
 	Ctx.clearRect(0,0,Canvas.width, Canvas.height);
-	
+
 	for (i = 0; i < TestObjects.length; i++)
 	{
-		TestObjects[i].ry += (2);
-		TestObjects[i].rx += (5);
+		TestObjects[i].rz += (0.8);
+		TestObjects[i].ry += (2.5);
+//		TestObjects[i].rz += (0.3);
+//		TestObjects[i].ry = 60;
+//		TestObjects[i].rx = 120;
 	}
 
-	MoveCameraTest();
+//	MoveCameraTest();
 	CreateDrawList(TestObjects);
 	Draw_DrawList();
-	
+
 	OverheadView();
-	
+
 	Ctx.beginPath();
 	Ctx.moveTo (10,10);
 	Ctx.lineTo (500,10);
@@ -958,15 +1221,15 @@ function InitInputs()
 function BigCanvas()
 {
 	// you don't scale the canvas, but scale the outer container.
-	// scale canvas square to fit 
+	// scale canvas square to fit
 	var w;
 	var h;
-	
+
 	var item;
 
 	w = window.innerWidth;
 	h = window.innerHeight;
-	
+
 	item = document.getElementById ("area");
 	if (w > h)
 	{
@@ -987,11 +1250,11 @@ function FullSizeCanvas()
 
 	w = window.innerWidth;
 	h = window.innerHeight;
-	
+
 	item = document.getElementById ("area");
 	item.style.width = w + "px";
 	item.style.height = h + "px";
-	
+
 }
 
 function InitMap()
@@ -1010,7 +1273,7 @@ function InitMap()
 	TestObjects[i].y = 0;
 	TestObjects[i].z = 0;
 	i++;
-
+/*
 	TestObjects[i] = new Object3D (TestModel);
 	TestObjects[i].x = 7;
 	TestObjects[i].y = 0;
@@ -1047,7 +1310,7 @@ function InitMap()
 	TestObjects[i].y = 0;
 	TestObjects[i].z = -5;
 	i++;
-
+*/
 }
 
 function file_load_callback (txt_file)
@@ -1065,7 +1328,7 @@ function DoInits()
 
 	var i;
 	var m;
-	
+
 
 	if (Joystick_Available() == true)
 	{
@@ -1074,17 +1337,17 @@ function DoInits()
 	}
 
 	MatrixTest();
-	
+
 	m = MatrixIdentity();
 	m = MatrixRotate (m, 0,90,0);
 //	console.log ("m:");
 //	console.log (m);
-	
+
 //	BigCanvas();
 	FullSizeCanvas();
 
 	InitInputs();
-	
+
 	Ctx.beginPath();
 	Ctx.moveTo (10,10);
 	Ctx.lineTo (100,100);
@@ -1096,9 +1359,9 @@ function DoInits()
 	w = Canvas.width;
 	h = Canvas.height;
 	ProjectionMatrix = Matrix_CreatePerspectiveProjectionMatrix
-			(	w, h, 
-				30,			// field_of_view, 
-				near_z,		// z_near, 
+			(	w, h,
+				30,			// field_of_view,
+				near_z,		// z_near,
 				far_z		// z_far
 			);
 
@@ -1107,17 +1370,22 @@ function DoInits()
 	if (EnableCamera == true)
 	{
 		Camera = new Cam3D(
-							2,0,3,
+							0,10,20,
 							0,1,0,
 							0,0,0);
 
+//		Camera.setCamera (0,10,30, 0, 0, 0);
 	}
 
-//	TestModel = new Model3D (vertices, faces);
+	TestModel = new Model3D (vertices, faces);
 //	TestModel = new Model3D (icosphere_vertices, icosphere_faces);
 
 	CreateIcosahedron (IcoVerts, IcoFaces);
-	TestModel = new Model3D (IcoVerts, IcoFaces);
+//	TestModel = new Model3D (IcoVerts, IcoFaces);
+	TestModel.calcNormals();
+	console.log ("===========");
+	TestModel.calcLighting (500,300,400);	//light_x, light_y, light_z)
+	console.log ("===========");
 
 	InitMap();
 
@@ -1126,9 +1394,9 @@ function DoInits()
 	CreateDrawList(TestObjects);
 
 	Draw_DrawList();
-	
+
 	once = 1;
-	
+
 	UpdateGame();
 
 }
@@ -1143,7 +1411,7 @@ function DoInits()
 
 <div class="outer" id="area">
 	<canvas class="gamecanvas" id="gc" width="512;" height="512;"></canvas>
-</div>	
+</div>
 
 </body>
 </html>
