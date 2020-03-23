@@ -1502,16 +1502,17 @@ function DoInits()
 //		Camera.setCamera (0,10,30, 0, 0, 0);
 	}
 
-	TestModel = new Model3D (vertices, faces);
 
 	CreateIcosahedron (IcoVerts, IcoFaces);
-	TestModel2 = new Model3D (IcoVerts, IcoFaces);
+	TestModel = new Model3D (IcoVerts, IcoFaces);
+	TestModel.initNormals();
+	TestModel.rotateNormals(0,0,0);
+
+
+	TestModel2 = new Model3D (vertices, faces);
 	TestModel2.initNormals();
 	TestModel2.rotateNormals(0,0,0);
 
-
-	TestModel.initNormals();
-	TestModel.rotateNormals(0,0,0);
 	TestModel.calcLighting (500,300,400);	//light_x, light_y, light_z)
 
 //	TestModel.calcLighting (0,300,0);	//light_x, light_y, light_z)
