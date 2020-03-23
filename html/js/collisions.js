@@ -11,14 +11,18 @@ Updated	:	23rd March 2020
 
 	 Notes:
 	---------
-	Basic 2D collision detection
+	"Basic" 2D collision detection .. well.. possibly medium
+	level .. not quite using calculus yet.
 
 */
 
-var INFO_OK = 0;
+var INFO_LINES_INTERSECT = 0;
 var INFO_PARALLEL_LINES = 1;
 var INFO_OVERLAPPING_LINES = 2;
 var INFO_OUTSIDE_SEGMENT = 3;
+
+var INFO_COLLISION = 4;
+var INFO_NO_COLLISION = 5;
 
 function Result()
 {
@@ -105,7 +109,7 @@ function LineIntersectionTest (ax0,ay0,ax1,ay1, bx0,by0,bx1,by1, result)
 			// calculate intersection point.
 			result.x = ax0 + (ua*(ax1-ax0));
 			result.y = ay0 + (ua*(ay1-ay0));
-			result.info = INFO_OK;
+			result.info = INFO_LINES_INTERSECT;
 		}
 	}
 }
@@ -146,7 +150,25 @@ function SquaredDistancePointToLine (px,py, x0,y0,x1,y1, result)
 //	return Math.sqrt(dist_squared);
 }
 
-function CircleLineCollision (cx,cy,cr, vx, vy, dt, x0,y0,x1,y1)
+function RayCircleIntersection (cx,cy,cr, x0,y0,dx,dy)
+{
+	// calculates the nearest intersection point of a circle
+	// and a ray.
+	
+	// http://paulbourke.net/geometry/circlesphere/
+	
+	var a;
+	var b;
+	var c;
+	
+	// a = (x2 - x1)2 + (y2 - y1)2 + (z2 - z1)2
+	// b = 2[ (x2 - x1) (x1 - x3) + (y2 - y1) (y1 - y3) + (z2 - z1) (z1 - z3) ] 
+	// c = x32 + y32 + z32 + x12 + y12 + z12 - 2[x3 x1 + y3 y1 + z3 z1] - r2
+	
+	
+}
+
+function CircleLineCollision (cx,cy,cr, vx, vy, dt, x0,y0,x1,y1, result)
 {
 	// does a collision test between a circle (cx,cy,cr) moving
 	// in direction vx,vy for dt seconds
@@ -163,6 +185,11 @@ function CircleLineCollision (cx,cy,cr, vx, vy, dt, x0,y0,x1,y1)
 	var d;
 	var cpx;
 	var cpy;
+	
+	var x2;
+	var y2;
+	var x3;
+	var y3;
 
 	SquaredDistancePointToLine (cx,cy, x0,y0,x1,y1, result);
 	dx = result.x - cx;
@@ -174,21 +201,35 @@ function CircleLineCollision (cx,cy,cr, vx, vy, dt, x0,y0,x1,y1)
 		dy /= d;
 	}
 
-	cpx = cx + (dx * r); 	// (cpx,cpy) 
-	cpy = cy + (dy * r);
+	cpx = cx + (dx * r); 	// (cpx,cpy) = the point on the circle
+	cpy = cy + (dy * r);	// that will collide with the line first.
 	
-	// now need ray-cast a line from (cpx,cpy) to the line to find
-	// the point of collision.
-	dx = vx;
-	dy = vy;
-	d = Math.sqrt ((dx*dx)+(dy*dy));
-	if (d != 0)
+		// now need ray-cast a line from (cpx,cpy) to the line to find
+		// the point of collision within dt seconds.
+
+	x2 = cpx;
+	y2 = cpy;
+	x3 = cpx + (vx * dt);
+	x4 = cpy + (vy * dt);
+	
+		// now need to see where lines cross. they have to cross
+		// between both end points for a collision to occur.
+
+	LineIntersectionTest (x0,y0,x1,y1, x2,y2,x3,y3, result);
+	
+	if (result.info == INFO_LINES_INTERSECT)
 	{
-		dx /= d;
-		dy /= d;
+		// circle will collide with line between line end points
+		// within dt seconds.
+		
 	}
 
-
-
+	// ---
+	// the circle could still collide the line end points,
+	// so this needs to be tested for separately.
+	// ---
+	// need to ray-cast in a reverse direction to that 
+	// of the circle from each line endpoint to see if it
+	// passes through the circle.
 
 }
