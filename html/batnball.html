@@ -161,6 +161,7 @@ body
 <script src="js/camera.js"></script>
 <script src="js/joystick.js"></script>
 <script src="js/icosphere.js"></script>
+<script src="js/collisions.js"></script>
 
 <script>
 
@@ -546,9 +547,9 @@ function Model3D (vertex_array, face_array)
 		i++;
 	}
 
-	console.log (this.initial_verts);
-	console.log ("num v:" + this.initial_verts.length);
-	console.log ("num f:" + this.faces.length);
+//	console.log (this.initial_verts);
+//	console.log ("num v:" + this.initial_verts.length);
+//	console.log ("num f:" + this.faces.length);
 }
 
 Model3D.prototype.initNormals = function()
@@ -559,7 +560,7 @@ Model3D.prototype.initNormals = function()
 	// https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
 	// newells method ???
 
-	console.log ("init normals");
+//	console.log ("init normals");
 
 	var i;
 	var lp;
@@ -593,10 +594,10 @@ Model3D.prototype.initNormals = function()
 	
 	var w;
 
-	if (once == 0)
-	{
-		console.log (this.initial_verts);
-	}
+//	if (once == 0)
+//	{
+//		console.log (this.initial_verts);
+//	}
 
 	w = 1;		// 4th value for normal vector
 	i = 0;
@@ -618,22 +619,22 @@ Model3D.prototype.initNormals = function()
 		y2 = this.initial_verts[v2+1];
 		z2 = this.initial_verts[v2+2];
 		
-		if (once == 0)
-		{
-			console.log ("i:" + i + " v0:" + v0 + " x0:" + x0 + " y0:" + y0 + " z0:" + z0);
-			console.log ("i:" + i + " v1:" + v1 + " x1:" + x1 + " y1:" + y1 + " z1:" + z1);
-			console.log ("i:" + i + " v2:" + v2 + " x2:" + x2 + " y2:" + y2 + " z2:" + z2);
-		}
+//		if (once == 0)
+//		{
+//			console.log ("i:" + i + " v0:" + v0 + " x0:" + x0 + " y0:" + y0 + " z0:" + z0);
+//			console.log ("i:" + i + " v1:" + v1 + " x1:" + x1 + " y1:" + y1 + " z1:" + z1);
+//			console.log ("i:" + i + " v2:" + v2 + " x2:" + x2 + " y2:" + y2 + " z2:" + z2);
+//		}
 
 			// U = p1 - p0
 		ux = x1 - x0;	//this.initial_verts[v1+0] - this.initial_verts[v0+0];
 		uy = y1 - y0;	//this.initial_verts[v1+1] - this.initial_verts[v0+1];
 		uz = z1 - z0;	//this.initial_verts[v1+2] - this.initial_verts[v0+2];
 		
-		if (once == 0)
-		{
-			console.log ("i:" + i + " ux:" + ux + " uy:" + uy + " uz:" + uz);
-		}
+//		if (once == 0)
+//		{
+//			console.log ("i:" + i + " ux:" + ux + " uy:" + uy + " uz:" + uz);
+//		}
 
 
 			// V = p2 = p0
@@ -641,10 +642,10 @@ Model3D.prototype.initNormals = function()
 		vy = y2 - y0;	//this.initial_verts[v2+1] - this.initial_verts[v0+1];
 		vz = z2 - z0;	//this.initial_verts[v2+2] - this.initial_verts[v0+2];
 
-		if (once == 0)
-		{
-			console.log ("i:" + i + " vx:" + vx + " vy:" + vy + " vz:" + vz);
-		}
+//		if (once == 0)
+//		{
+//			console.log ("i:" + i + " vx:" + vx + " vy:" + vy + " vz:" + vz);
+//		}
 
 			// normal is cross product of two edge  vectors N = U X V
 		nx = (uy*vz)-(uz*vy);	// Nx = UyVz - UzVy
@@ -663,12 +664,12 @@ Model3D.prototype.initNormals = function()
 		this.initial_normal[i++] = ny;
 		this.initial_normal[i++] = nz;
 		this.initial_normal[i++] = w;
-		if (once == 0)
-		{
-			console.log ("i:" + i + " nx:" + nx);
-			console.log ("i:" + i + " ny:" + ny);
-			console.log ("i:" + i + " nz:" + nz);
-		}
+//		if (once == 0)
+//		{
+//			console.log ("i:" + i + " nx:" + nx);
+//			console.log ("i:" + i + " ny:" + ny);
+//			console.log ("i:" + i + " nz:" + nz);
+//		}
 	}
 }
 
@@ -735,11 +736,11 @@ Model3D.prototype.calcLighting = function (light_x, light_y, light_z)
 		lz /= dl;
 	}
 
-	if (once == 0)
-	{
-		console.log ("lx:" + lx + " ly:" + ly + " lz:" + lz);
-		console.log (this.normal);
-	}
+//	if (once == 0)
+//	{
+//		console.log ("lx:" + lx + " ly:" + ly + " lz:" + lz);
+//		console.log (this.normal);
+//	}
 
 	k =0.5;		// k = diffuse intensity
 
@@ -754,10 +755,10 @@ Model3D.prototype.calcLighting = function (light_x, light_y, light_z)
 
 		diffuse = k * ((nx * lx) + (ny * ly) + (nz * lz));
 
-		if (once == 0)
-		{
-			console.log ("i:" + i + " d:" + diffuse);
-		}
+//		if (once == 0)
+//		{
+//			console.log ("i:" + i + " d:" + diffuse);
+//		}
 
 		if (diffuse < 0)	{	diffuse = 0; }
 		if (diffuse > 1)	{ diffuse = 1;}
