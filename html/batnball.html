@@ -10,7 +10,7 @@ Info	:	Version 0.0	10th March 2020
 
 Author	:	Nick Fleming
 
-Updated	:	20th March 2020
+Updated	:	25th March 2020
 
  11th March :
 ----------------
@@ -97,6 +97,12 @@ something that works.
 	 24th March 2020
 	------------------
 	experimenting with layouts.
+	
+	 25th March 2020
+	--------------------
+		This is probably more complicated than it needs to be,
+	but I'm trying to keep the game engine separate from the
+	rendering engine.
 -->
 
 <html>
@@ -177,16 +183,24 @@ body
 <script src="js/vector.js"></script>
 <script src="js/camera.js"></script>
 <script src="js/joystick.js"></script>
+<script src="js/inkeys.js"></script>
 <script src="js/icosphere.js"></script>
 <script src="js/collisions.js"></script>
+<script src="js/batnball.js"></script>
 
 <script>
+
+var OBJECT_OFF = 0;
+var OBJECT_ON = 1;
 
 var WALL_WIDTH = 0.5;
 
 var BRICK_WIDTH = 1.5;
 var BRICK_HEIGHT = 1.8;
 
+var NUM_BRICK_ROWS = 5;
+var NUM_BRICK_COLUMNS = 10;
+var BAT_WIDTH = 3;
 var once = 0;
 
 var DRAWLIST_INVALID_IDX = -1;
@@ -199,12 +213,18 @@ var Canvas;
 var Ctx;
 
 
-var BallX = 0;
-var BallY = -4;
-var BallZ = -10;	// constant.
-var BallIncX = -0.1;
-var BallIncY = 0.1;
+//var BallX = 0;
+//var BallY = -4;
+//var BallZ = -10;	// constant.
+//var BallIncX = -0.1;
+//var BallIncY = 0.1;
+
 var BallObjectId;
+var BatObjectId;
+
+var BallRotateX;
+var BallRotateY;
+
 
 var TopWallY = 19.5;
 var LeftWallX = -9.4;
@@ -516,11 +536,13 @@ function Draw_DrawList()
 				d = DrawList[i];
 				Ctx.beginPath();
 				Ctx.fillStyle = d.rgbhex;
+				Ctx.strokeStyle = d.rgbhex;
 				Ctx.moveTo (d.x0, d.y0);
 				Ctx.lineTo (d.x1, d.y1);
-				Ctx.lineTo (d.x2, d.y2);
+				Ctx.lineTo (d.x2+0.5, d.y2);
 				Ctx.lineTo (d.x0, d.y0);
 				Ctx.fill();
+				Ctx.stroke();
 				i = d.next_idx;
 			}
 		}
@@ -804,11 +826,6 @@ Model3D.prototype.calcLighting = function (light_x, light_y, light_z)
 
 		diffuse = k * ((nx * lx) + (ny * ly) + (nz * lz));
 
-//		if (once == 0)
-//		{
-//			console.log ("i:" + i + " d:" + diffuse);
-//		}
-
 		if (diffuse < 0)	{	diffuse = 0; }
 		if (diffuse > 1)	{ diffuse = 1;}
 
@@ -818,7 +835,7 @@ Model3D.prototype.calcLighting = function (light_x, light_y, light_z)
 
 		this.r[i] = l * this.red;
 		this.g[i] = l * this.green;
-		this.b[i] = l * this.blue;
+		this.b[i] = l * this.blue ;
 		i++;
 	}
 }
@@ -880,6 +897,7 @@ Model3D.prototype.transform = function (tx,ty,tz, rx,ry,rz, sx,sy,sz)
 
 function Object3D(ref_model_3d)
 {
+	this.state;		// OBJECT_ON or OBJECT_OFF
 	this.flags;
 	this.x = 0;
 	this.y = 0;
@@ -1147,7 +1165,7 @@ function CreateDrawList(object_array, first, last)
  	ytytyt = 1;
 }
 
-function MoveCameraTest()
+function PositionCamera()
 {
 	var r;
 
@@ -1185,13 +1203,12 @@ function MoveCameraTest()
 //	}
 
 //	x = 0;
-//	y = -5;
-//	z = 24;
+//	y = 6;
+//	z = 44;
 
 	Camera.setCamera (x,y,z, 0, 0, 0);
 }
 
-var ooor = 0;
 function OverheadView()
 {
 	var ox;
@@ -1203,13 +1220,8 @@ function OverheadView()
 	var x;
 	var y;
 
-//	ox = window.innerWidth >> 1;
-//	oy = window.innerHeight >> 1;
-
 	ox = Canvas.width >> 1;
 	oy = Canvas.height >> 1;
-
-//	console.log ("w:" + ox + " h" + oy);
 
 	Ctx.beginPath();
 	Ctx.fillStyle="#ffffff";
@@ -1226,13 +1238,6 @@ function OverheadView()
 	Ctx.moveTo (ox + Camera.pos.x, oy + Camera.pos.z);
 	Ctx.lineTo (ox,oy);
 	Ctx.stroke();
-
-	if (ooor == 0)
-	{
-		console.log ("wawawawawawss");
-		console.log (TestObjects);
-		ooor= 1;
-	}
 
 	c = 0;
 	for (i = 0; i < TestObjects.length; i++)
@@ -1253,10 +1258,111 @@ function OverheadView()
 	}
 }
 
-var busy = false;
+function DrawGame()
+{
+	// uses data from batnball.js to draw the game.
+	
+	// Objects 0,1 & 2 are walls.. they do *not* change.
+	
+	// Object 3 is the bat - also always exists.
+	
+	// objects 4 and up are are created dynamically each frame so that
+	// the number of balls/bricks can change as required.
 
+	var i;
+	var n;
+	
+	var first_brick;
+
+	var rgb = 
+	[
+		0, 0, 0.9,
+		0,0.7,0.7,
+		0.8,0,0.5,
+		1.0,0.5,0,
+		1.0,0.7,0,
+		1.0,1.2,0.1,
+	];
+
+	n = BatObjectId;
+//	if (n == TestObjects.length)
+//	{
+//		TestObjects[n] = new Object3D(BatModel);
+//	}
+	TestObjects[n].state = OBJECT_ON;
+	TestObjects[n].x = 0;
+	TestObjects[n].y = -5;
+	TestObjects[n].z = -10;
+	TestObjects[n].red = 1;
+	TestObjects[n].green = 1;
+	TestObjects[n].blue = 0;
+	n++;
+
+		// now turn all dynamic objects off.
+	for (i = n; i < TestObjects.length; i++)
+	{
+		TestObjects[i].state = OBJECT_OFF;
+	}
+
+		// add any balls
+	for (i = 0; i < Balls.length; i++)
+	{
+		if (Balls[i].state == BALL_ON)
+		{
+			if (n == TestObjects.length)
+			{
+				TestObjects[n] = new Object3D(BallModel);
+			}
+			TestObjects[n].state = OBJECT_ON;
+			TestObjects[n].model_ref = BallModel;	// pointer to model data.
+
+			TestObjects[n].x = Balls[i].x;
+			TestObjects[n].y = Balls[i].y;
+			TestObjects[n].z = -10;
+			TestObjects[n].rx = BallRotateX;
+			TestObjects[n].ry = BallRotateY;
+			TestObjects[n].red = 1;
+			TestObjects[n].green = 1;
+			TestObjects[n].blue = 1;
+			n++;
+		}
+	}
+
+
+		// now add bricks.
+	first_brick = n;
+	for (i = 0; i < Bricks.length; i++)
+	{
+		if (Bricks[i].state == BNB_BRICK_ON)
+		{
+			if (n == TestObjects.length)
+			{
+				TestObjects[n] = new Object3D(BrickModel);
+			}
+			TestObjects[n].state = OBJECT_ON;
+			TestObjects[n].model_ref = BrickModel;	// pointer to model data.
+
+			TestObjects[n].x = Bricks[i].x;
+			TestObjects[n].y = Bricks[i].y;
+			TestObjects[n].z = -10;
+			
+			TestObjects[n].red = rgb[0 + (Math.floor((i/12))*3)];
+			TestObjects[n].green = rgb[1 + (Math.floor((i/12))*3)];
+			TestObjects[n].blue = rgb[2 + (Math.floor((i/12))*3)];
+			n++;
+		}
+	}
+
+//	TestObjects[first_brick].x = 0;
+//	TestObjects[first_brick].y = 0;
+//	TestObjects[first_brick].rx = BallRotateX;
+}
+
+
+var busy = false;
 function UpdateGame()
 {
+	var dt;
 	var i;
 	if (busy == true)
 	{
@@ -1267,30 +1373,38 @@ function UpdateGame()
 	UpdateFrameCounter();
 
 	if (!Ctx)	return;
+	
+	dt = 1/50;		// timing is 1/50th of a second.
+	BNB_DoGame(dt);
 
 	Ctx.clearRect(0,0,Canvas.width, Canvas.height);
-
-	for (i = 3; i < TestObjects.length; i++)
+	
+	BallRotateX += 2.5;
+	BallRotateY += 3.1;
+	if (BallRotateX >= 360)
 	{
-//	TestObjects[i].z += 0.5;
-//		TestObjects[i].rx += (2);
-//		TestObjects[i].ry += (1);
+		BallRotateX -= 360;
+	}
+	if (BallRotateY >= 360)
+	{
+		BallRotateY -= 360;
 	}
 
-	TestObjects[4].rx += 1.3;
-	TestObjects[4].ry += 2;
-	if (TestObjects[4].rx > 360)
+/*
+	TestObjects[BallObjectId].rx += 2.5;
+	TestObjects[BallObjectId].ry += 3;
+	if (TestObjects[BallObjectId].rx > 360)
 	{
-		TestObjects[4].rx -= 360;
+		TestObjects[BallObjectId].rx -= 360;
 	}
-	if (TestObjects[4].ry > 360)
+	if (TestObjects[BallObjectId].ry > 360)
 	{
-		TestObjects[4].ry -= 360;
+		TestObjects[BallObjectId].ry -= 360;
 	}
+*/
+	PositionCamera();
 
-	MoveCameraTest();
-
-
+/*
 	BallX += BallIncX;
 	BallY += BallIncY;
 	
@@ -1313,79 +1427,45 @@ function UpdateGame()
 
 	TestObjects[BallObjectId].x = BallX;
 	TestObjects[BallObjectId].y = BallY;
+*/
 
+	DrawGame();
 
+		// draw static 'background' objects (i.e. walls)
 	CreateDrawList(TestObjects,0,3);
 	Draw_DrawList();
-//	CreateDrawList(TestObjects,3,65);
-	CreateDrawList(TestObjects,3,5);
+
+		// now draw everything else.
+	CreateDrawList(TestObjects,3,TestObjects.length);
 	Draw_DrawList();
+
+//	CreateDrawList(TestObjects,3,65);
+//	CreateDrawList(TestObjects,3,5);
+//	Draw_DrawList();
 
 
 //	OverheadView();
 
 
-
-/*	Ctx.beginPath();
-	Ctx.moveTo (10,10);
-	Ctx.lineTo (500,10);
-	Ctx.lineTo (500,480);
-	Ctx.lineTo (10,480);
-	Ctx.lineTo (10,10);
-	Ctx.stroke();
-*/
 	busy = false;
 	once = 1;
 }
 
-function InitInputs()
-{
-	// TO DO : Keyboard, mouse, touchscreen, joystick.
-}
-
-function BigCanvas()
-{
-	// you don't scale the canvas, but scale the outer container.
-	// scale canvas square to fit
-	var w;
-	var h;
-
-	var item;
-
-	w = window.innerWidth;
-	h = window.innerHeight;
-
-	item = document.getElementById ("area");
-	if (w > h)
-	{
-		item.style.width= h + "px";
-		item.style.height= h + "px";
-	}
-	else
-	{
-		item.style.width = w + "px";
-		item.style.height = w + "px";
-	}
-}
-
 function FullSizeCanvas()
 {
+	// https://stackoverflow.com/questions/26745292/canvas-toggle-filling-whole-page-removing-scrollbar
+
 	var w;
 	var h;
 
 	w = window.innerWidth;
 	h = window.innerHeight;
-
-//	item = document.getElementById ("area");
-//	item.style.width = w + "px";
-//	item.style.height = h + "px";
 
 	item = document.getElementById ("gc");
 	item.style.width = w + "px";
 	item.style.height = h + "px";
 	
-	
-	// https://stackoverflow.com/questions/26745292/canvas-toggle-filling-whole-page-removing-scrollbar
+
 	
 	document.body.scrollTop = 0; // <-- pull the page back up to the top
 	document.body.style.overflow = 'hidden';
@@ -1433,6 +1513,8 @@ function MakeCuboid (width, height, depth, vertices, faces)
 
 function MakeModels()
 {
+		// creates 3D models from vertices for
+		// walls, bat n ball.
 	var i;
 	var sy;
 	var half_wall_length;
@@ -1445,17 +1527,18 @@ function MakeModels()
 	WallModel = new Model3D (vertices, faces);
 	WallModel.initNormals();
 
-	// do top wall based on side wall positions.
+		// do top wall length based on side wall positions.
 
 	MakeCuboid (20, 0.5, 2.5, vertices, faces);
 	TopWallModel = new Model3D (vertices, faces);
 	TopWallModel.initNormals();
 
-	MakeCuboid (2, 0.5, 2.5, vertices, faces);
+	MakeCuboid (BAT_WIDTH, 0.5, 2.5, vertices, faces);
 	BatModel = new Model3D (vertices, faces);
 	BatModel.initNormals();
 
 	vertices = [];
+	faces = [];
 	CreateIcosahedron (vertices, faces);
 	for (i = 0; i < vertices.length; i++)
 	{
@@ -1464,19 +1547,20 @@ function MakeModels()
 	BallModel = new Model3D (vertices, faces);
 	BallModel.initNormals();
 
+	vertices = [];
+	faces = [];
 	MakeCuboid (BRICK_WIDTH, BRICK_HEIGHT, 3, vertices, faces);
 	BrickModel = new Model3D (vertices, faces);
 	BrickModel.initNormals();
 }
 
-
-function InitMap()
+function Init_3D_Objects()
 {
 	var x;
 	var y;
 	var i;
 	var ox;
-	
+/*	
 	var rgb = 
 	[
 		0, 0, 0.9,
@@ -1486,10 +1570,11 @@ function InitMap()
 		1.0,0.7,0,
 		1.0,1.2,0.1,
 	];
-		
+*/
 	
 	i = 0;
 	TestObjects[i] = new Object3D(WallModel);
+	TestObjects[i].state = OBJECT_ON;
 	TestObjects[i].x = LeftWallX;	//left_wall_x;
 	TestObjects[i].y = 7;
 	TestObjects[i].z = -10;
@@ -1499,6 +1584,7 @@ function InitMap()
 	i++;
 
 	TestObjects[i] = new Object3D(WallModel);
+	TestObjects[i].state = OBJECT_ON;
 	TestObjects[i].x = RightWallX;
 	TestObjects[i].y = 7;
 	TestObjects[i].z = -10;
@@ -1508,6 +1594,7 @@ function InitMap()
 	i++;
 
 	TestObjects[i] = new Object3D(TopWallModel);
+	TestObjects[i].state = OBJECT_ON;
 	TestObjects[i].x = 0;
 	TestObjects[i].y = 19.5;
 	TestObjects[i].z = -10;
@@ -1516,7 +1603,9 @@ function InitMap()
 	TestObjects[i].blue = 1;
 	i++;
 
+	BatObjectId = i;
 	TestObjects[i] = new Object3D(BatModel);
+	TestObjects[i].state = OBJECT_ON;
 	TestObjects[i].x = 0;
 	TestObjects[i].y = -5;
 	TestObjects[i].z = -10;
@@ -1524,17 +1613,22 @@ function InitMap()
 	TestObjects[i].green = 1;
 	TestObjects[i].blue = 0;
 	i++;
-
+/*
 	BallObjectId = i;
 	TestObjects[i] = new Object3D(BallModel);
+	TestObjects[i].state = OBJECT_ON;
 	TestObjects[i].x = 0;
-	TestObjects[i].y = -4;
+	TestObjects[i].y = -3;
 	TestObjects[i].z = -10;
-	TestObjects[i].red = 0.8;
-	TestObjects[i].green = 0.3;
+	TestObjects[i].red = 0.95;
+	TestObjects[i].green = 0.9;
 	TestObjects[i].blue = 0.8;
 	i++;
-
+*/	
+	
+	
+	
+/*
 	ox = -(11 * BRICK_WIDTH) /2;
 	for (y = 0; y < 6; y++)
 	{
@@ -1550,6 +1644,7 @@ function InitMap()
 			i++;
 		}
 	}
+*/
 }
 
 function file_load_callback (txt_file)
@@ -1562,12 +1657,11 @@ function DoInits()
 {
 	var w;
 	var h;
-	Canvas = document.getElementById("gc");
-	Ctx = Canvas.getContext("2d");
-
 	var i;
 	var m;
 
+	Canvas = document.getElementById("gc");
+	Ctx = Canvas.getContext("2d");
 
 	if (Joystick_Available() == true)
 	{
@@ -1577,18 +1671,7 @@ function DoInits()
 
 	MatrixTest();
 
-//	BigCanvas();
 	FullSizeCanvas();
-
-	InitInputs();
-
-	Ctx.beginPath();
-	Ctx.moveTo (10,10);
-	Ctx.lineTo (100,100);
-
-	Ctx.moveTo (380,380);
-	Ctx.lineTo (200,200);
-	Ctx.stroke();
 
 	w = Canvas.width;
 	h = Canvas.height;
@@ -1599,8 +1682,6 @@ function DoInits()
 				far_z		// z_far
 			);
 
-//	console.log (ProjectionMatrix);
-
 	if (EnableCamera == true)
 	{
 		Camera = new Cam3D(
@@ -1608,37 +1689,26 @@ function DoInits()
 							0,1,0,
 							0,0,0);
 
-//		Camera.setCamera (0,10,30, 0, 0, 0);
 	}
 
 	MakeModels();
+	Init_3D_Objects();
 
-//	CreateIcosahedron (IcoVerts, IcoFaces);
-//	TestModel = new Model3D (IcoVerts, IcoFaces);
-//	TestModel.initNormals();
-//	TestModel.rotateNormals(0,0,0);
+	BNB_Init();
+	
+	console.log ("bricks");
+	console.log (Bricks);
 
+	BallRotateX = 0;
+	BallRotateY = 0;
 
-//	TestModel2 = new Model3D (vertices, faces);
-//	TestModel2.initNormals();
-//	TestModel2.rotateNormals(0,0,0);
-
-//	TestModel.calcLighting (500,300,400);	//light_x, light_y, light_z)
-
-//	TestModel.calcLighting (0,300,0);	//light_x, light_y, light_z)
-
-	InitMap();
-
-	ClearDrawList();
-
-	CreateDrawList(TestObjects);
-
-	Draw_DrawList();
+//	ClearDrawList();
+//	CreateDrawList(TestObjects);
+//	Draw_DrawList();
 
 	once = 1;
 
 	UpdateGame();
-
 }
 
 </script>

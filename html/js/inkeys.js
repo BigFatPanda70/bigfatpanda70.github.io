@@ -1,18 +1,23 @@
 //
 //		Experimental Keyboard Stuff.
 //
-//		Info	:	Version 0.0		6th July 2017
+//		Info	:	Version 0.1		6th July 2017
 //
 //		Author:	Nick Fleming
 //
-//		Updated:	10th July 2017
+//		Updated:	25th March 2020
 //
 //		 Notes:
 //		----------
 //
 //		Some simple keyboard functions + constants.
 //
+//	 25th March 2020
+//	-----------------
+//		added code to stop blocking function keys on firefox.
 //
+//
+
 
 
 var keys_KeyCodeArray = [];		// true = key down, false = key up
@@ -104,6 +109,12 @@ var KEY_PAD9 = 105;
 function keys_DoKeyDown (e)
 {
 	keys_KeyCodeArray[e.keyCode] = true;
+	
+	if ((e.keyCode >= KEY_F1) && (e.keyCode <= KEY_F13))
+	{
+		return true;	// allow function keys as normal.
+	};	
+	
 	e.preventDefault(); 
 //	console.log (e.keyCode);
 };
