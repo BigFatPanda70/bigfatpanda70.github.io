@@ -22,7 +22,7 @@ function UpdateFrameCounter()
 		frame_number = 0;
 	}
 	
-	document.getElementById ("fps").innerHTML = frames_per_second;
+	document.getElementById ("fps").innerHTML = "&nbsp&nbsp" + frames_per_second;
 };
 
 	// ---------------- end of frame counter stuff ---------------

@@ -124,12 +124,25 @@ body
 }
 */
 
+.frame_counter
+{
+	position:absolute;
+	left:0;
+	top:0;
+	background-color:#fff;
+	z-index:1;
+}
+
 .gamecanvas
 	{
-/*	background-color:#ffccee; */
-	background-color:#000000;
-	width:100%;					/* width = container width */
-	height:100%;				/* height = container height */
+		cursor:none;
+		margin:0;
+		padding:0;
+		overflow: hidden;
+		display:block;
+		background-color:#000000;
+		width:100%;					/* width = container width */
+		height:100%;				/* height = container height */
 }
 
 .left
@@ -169,7 +182,9 @@ body
 
 <script>
 
-var BRICK_WIDTH = 1.4;
+var WALL_WIDTH = 0.5;
+
+var BRICK_WIDTH = 1.5;
 var BRICK_HEIGHT = 1.8;
 
 var once = 0;
@@ -180,11 +195,20 @@ var DRAWLIST_MAXBUCKETS = 512;
 var near_z = 1.0;
 var far_z = 1000;
 
-var left_wall_x = -10;
-var right_wall_x = -left_wall_x;
-
 var Canvas;
 var Ctx;
+
+
+var BallX = 0;
+var BallY = -4;
+var BallZ = -10;	// constant.
+var BallIncX = -0.1;
+var BallIncY = 0.1;
+var BallObjectId;
+
+var TopWallY = 19.5;
+var LeftWallX = -9.4;
+var RightWallX = 9.4;
 
 var TestMap =
 [
@@ -1266,12 +1290,41 @@ function UpdateGame()
 
 	MoveCameraTest();
 
+
+	BallX += BallIncX;
+	BallY += BallIncY;
+	
+	if (BallX <= (LeftWallX+WALL_WIDTH))
+	{
+		BallX = LeftWallX+WALL_WIDTH;
+		BallIncX *= -1;
+	}
+	if (BallX >= (RightWallX-WALL_WIDTH))
+	{
+		BallX = RightWallX-WALL_WIDTH;
+		BallIncX *= -1;
+	}
+	
+	if (BallY >= TopWallY)
+	{
+		BallY = TopWallY;
+		BallIncY *= -1;
+	}
+
+	TestObjects[BallObjectId].x = BallX;
+	TestObjects[BallObjectId].y = BallY;
+
+
 	CreateDrawList(TestObjects,0,3);
 	Draw_DrawList();
-	CreateDrawList(TestObjects,3,65);
+//	CreateDrawList(TestObjects,3,65);
+	CreateDrawList(TestObjects,3,5);
 	Draw_DrawList();
 
+
 //	OverheadView();
+
+
 
 /*	Ctx.beginPath();
 	Ctx.moveTo (10,10);
@@ -1323,9 +1376,20 @@ function FullSizeCanvas()
 	w = window.innerWidth;
 	h = window.innerHeight;
 
-	item = document.getElementById ("area");
+//	item = document.getElementById ("area");
+//	item.style.width = w + "px";
+//	item.style.height = h + "px";
+
+	item = document.getElementById ("gc");
 	item.style.width = w + "px";
 	item.style.height = h + "px";
+	
+	
+	// https://stackoverflow.com/questions/26745292/canvas-toggle-filling-whole-page-removing-scrollbar
+	
+	document.body.scrollTop = 0; // <-- pull the page back up to the top
+	document.body.style.overflow = 'hidden';
+
 }
 
 function MakeCuboid (width, height, depth, vertices, faces)
@@ -1377,7 +1441,7 @@ function MakeModels()
 	var vertices = [];
 	var faces = [];
 	
-	MakeCuboid (0.5, 24, 2.5, vertices, faces);
+	MakeCuboid (WALL_WIDTH, 24, 2.5, vertices, faces);
 	WallModel = new Model3D (vertices, faces);
 	WallModel.initNormals();
 
@@ -1426,7 +1490,7 @@ function InitMap()
 	
 	i = 0;
 	TestObjects[i] = new Object3D(WallModel);
-	TestObjects[i].x = -9;	//left_wall_x;
+	TestObjects[i].x = LeftWallX;	//left_wall_x;
 	TestObjects[i].y = 7;
 	TestObjects[i].z = -10;
 	TestObjects[i].red = 0.5;
@@ -1435,7 +1499,7 @@ function InitMap()
 	i++;
 
 	TestObjects[i] = new Object3D(WallModel);
-	TestObjects[i].x = 9;
+	TestObjects[i].x = RightWallX;
 	TestObjects[i].y = 7;
 	TestObjects[i].z = -10;
 	TestObjects[i].red = 0.5;
@@ -1461,6 +1525,7 @@ function InitMap()
 	TestObjects[i].blue = 0;
 	i++;
 
+	BallObjectId = i;
 	TestObjects[i] = new Object3D(BallModel);
 	TestObjects[i].x = 0;
 	TestObjects[i].y = -4;
@@ -1478,7 +1543,7 @@ function InitMap()
 			TestObjects[i] = new Object3D(BrickModel);
 			TestObjects[i].x = ox + (x * BRICK_WIDTH);
 			TestObjects[i].y = 4 + (y * BRICK_HEIGHT);
-			TestObjects[i].z = -8.5;
+			TestObjects[i].z = -10;
 			TestObjects[i].red = rgb[y*3];			//)(y/5);
 			TestObjects[i].green = rgb[1+(y*3)];	//(y/5);
 			TestObjects[i].blue = rgb[2+(y*3)];		//0.8;
@@ -1581,10 +1646,11 @@ function DoInits()
 
 </head>
 <body onload ="DoInits();">
-<div class="outer" id="area">
-	<canvas class="gamecanvas" id="gc" width="512;" height="512;"></canvas>
-</div>
-<p id="fps">X</p>
+<!--<div class="outer" id="area"> -->
+<canvas class="gamecanvas" id="gc" width="512;" height="512;"></canvas>
+<br>
+<!-- </div> -->
+<p class="frame_counter" id="fps">X</p>
 
 </body>
 </html>
