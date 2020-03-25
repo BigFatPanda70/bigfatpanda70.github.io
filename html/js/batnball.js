@@ -25,8 +25,10 @@
 
 	3 players ?? .. two control one bat.. one controls 2 bats ???
 
+
 */
 
+var DEFAULT_BAT_WIDTH = 64;
 var BRICK_HEIGHT = 16;
 var BRICK_WIDTH = 32;
 
@@ -39,27 +41,9 @@ var BRICK_NOT_USED = -1;
 
 var NO_COLLISION = -1;
 
-function BrickStruct()
-{
-	this.flags = BRICK_NOT_USED;
-	this.x;
-	this.y;
-	this.width;
-	this.height;
-	this.number_of_hits_required;
-	this.red;
-	this.green;
-	this.blue;
-};
-
-function PlayerStruct
-{
-	var flags;
-	var x;
-	var y;
-	var bat_width;
-	var score;
-}
+	// -----
+	// Ball Structure
+	// ----
 
 function BallStruct()
 {
@@ -68,79 +52,15 @@ function BallStruct()
 	var vx;
 	var vy;
 	var radius;
+	
+		// AABB
 	var left;
 	var right;
 	var top;
 	var bottom;
 }
 
-var Bricks = [];
-var Balls = [];
-
-var num_players = 1;
-var num_balls = 1;
-
-var Player = [];
-
-function overlapAABB (left1,right1,top1,bottom1, left2,rigth2,top2,bottom2)
-{
-	if (right1 < left2)
-	{
-		return false;
-	}
-	if (right2 < left1)
-	{
-		return false;
-	}
-	if (top1 > bottom2)
-	{
-		return false;
-	}
-	if (top2 > bottom1)
-	{
-		return false;
-	}
-	return true;
-}
-
-function InitLevel (level_number)
-{
-	var i;
-	var r;
-	var c;
-	
-	var ox;
-	var oy;
-	
-	for (i = 0; i < Bricks.length; i++)
-	{
-		Bricks[i].flags = BRICK_NOT_USED;
-	}
-	
-	i = 0;
-	ox = 0;
-	oy = 0;
-	for (r = 0; r < NUM_ROWS; r++)
-	{
-		for (c = 0; c < NUM_COLUMNS; c++)
-		{
-			if (i == Bricks.length)
-			{
-				Bricks[i] = new BrickStruct();
-			}
-			Bricks[i].x = ox + (c * BRICK_WIDTH);
-			Bricks[i].y = oy + (r * BRICK_HEIGHT);
-			Bricks[i].number_of_hits_required = 1;
-			Bricks[i].width = BRICK_WIDTH;
-			Bricks[i].heigth= BRICK_HEIGHT;
-			Bricks[i].red = 255;
-			Bricks[i].green = 255;
-			Bricks[i].blue = 255;
-		}
-	}
-}
-
-BallInfo.prototype.calcAABB(dt)
+BallStruct.prototype.calcAABB(dt)
 {
 		// calculate axis aligned bounding box for ball.
 
@@ -187,6 +107,98 @@ BallInfo.prototype.calcAABB(dt)
 	this.bottom = bottom;
 }
 
+	// -----
+	// Brick Struct
+	// -----
+
+function BrickStruct()
+{
+	this.flags = BRICK_NOT_USED;
+	this.x;
+	this.y;
+	this.width;
+	this.height;
+	this.number_of_hits_required;
+	this.red;
+	this.green;
+	this.blue;
+	
+		// AABB
+	this.left;
+	this.right;
+	this.top;
+	this.bottom;
+};
+
+BrickStruct.prototype.calcAABB(dt)
+{
+	// for now, bricks cannot rotate or move, so this is 
+	// straightforward to do.
+	
+	this.left = this.x;
+	this.right = this.x + this.width;
+	this.top = this.y;
+	this.bottom = this.y + this.height;
+}
+
+	// --- 
+	// player struct
+	// ---
+
+function PlayerStruct
+{
+	var flags;
+	var x;
+	var y;
+	var bat_width;
+	var score;
+}
+
+var Bricks = [];
+var Balls = [];
+
+var num_players = 1;
+var num_balls = 1;
+
+var Player = [];
+
+function InitLevel (level_number)
+{
+	var i;
+	var r;
+	var c;
+	
+	var ox;
+	var oy;
+	
+	for (i = 0; i < Bricks.length; i++)
+	{
+		Bricks[i].flags = BRICK_NOT_USED;
+	}
+	
+	i = 0;
+	ox = 0;
+	oy = 0;
+	for (r = 0; r < NUM_ROWS; r++)
+	{
+		for (c = 0; c < NUM_COLUMNS; c++)
+		{
+			if (i == Bricks.length)
+			{
+				Bricks[i] = new BrickStruct();
+			}
+			Bricks[i].x = ox + (c * BRICK_WIDTH);
+			Bricks[i].y = oy + (r * BRICK_HEIGHT);
+			Bricks[i].number_of_hits_required = 1;
+			Bricks[i].width = BRICK_WIDTH;
+			Bricks[i].heigth= BRICK_HEIGHT;
+			Bricks[i].red = 255;
+			Bricks[i].green = 255;
+			Bricks[i].blue = 255;
+		}
+	}
+}
+
 function BrickBallCollisionTime(brick_number, ball_number, dt)
 {
 	// .. checks to see if the balls movement path will collide with 
@@ -198,11 +210,14 @@ function BrickBallCollisionTime(brick_number, ball_number, dt)
 	var brick;
 	var ball;
 	var c;
+	var r;
 
 	var x0;
 	var y0;
 	var x1;
 	var y1;
+	
+	c = new CollisionObject();
 
 	brick = Bricks [brick_number];
 	ball = Balls[ball_number];
@@ -212,8 +227,8 @@ function BrickBallCollisionTime(brick_number, ball_number, dt)
 	x1 = x0 + brick.width;
 	y1 = y0 + brick.height;
 	
-	c = overlapAABB (x0,y0,x1,y1, ball.left, ball.right, ball.top, ball.bottom);
-	if (c == false)
+	r = c.overlapAABB (x0,y0,x1,y1, ball.left, ball.right, ball.top, ball.bottom);
+	if (r == false)
 	{
 		return NO_COLLISION;
 	}
@@ -231,3 +246,22 @@ function MovePlayerRight(player_number)
 
 
 
+function InitGame (num_players)
+{
+	var i;
+	
+	for (i = 0; i < num_players; i++)
+	{
+		if (i == Player.length)
+		{
+			Player[i] = new PlayerStruct();
+		}
+		Player[i].flags = 0;
+		Player[i].x = 0;
+		Player[i].y = 0;
+		Player[i].bat_width = DEFAULT_BAT_WIDTH;
+		Player[i].score = 0;
+
+	}
+	
+}
