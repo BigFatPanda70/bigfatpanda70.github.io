@@ -176,6 +176,14 @@ body
 	z-index:1;
 }
 
+.joystickdiv
+{
+	position:absolute;
+	left:20px;
+	top:50px;
+	background-color:white;
+}
+
 </style>
 
 <script src="js/frame_counter.js"></script>
@@ -1359,6 +1367,48 @@ function DrawGame()
 }
 
 
+function DoInputs()
+{
+	var left_pressed;
+	var right_pressed;
+	var item;
+	var i;
+	var str;
+
+	left_pressed = false;
+	right_pressed = false;
+	
+	if ((KeyPressed (KEY_LEFT) == true) || 
+		(KeyPressed (KEY_A) == true) ||
+		(KeyPressed (KEY_J) == true))
+	{
+		left_pressed = true;
+	}
+
+	if ((KeyPressed (KEY_RIGHT) == true) ||
+		(KeyPressed (KEY_D) == true) ||
+		(KeyPressed (KEY_D) == true))
+	{
+		right_pressed = true;
+	}
+
+		// joystick tests too.
+
+	Joystick_Update();
+	item = document.getElementById ("Jstk");
+	str ="";
+	for (i = 0; i < Joystick_ButtonCount(0); i++)
+	{
+		str = str + i + ":" + Joystick_GetButton (0, i) + " ";
+	}
+	str += "<br>";
+	for (i = 0; i < Joystick_AxisCount(0); i++)
+	{
+		str = str + i + ":" + Joystick_GetAxis (0, i) + " ";
+	}
+	item.innerHTML = str;
+}
+
 var busy = false;
 function UpdateGame()
 {
@@ -1375,6 +1425,9 @@ function UpdateGame()
 	if (!Ctx)	return;
 	
 	dt = 1/50;		// timing is 1/50th of a second.
+	
+	DoInputs();
+	
 	BNB_DoGame(dt);
 
 	Ctx.clearRect(0,0,Canvas.width, Canvas.height);
@@ -1464,8 +1517,6 @@ function FullSizeCanvas()
 	item = document.getElementById ("gc");
 	item.style.width = w + "px";
 	item.style.height = h + "px";
-	
-
 	
 	document.body.scrollTop = 0; // <-- pull the page back up to the top
 	document.body.style.overflow = 'hidden';
@@ -1721,6 +1772,6 @@ function DoInits()
 <br>
 <!-- </div> -->
 <p class="frame_counter" id="fps">X</p>
-
+<div class="joystickdiv" id="Jstk">joystick</div>
 </body>
 </html>

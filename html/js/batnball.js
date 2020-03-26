@@ -290,11 +290,11 @@ function BrickBallCollisionTime(brick_number, ball_number, dt)
 	}
 }
 
-function MovePlayerLeft(player_number)
+function BNB_MovePlayerLeft(player_number)
 {
 }
 
-function MovePlayerRight(player_number)
+function BNB_MovePlayerRight(player_number)
 {
 }
 
