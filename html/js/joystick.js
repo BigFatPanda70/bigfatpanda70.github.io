@@ -258,6 +258,30 @@ var JOYSTICK_LBC_LEFT   = 14;
 var JOYSTICK_LBC_RIGHT  = 15;
 
 
+var joystick_map_standard =
+[
+	0,	// JOYSTICK_RBC_BOTTOM = 0;			// RBC = right button cluster
+	1,	// JOYSTICK_RBC_RIGHT  = 1;
+	2,	// JOYSTICK_RBC_LEFT   = 2;
+	3,	// JOYSTICK_RBC_TOP    = 3;
+
+	4,	// JOYSTICK_FB_TOP_LEFT  = 4;
+	5,	// JOYSTICK_FB_TOP_RIGHT = 5;
+	6,	// JOYSTICK_FB_BOTTOM_LEFT = 6;
+	7,	// JOYSTICK_FV_BOTTOM_RIGHT= 7;
+
+	8,	// JOYSTICK_CB_LEFT  = 8;
+	9,	// JOYSTICK_CB_RIGHT = 9;
+
+	10,  // JOYSTICK_LEFT_STICK_BUTTON  = 10;
+	11, // JOYSTICK_RIGHT_STICK_BUTTON = 11;
+
+	12, // JOYSTICK_LBC_TOP    = 12;		// LBC = left button cluster
+	13, // JOYSTICK_LBC_BOTTOM = 13;
+	14, // JOYSTICK_LBC_LEFT   = 14;
+	15, // JOYSTICK_LBC_RIGHT  = 15;
+];
+
 var joystick_map_LF310 =
 [
 	0,	// JOYSTICK_RBC_BOTTOM = 0;			// RBC = right button cluster
@@ -378,6 +402,16 @@ var joystick_map_2563 = 	// shanwan android gamepad (atari joystick)
 	// JOYSTICK_LBC_RIGHT  = 15;
 ];
 
+var joystick_maps =
+[
+	joystick_map_standard,
+	joystick_map_LF310,
+	joystick_map_0079,	 	// trust / dragonrise
+	joystick_map_2563, 		// shanwan android gamepad (atari joystick)
+	joystick_map_0810,		// ninty / snes style button controller.
+	joystick_map_0458	 	// minipad
+];
+
 	// ---- end of button layout info
 
 var JoystickConnected = false;		// false = no/unknown.
@@ -386,13 +420,14 @@ var Joystick_DeadZone = 0.1;
 
 var Joystick = null;
 
-function Joystick_GetIdNum (jstk)
+function Joystick_GetMapIndex(jstk)
 {
 		// for now, just assume single joystick attached.
 	var id_str;
 	var id;
 
-	id_str = jstk[0].id.substring (0,4);
+	id_str = jstk.id.substring (0,4);
+	
 	switch (id_str)
 	{
 		case "0079": id = JOYSTICK_ID_DRAGONRISE; break;
@@ -400,7 +435,15 @@ function Joystick_GetIdNum (jstk)
 		case "2563": id = JOYSTICK_ID_ATARI; break;
 		case "0458": id = JOYSTICK_ID_MINIPAD; break;
 		case "0810": id = JOYSTICK_ID_NINTY; break;
+		case "xinp":
+					id = JOYSTICK_ID_UNKNOWN;
+					if (jstk.mapping == "standard")
+					{
+						id = JOYSTICK_ID_STANDARD;
+					}
+					break;
 		default:
+
 			id = JOYSTICK_ID_UNKNOWN; break;
 	}
 	return id;
@@ -499,15 +542,29 @@ function Joystick_AxisCount(jidx)
 	return Joystick[jidx].axes.length;
 }
 
-
-
-function Joystick_GetButton (jidx, button_idx)
+function Joystick_GetButton (jidx, standard_button_idx)
 {
+		// standard_button_idx = standard button index.
+
+	var id;
+	var map;
+	var button_id;
+
 	if (Joystick == null)	return 0;
 	if (Joystick.length < 1)	return 0;
 	if ((jidx < 0) || (Joystick.length <= jidx))	return 0;
 
-	return Joystick[jidx].buttons[button_idx].pressed;
+//	function Joystick_GetIdNum (jstk)
+
+	id = Joystick_GetMapIndex (Joystick[jidx]);
+	if (id == JOYSTICK_ID_UNKNOWN)
+	{
+		return Joystick[jidx].buttons[button_idx].pressed;
+	}
+
+	map = joystick_maps[id];
+	button = map[
+	button = Joystick[jidx]
 }
 
 function Joystick_GetAxis (jidx, axis_idx)
