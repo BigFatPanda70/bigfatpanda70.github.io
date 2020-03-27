@@ -229,8 +229,8 @@ axes[3]      Vertical axis for right stick (negative up/positive down)
 
 var JOYSTICK_ID_UNKNOWN       = -1;
 var JOYSTICK_ID_STANDARD      = 0;		// none of my joysticks match this!!
-var JOYSTICK_ID_LOGITECH_F310 = 1;
-var JOYSTICK_ID_DRAGONRISE    = 2;
+var JOYSTICK_ID_LOGITECH_F310 = 1;		// logitech
+var JOYSTICK_ID_DRAGONRISE    = 2;		// trust
 var JOYSTICK_ID_ATARI         = 3;		// SHANWAN Android Gamepade (atari style :-))
 var JOYSTICK_ID_NINTY         = 4;		// ye ole snes style. - no manufacturer info
 var JOYSTICK_ID_MINIPAD       = 5;		// Padix Co. Ltd
@@ -300,10 +300,10 @@ var joystick_map_LF310 =
 	9,  // JOYSTICK_LEFT_STICK_BUTTON  = 10;
 	10, // JOYSTICK_RIGHT_STICK_BUTTON = 11;
 
-	// JOYSTICK_LBC_TOP    = 12;		// LBC = left button cluster
-	// JOYSTICK_LBC_BOTTOM = 13;
-	// JOYSTICK_LBC_LEFT   = 14;
-	// JOYSTICK_LBC_RIGHT  = 15;
+	-1,// JOYSTICK_LBC_TOP    = 12;		// LBC = left button cluster
+	-1,// JOYSTICK_LBC_BOTTOM = 13;
+	-1,// JOYSTICK_LBC_LEFT   = 14;
+	-1,// JOYSTICK_LBC_RIGHT  = 15;
 ];
 
 var joystick_map_0079 = 	// trust / dragonrise
@@ -324,10 +324,10 @@ var joystick_map_0079 = 	// trust / dragonrise
 	10,  // JOYSTICK_LEFT_STICK_BUTTON  = 10;
 	11, // JOYSTICK_RIGHT_STICK_BUTTON = 11;
 
-	// JOYSTICK_LBC_TOP    = 12;		// LBC = left button cluster
-	// JOYSTICK_LBC_BOTTOM = 13;
-	// JOYSTICK_LBC_LEFT   = 14;
-	// JOYSTICK_LBC_RIGHT  = 15;
+	-1,// JOYSTICK_LBC_TOP    = 12;		// LBC = left button cluster
+	-1,// JOYSTICK_LBC_BOTTOM = 13;
+	-1,// JOYSTICK_LBC_LEFT   = 14;
+	-1,// JOYSTICK_LBC_RIGHT  = 15;
 ];
 
 var joystick_map_0810 = 	// ninty / snes style button controller.
@@ -348,10 +348,10 @@ var joystick_map_0810 = 	// ninty / snes style button controller.
 	-1, // JOYSTICK_LEFT_STICK_BUTTON  = 10;
 	-1, // JOYSTICK_RIGHT_STICK_BUTTON = 11;
 
-	// JOYSTICK_LBC_TOP    = 12;		// LBC = left button cluster
-	// JOYSTICK_LBC_BOTTOM = 13;
-	// JOYSTICK_LBC_LEFT   = 14;
-	// JOYSTICK_LBC_RIGHT  = 15;
+	-1,// JOYSTICK_LBC_TOP    = 12;		// LBC = left button cluster
+	-1,// JOYSTICK_LBC_BOTTOM = 13;
+	-1,// JOYSTICK_LBC_LEFT   = 14;
+	-1,// JOYSTICK_LBC_RIGHT  = 15;
 ];
 
 var joystick_map_0458 = 	// minipad
@@ -372,10 +372,10 @@ var joystick_map_0458 = 	// minipad
 	-1, // JOYSTICK_LEFT_STICK_BUTTON  = 10;
 	-1, // JOYSTICK_RIGHT_STICK_BUTTON = 11;
 
-	// JOYSTICK_LBC_TOP    = 12;		// LBC = left button cluster
-	// JOYSTICK_LBC_BOTTOM = 13;
-	// JOYSTICK_LBC_LEFT   = 14;
-	// JOYSTICK_LBC_RIGHT  = 15;
+	-1,// JOYSTICK_LBC_TOP    = 12;		// LBC = left button cluster
+	-1,// JOYSTICK_LBC_BOTTOM = 13;
+	-1,// JOYSTICK_LBC_LEFT   = 14;
+	-1,// JOYSTICK_LBC_RIGHT  = 15;
 ];
 
 var joystick_map_2563 = 	// shanwan android gamepad (atari joystick)
@@ -396,10 +396,10 @@ var joystick_map_2563 = 	// shanwan android gamepad (atari joystick)
 	-1, // JOYSTICK_LEFT_STICK_BUTTON  = 10;
 	-1, // JOYSTICK_RIGHT_STICK_BUTTON = 11;
 
-	// JOYSTICK_LBC_TOP    = 12;		// LBC = left button cluster
-	// JOYSTICK_LBC_BOTTOM = 13;
-	// JOYSTICK_LBC_LEFT   = 14;
-	// JOYSTICK_LBC_RIGHT  = 15;
+	-1,// JOYSTICK_LBC_TOP    = 12;		// LBC = left button cluster
+	-1,// JOYSTICK_LBC_BOTTOM = 13;
+	-1,// JOYSTICK_LBC_LEFT   = 14;
+	-1,// JOYSTICK_LBC_RIGHT  = 15;
 ];
 
 var joystick_maps =
@@ -420,9 +420,14 @@ var Joystick_DeadZone = 0.1;
 
 var Joystick = null;
 
+	// -------------------------------------------
+	//		---- joystick mapping stuff ----
+	// -------------------------------------------
+
 function Joystick_GetMapIndex(jstk)
 {
 		// for now, just assume single joystick attached.
+
 	var id_str;
 	var id;
 
@@ -449,8 +454,7 @@ function Joystick_GetMapIndex(jstk)
 	return id;
 }
 
-
-function Joystick_MapStandardToOEM (jstk, standard_button_id)
+/*function Joystick_MapStandardToOEM (jstk, standard_button_id)
 {
 	var jid;
 
@@ -469,7 +473,7 @@ function Joystick_MapStandardToOEM (jstk, standard_button_id)
 				return standard_button_id;
 	}
 }
-
+*/
 
 
 function Joystick_Available()
@@ -508,20 +512,20 @@ function Joystick_ListenForConnect()
 	window.addEventListener("gamepadconnected", Joystick_OnConnect);
 }
 
-var gggh = 0
+//var gggh = 0
 function Joystick_Update()
 {
 	Joystick = navigator.getGamepads();
 	if (Joystick == null)	return 0;
 	if (Joystick.length < 1)	return 0;
 
-	if (gggh == 0)
-	{
-		console.log ("jotstcjk~~~" + Joystick_GetIdNum (Joystick));
+//	if (gggh == 0)
+//	{
+		//console.log ("jotstcjk~~~" + Joystick_GetIdNum (Joystick));
 
-		console.log (Joystick);
-		gggh = 1;
-	}
+//		console.log (Joystick);
+//		gggh = 1;
+//	}
 }
 
 function Joystick_ButtonCount(jidx)
@@ -542,13 +546,121 @@ function Joystick_AxisCount(jidx)
 	return Joystick[jidx].axes.length;
 }
 
+function Joystick_LBC (mapidx, jidx, standard_button_idx)
+{
+		// LBC - left button cluster. These 'standard' buttons
+		// are often reported as axis values. To provide
+		// consistency, if app wants to know the standard button
+		// it uses the axis values to return a standard LBC value.
+		// (basically fakes it :-D  )
+
+	switch (mapidx)
+	{
+		case JOYSTICK_ID_STANDARD:
+				return Joystick[jidx].buttons[standard_button_idx].pressed;
+
+		case JOYSTICK_ID_LOGITECH_F310:			// logitech
+				switch (standard_button_idx)
+				{
+					case JOYSTICK_LBC_TOP:
+							if (Joystick[jidx].axes[7] < 0)	return true;
+							break;
+					case JOYSTICK_LBC_BOTTOM:
+							if (Joystick[jidx].axes[7] > 0)	return true;
+							break;
+					case JOYSTICK_LBC_LEFT:
+							if (Joystick[jidx].axes[6] < 0)	return true;
+							break;
+					case JOYSTICK_LBC_RIGHT:
+							if (Joystick[jidx].axes[6] > 0)	return true;
+							break;
+				}
+				return false;
+
+		case JOYSTICK_ID_DRAGONRISE: 		// trust
+				switch (standard_button_idx)
+				{
+					case JOYSTICK_LBC_TOP:
+							if (Joystick[jidx].axes[6] < 0)	return true;
+							break;
+					case JOYSTICK_LBC_BOTTOM:
+							if (Joystick[jidx].axes[6] > 0)	return true;
+							break;
+					case JOYSTICK_LBC_LEFT:
+							if (Joystick[jidx].axes[5] < 0)	return true;
+							break;
+					case JOYSTICK_LBC_RIGHT:
+							if (Joystick[jidx].axes[5] > 0)	return true;
+							break;
+				}
+				return false;
+			
+		case JOYSTICK_ID_ATARI:		// SHANWAN Android Gamepade (atari style :-))
+				switch (standard_button_idx)
+				{
+					case JOYSTICK_LBC_TOP:
+							if (Joystick[jidx].axes[1] < 0)	return true;
+							break;
+					case JOYSTICK_LBC_BOTTOM:
+							if (Joystick[jidx].axes[1] > 0)	return true;
+							break;
+					case JOYSTICK_LBC_LEFT:
+							if (Joystick[jidx].axes[0] < 0)	return true;
+							break;
+					case JOYSTICK_LBC_RIGHT:
+							if (Joystick[jidx].axes[0] > 0)	return true;
+							break;
+				}
+				return false;
+
+		case JOYSTICK_ID_NINTY:		// ye ole snes style. - no manufacturer info
+				switch (standard_button_idx)
+				{
+					case JOYSTICK_LBC_TOP:
+							if (Joystick[jidx].axes[1] < 0)	return true;
+							break;
+					case JOYSTICK_LBC_BOTTOM:
+							if (Joystick[jidx].axes[1] > 0)	return true;
+							break;
+					case JOYSTICK_LBC_LEFT:
+							if (Joystick[jidx].axes[0] < 0)	return true;
+							break;
+					case JOYSTICK_LBC_RIGHT:
+							if (Joystick[jidx].axes[0] > 0)	return true;
+							break;
+				}
+				return false;
+
+		case JOYSTICK_ID_MINIPAD:		// Padix Co. Ltd
+				switch (standard_button_idx)
+				{
+					case JOYSTICK_LBC_TOP:
+							if (Joystick[jidx].axes[1] < 0)	return true;
+							break;
+					case JOYSTICK_LBC_BOTTOM:
+							if (Joystick[jidx].axes[1] > 0)	return true;
+							break;
+					case JOYSTICK_LBC_LEFT:
+							if (Joystick[jidx].axes[0] < 0)	return true;
+							break;
+					case JOYSTICK_LBC_RIGHT:
+							if (Joystick[jidx].axes[0] > 0)	return true;
+							break;
+				}
+				return false;
+
+		default:	break;
+	}
+	return false;
+}
+
 function Joystick_GetButton (jidx, standard_button_idx)
 {
 		// standard_button_idx = standard button index.
 
-	var id;
+	var mapidx;
 	var map;
-	var button_id;
+	var button_idx;
 
 	if (Joystick == null)	return 0;
 	if (Joystick.length < 1)	return 0;
@@ -556,15 +668,29 @@ function Joystick_GetButton (jidx, standard_button_idx)
 
 //	function Joystick_GetIdNum (jstk)
 
-	id = Joystick_GetMapIndex (Joystick[jidx]);
-	if (id == JOYSTICK_ID_UNKNOWN)
+	mapidx = Joystick_GetMapIndex (Joystick[jidx]);
+	if (mapidx == JOYSTICK_ID_UNKNOWN)
 	{
-		return Joystick[jidx].buttons[button_idx].pressed;
+			// no mapping available, so just cross fingers and hope.
+		return Joystick[jidx].buttons[standard_button_idx].pressed;
 	}
 
-	map = joystick_maps[id];
-	button = map[
-	button = Joystick[jidx]
+			// left button clusters are a pain to convert to standard format
+			// as they are usually part of the axis group.
+	if ((standard_button_idx >= JOYSTICK_LBC_TOP) && (standard_button_idx <= JOYSTICK_LBC_RIGHT))
+	{
+		return Joystick_LBC (mapidx, jidx, standard_button_idx);
+	}
+
+	map = joystick_maps[mapidx];
+	button_idx = map[standard_button_idx];
+	if (button_idx == -1)
+	{
+		return 0;		// button not available.
+	}
+	button = Joystick[jidx].buttons[button_idx].pressed;
+	
+	return button;
 }
 
 function Joystick_GetAxis (jidx, axis_idx)

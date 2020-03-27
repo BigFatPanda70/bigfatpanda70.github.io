@@ -292,10 +292,32 @@ function BrickBallCollisionTime(brick_number, ball_number, dt)
 
 function BNB_MovePlayerLeft(player_number)
 {
+	var bat_left;
+	var left_wall_x;
+
+	left_wall_x = -9;
+	BatX -= 0.2;
+	
+	bat_left = BatX - (BAT_WIDTH/2);
+	if (bat_left < left_wall_x)
+	{
+		BatX = left_wall_x + (BAT_WIDTH/2);
+	}
 }
 
 function BNB_MovePlayerRight(player_number)
 {
+	var bat_right;
+	var right_wall_x;
+
+	right_wall_x = 9;
+	BatX += 0.2;
+	
+	bat_right = BatX + (BAT_WIDTH/2);
+	if (bat_right > right_wall_x)
+	{
+		BatX = right_wall_x - (BAT_WIDTH/2);
+	}
 }
 
 function BNB_InitBricks (level)
