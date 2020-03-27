@@ -36,7 +36,6 @@
 	out in a boring row by row fashion. Perhaps experiment with 
 	different size bricks at different angles ???
 
-
 	 To Use :
 	----------
 		Call BNB_Init() to do one time initialisations.
@@ -45,20 +44,28 @@
 
 	// === constants ===
 
-var DEFAULT_BAT_WIDTH = 64;
+//var DEFAULT_BAT_WIDTH = 64;
+var BNB_BAT_WIDTH = 3;
+var BNB_BAT_HEIGHT = 0.5;
+
 var BNB_BRICK_HEIGHT = 1.8;
 var BNB_BRICK_WIDTH = 1.5;
 var BAT_WIDTH = 2;
 var BALL_RADIUS = 0.25;
-var BNB_PLAYER_Y = -5;
+
+var BNB_PLAYER_Y = -4.5;
+
 var BNB_NUM_ROWS = 6;
 var BNB_NUM_COLUMNS = 12;
 var BNB_BRICK_WALL_Y = 5;
 
-var BNB_LEFT_WALL_X = -10;
-var BNB_RIGHT_WALL_X= 10;
+var BNB_LEFT_WALL_X = -9;
+var BNB_RIGHT_WALL_X= 9;
+var BNB_TOP_WALL_Y = 19.5;
 
-var MAX_BALL_SPEED = 10;
+var MAX_BALL_SPEED = 0.3;
+
+var PLAYER_SPEED = 0.2;
 
 var NO_COLLISION = -1;
 
@@ -67,6 +74,9 @@ var BNB_BRICK_ON = 1;
 
 var BALL_OFF = 0;
 var BALL_ON = 1;
+
+var PLAYER_OFF = 0;
+var PLAYER_ON = 1;
 
 	// some possible game states:
 var BNB_GAME_MODE_INIT 			= 0;
@@ -118,8 +128,8 @@ BallStruct.prototype.calcAABB = function(dt)
 
 	left = this.x - this.radius;
 	right = this.x + this.radius;
-	top = this.y - this.radius;
-	bottom = this.y + this.radius;
+	top = this.y + this.radius;
+	bottom = this.y - this.radius;
 
 	dx = this.vx * dt;
 	dy = this.vy * dt;
@@ -175,10 +185,10 @@ BrickStruct.prototype.calcAABB = function(dt)
 	// for now, bricks cannot rotate or move, so this is 
 	// straightforward to do.
 	
-	this.left = this.x;
-	this.right = this.x + this.width;
-	this.top = this.y;
-	this.bottom = this.y + this.height;
+	this.left = this.x - (this.width/2);
+	this.right = this.left + this.width;
+	this.top = this.y + (this.height/2);
+	this.bottom = this.top - this.height;
 }
 
 	// --- 
@@ -187,11 +197,30 @@ BrickStruct.prototype.calcAABB = function(dt)
 
 function PlayerStruct()
 {
-	var flags;
-	var x;
-	var y;
-	var bat_width;
-	var score;
+	this.state;
+	this.flags;
+	this.x;
+	this.y;
+	this.vx;
+	this.vy;
+	this.bat_width;
+	this.score;
+	
+		// AABB.
+	this.left;
+	this.right;
+	this.top;
+	this.bottom;
+}
+
+PlayerStruct.prototype.calcAABB = function (dt)
+{
+	// assume bat not moving for aabb calculations.
+
+	this.left = this.x - (this.bat_width / 2);
+	this.right= this.left + this.bat_width;
+	this.top = this.y + (this.bat_height/2);
+	this.bottom = this.top - this.bat_height;
 }
 
 	// =========================
@@ -205,8 +234,8 @@ var BNB_NextState;
 var Bricks = [];
 var Balls = [];
 
-var BatX;
-var Baty;
+//var BatX;
+//var Baty;
 
 var num_players = 1;
 var num_balls = 1;
@@ -215,57 +244,89 @@ var Player = [];
 
 function InitLevel (level_number)
 {
-	/*
-	console.log ("batnball.js : init level");
-	var i;
-	var r;
-	var c;
-	
-	var ox;
-	var oy;
-	
-	for (i = 0; i < Bricks.length; i++)
-	{
-		Bricks[i].flags = BRICK_NOT_USED;
-	}
-	
-	i = 0;
-	ox = 0;
-	oy = 0;
-
-	for (r = 0; r < NUM_ROWS; r++)
-	{
-		for (c = 0; c < NUM_COLUMNS; c++)
-		{
-			if (i == Bricks.length)
-			{
-				Bricks[i] = new BrickStruct();
-			}
-			Bricks[i].x = ox + (c * BRICK_WIDTH);
-			Bricks[i].y = oy + (r * BRICK_HEIGHT);
-			Bricks[i].number_of_hits_required = 1;
-			Bricks[i].width = BRICK_WIDTH;
-			Bricks[i].height= BRICK_HEIGHT;
-			Bricks[i].red = 255;
-			Bricks[i].green = 255;
-			Bricks[i].blue = 255;
-			i++;
-		}
-	}
-	 */
 }
 
-function BrickBallCollisionTime(brick_number, ball_number, dt)
-{
-	// .. checks to see if the balls movement path will collide with 
-	// the stationary rectangular brick. Not skimping on the maths
-	// so that the collisions can be reasonably accurate.
 
-	// first check aabb 
+function BNB_MoveBalls(dt)
+{
+	var i;
+	var x;
+	var y;
+	var vx;
+	var vy;
 	
-	var brick;
-	var ball;
+	var left;
+	var right;
+	var ball_width;
+
+	var	left_wall_x;
+	var right_wall_x;
+	
+	ball_width = 0.25;
+	
+	
+	left_wall_x = BNB_LEFT_WALL_X;
+	right_wall_x = BNB_RIGHT_WALL_X;
+	
+	for (i = 0; i < Balls.length; i++)
+	{
+		Balls[i].calcAABB(dt);
+		x = Balls[i].x;
+		y = Balls[i].y;
+		
+		vx = Balls[i].vx;
+		vy = Balls[i].vy;
+		
+		x += vx;
+		y += vy;
+		
+		if (y < -6)		{	vy *= -1;	}			// test code to stop ball disappearing off the bottom
+
+		if (y > BNB_TOP_WALL_Y)
+		{
+			y = BNB_TOP_WALL_Y;
+			vy *= -1;
+		}
+		
+		left = x - (ball_width/2);
+		right = left + ball_width;
+
+		if (left <= left_wall_x)
+		{
+			x = left_wall_x + (ball_width/2);
+			vx *= -1;
+		}
+		if (right >= right_wall_x)
+		{
+			x = right_wall_x - ball_width;
+			vx *= -1;
+		}
+		
+		Balls[i].x = x;
+		Balls[i].y = y;
+		Balls[i].vx = vx;
+		Balls[i].vy = vy;
+	}
+}
+
+function BNB_CalcAABBs (dt)
+{
+	var i;
+	
+	for (i = 0; i < Player.length; i++)
+	{
+		Player[i].calcAABB(dt);
+	}
+	for (i = 0; i < Balls.length; i++)
+	{
+		Balls[i].calcAABB(dt);
+	}
+}
+
+function BNB_PlayerBallCollision (p,b,dt)
+{
 	var c;
+
 	var r;
 
 	var x0;
@@ -273,51 +334,185 @@ function BrickBallCollisionTime(brick_number, ball_number, dt)
 	var x1;
 	var y1;
 	
+	var x2;
+	var y2;
+	var x3;
+	var y3;
+
 	c = new CollisionObject();
 
-	brick = Bricks [brick_number];
-	ball = Balls[ball_number];
+	x0 = Player[p].left;
+	y0 = Player[p].top;
+	x1 = Player[p].right;
+	y1 = Player[p].bottom;
 
-	x0 = brick.x;
-	y0 = brick.y;
-	x1 = x0 + brick.width;
-	y1 = y0 + brick.height;
+	x2 = Balls[b].left;
+	y2 = Balls[b].top;
+	x3 = Balls[b].right;
+	y3 = Balls[b].bottom;
 	
-	r = c.overlapAABB (x0,y0,x1,y1, ball.left, ball.right, ball.top, ball.bottom);
+	r = c.overlapAABB(x0,y0,x1,y1,  x2,y2,x3,y3);
 	if (r == false)
 	{
-		return NO_COLLISION;
+		return false;
+	}
+	return true;
+}
+
+function BNB_PlayerBallCollisionTests (dt)
+{
+	// just doing AABB collisions for bat and ball.
+	// .. hopefully making things more playable by giving the player
+	// as much bat to er..bat with.
+
+	var p;
+	var b;
+
+	var vx;
+	var inc_v;
+
+	for (p = 0; p < Player.length; p++)
+	{
+		if (Player[p].state == PLAYER_ON)
+		{
+			for (b = 0; b < Balls.length; b++)
+			{
+				if (Balls[b].state == BALL_ON)
+				{
+					// test collision between player p and ball b
+					r = BNB_PlayerBallCollision (p,b,dt);
+					if (r == true)
+					{
+						// collision occurred, do collision response.
+						Balls[b].vy  = -Balls[b].vy;
+						if (Player[p].vx != 0)
+						{
+							// if player is moving, adjust the balls horizontal velocity 
+							vx = Balls[b].vx;
+							inc_v = 0;
+							if (Player[p].vx < 0)
+							{
+								inc_v = -0.05;
+							}
+							if (Player[p].vx > 0)
+							{
+								inc_v = 0.05;
+							}
+							vx += inc_v;
+							if (vx > MAX_BALL_SPEED)
+							{
+								vx = MAX_BALL_SPEED;
+							}
+							if (vx < (-MAX_BALL_SPEED))
+							{
+								vx = -MAX_BALL_SPEED;
+							}
+							Balls[b].vx = vx;
+						}
+					}
+				}
+			}
+		}
 	}
 }
 
-function BNB_MovePlayerLeft(player_number)
+function BNB_BrickBallCollided (s,b,dt)
+{
+	// returns true if they collide, false otherwise.
+	var r;
+	var c;
+	var x0;
+	var y0;
+	var x1;
+	var y1;
+	var x2;
+	var y2;
+	var x3;
+	var y3;
+	
+	x0 = Bricks[s].left;
+	y0 = Bricks[s].top;
+	x1 = Bricks[s].right;
+	y1 = Bricks[s].bottom;
+	
+	x2 = Balls[b].left;
+	y2 = Balls[b].top;
+	x3 = Balls[b].right;
+	y3 = Balls[b].bottom;
+	
+	c = new CollisionObject();
+
+	r = c.overlapAABB (x0,y0,x1,y1, x2,y2,x3,y3);
+	if (r == false)
+	{
+		return false;
+	}
+	return true;
+}
+
+
+function BNB_BrickBallCollisions(dt)
+{
+	var s;
+	var b;
+	var r;
+
+	for (s = 0; s < Bricks.length; s++)
+	{
+		if (Bricks[s].state == BNB_BRICK_ON)
+		{
+			for (b = 0; b < Balls.length; b++)
+			{
+				if (Balls[b].state == BALL_ON)
+				{
+					r = BNB_BrickBallCollided(s,b,dt);
+					if (r == true)
+					{
+						// collision found
+						Bricks[s].state = BNB_BRICK_OFF;
+						Balls[b].vy *= -1;
+					}
+				}
+			}
+		}
+	}
+}
+
+function BNB_MovePlayer(player_number)
 {
 	var bat_left;
 	var left_wall_x;
-
-	left_wall_x = -9;
-	BatX -= 0.2;
-	
-	bat_left = BatX - (BAT_WIDTH/2);
-	if (bat_left < left_wall_x)
-	{
-		BatX = left_wall_x + (BAT_WIDTH/2);
-	}
-}
-
-function BNB_MovePlayerRight(player_number)
-{
 	var bat_right;
 	var right_wall_x;
+	var bat_width;
+	var i;
+	var x;
+	var vx;
 
-	right_wall_x = 9;
-	BatX += 0.2;
+	i = player_number;
 	
-	bat_right = BatX + (BAT_WIDTH/2);
+	x = Player[i].x;
+	vx = Player[i].vx;
+	bat_width = Player[i].bat_width;
+	x += vx;
+
+	left_wall_x = BNB_LEFT_WALL_X;
+	right_wall_x = BNB_RIGHT_WALL_X;
+	
+	bat_left = x - (bat_width/2);
+	bat_right = bat_left + bat_width;
+	if (bat_left < left_wall_x)
+	{
+		x = left_wall_x + (bat_width/2);
+	}
 	if (bat_right > right_wall_x)
 	{
-		BatX = right_wall_x - (BAT_WIDTH/2);
+		x = right_wall_x - (bat_width/2);
 	}
+	vx = 0;
+
+	Player[i].x = x;
+	Player[i].vx = vx;
 }
 
 function BNB_InitBricks (level)
@@ -357,6 +552,8 @@ function BNB_InitBricks (level)
 			Bricks[i].red = 255;
 			Bricks[i].green = 255;
 			Bricks[i].blue = 255;
+			
+			Bricks[i].calcAABB(0);
 			i++;
 		}
 	}
@@ -374,7 +571,7 @@ function BNB_InitBalls()
 	}
 
 	i = 0;
-//	while (i < 3)
+	while (i < 2)
 	{
 		if (i == Balls.length)
 		{
@@ -382,13 +579,36 @@ function BNB_InitBalls()
 		}
 
 		Balls[i].state = BALL_ON;
-		Balls[i].x = 0;	//-3 + (i * 3);
-		Balls[i].y = -3;
-		Balls[i].vx = 0;
-		Balls[i].vy = 0;
+		Balls[i].x = -5 + (i * 3);
+		Balls[i].y = 14;
+		Balls[i].vx = Math.random() * 0.1;
+		Balls[i].vy = -0.4 + (Math.random() * 0.8);
 		Balls[i].radius = 0.25;
 		i++;
 	}
+}
+
+function BNB_InitPlayers()
+{
+	var i;
+
+	for (i = 0; i < num_players; i++)
+	{
+		if (i == Player.length)
+		{
+			Player[i] = new PlayerStruct();
+		}
+		Player[i].state = PLAYER_ON;
+		Player[i].flags = 0;
+		Player[i].x = 0;
+		Player[i].y = BNB_PLAYER_Y;
+		Player[i].vx = 0;
+		Player[i].vy = 0;
+		Player[i].bat_width = BNB_BAT_WIDTH;
+		Player[i].bat_height= BNB_BAT_HEIGHT;
+		Player[i].score = 0;
+	}
+
 }
 
 function BNB_SetTransition(next_state)
@@ -400,24 +620,8 @@ function BNB_SetTransition(next_state)
 function BNB_InitGame()
 {
 	console.log ("BNB_InitGame");
-	var i;
-
-	for (i = 0; i < num_players; i++)
-	{
-		if (i == Player.length)
-		{
-			Player[i] = new PlayerStruct();
-		}
-		Player[i].flags = 0;
-		Player[i].x = 0;
-		Player[i].y = BNB_PLAYER_Y;
-		Player[i].bat_width = DEFAULT_BAT_WIDTH;
-		Player[i].score = 0;
-	}
 	
-	BatX = 0;
-	BatY = -5;
-	
+	BNB_InitPlayers();
 	BNB_InitBricks (0);
 	BNB_InitBalls();
 	BNB_SetTransition (BNB_GAME_MODE_START_GAME);
@@ -429,9 +633,42 @@ function BNB_Transition()
 	BNB_GameMode = BNB_NextState;
 }
 
+function BNB_StartGame()
+{
+	BNB_SetTransition (BNB_GAME_MODE_MAIN_LOOP);
+}
+
+function BNB_DoMainLoop(dt)
+{
+	var i;
+
+	BNB_CalcAABBs(dt);	// init aabb's for collision checks.
+
+		// do collision tests first, to use players velocity.
+	BNB_PlayerBallCollisionTests (dt);
+	
+	for (i = 0; i < Player.length; i++)
+	{
+		BNB_MovePlayer(i);
+	}
+	
+	BNB_BrickBallCollisions(dt);
+
+	BNB_MoveBalls(dt);
+}
 	// ========================================
 	//		Public Facing Routines
 	// ========================================
+	
+function BNB_LeftPressed (player_number)
+{
+	Player[player_number].vx = -PLAYER_SPEED;
+}
+
+function BNB_RightPressed (player_number)
+{
+	Player[player_number].vx = PLAYER_SPEED;
+}
 
 function BNB_DoGame (dt)
 {
@@ -448,8 +685,10 @@ function BNB_DoGame (dt)
 				BNB_InitGame();
 				break;
 		case BNB_GAME_MODE_START_GAME:
+				BNB_StartGame();
 				break;
 		case BNB_GAME_MODE_MAIN_LOOP:
+				BNB_DoMainLoop(dt);
 				break;
 		case BNB_GAME_MODE_PAUSE:
 				break;
@@ -472,3 +711,4 @@ function BNB_Init()
 		
 	BNB_GameMode = BNB_GAME_MODE_INIT_GAME;
 }
+

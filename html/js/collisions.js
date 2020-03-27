@@ -20,6 +20,7 @@ var INFO_LINES_INTERSECT = 0;
 var INFO_PARALLEL_LINES = 1;
 var INFO_OVERLAPPING_LINES = 2;
 var INFO_OUTSIDE_SEGMENT = 3;
+var INFO_RAY_ON_LINE = 4;
 
 var INFO_COLLISION = 4;
 var INFO_NO_COLLISION = 5;
@@ -40,9 +41,20 @@ function CollisionObject()
 	this.t2;
 }
 
-CollisionObject.prototype.overlapAABB = function (left1,right1,top1,bottom1, left2,rigth2,top2,bottom2)
+CollisionObject.prototype.overlapAABB = function (left1,top1,right1,bottom1, left2,top2,right2,bottom2)
 {
 		// returns true if there is an overlap
+		
+	// IMPORTANT NOTE : ASSUMES COORDINATES ARE IN WORLD SPACE
+	// *NOT* SCREEN SPACE. So TopY > BottomY. 
+	
+	// modified to allow both screen and world coords.
+	
+	var y0;
+	var y1;
+	var y2;
+	var y3;
+		
 	if (right1 < left2)
 	{
 		return false;
@@ -51,14 +63,33 @@ CollisionObject.prototype.overlapAABB = function (left1,right1,top1,bottom1, lef
 	{
 		return false;
 	}
-	if (top1 > bottom2)
+
+	y0 = top1;
+	y1 = bottom1;
+	y2 = top2;
+	y3 = bottom2;
+	
+		// adjust so y0 > y1 is always true for each AABB
+	if (y1 > y0)
+	{
+		y0 = bottom1;
+		y1 = top1;
+	}
+	if (y3 > y2)
+	{
+		y2 = bottom2;
+		y3 = top2;
+	}
+
+	if (y1 > y2)	//bottom1 < top2)
 	{
 		return false;
 	}
-	if (top2 > bottom1)
+	if (y3 > y0)	//bottom1 > top2)
 	{
 		return false;
 	}
+
 	return true;
 }
 
@@ -319,12 +350,13 @@ CollisionObject.prototype.circleLineCollision = function (cx,cy,cr, vx, vy, dt, 
 
 }
 
-
-function Geom_RayReflection (px,py, vx,vy, x0,y0,x1,y1, result)
+CollisionObject.prototype.rayReflection = function (px,py, vx,vy, x0,y0,x1,y1)
 {
 	// vector reflection - calculates the result of a ray from
 	// point (px,py) in the direction (vx,vy),
 	// colliding with a line (x0,y0)->(x1,y1)
+	
+	// returns true if successful, false otherwise.
 	
 	// https://www.fabrizioduroni.it/2017/08/25/how-to-calculate-reflection-vector.html
 	// https://math.stackexchange.com/questions/13261/how-to-get-a-reflection-vector
@@ -358,8 +390,8 @@ function Geom_RayReflection (px,py, vx,vy, x0,y0,x1,y1, result)
 	if (d == 0)
 	{
 		// ray is on line.. can't reflect 
-		result.error = GEOM_ERROR_POINT_ON_LINE;
-		return;
+		this.info = INFO_RAY_ON_LINE;
+		return false;
 	}
 	nx /= d;
 	ny /= d;
@@ -369,6 +401,8 @@ function Geom_RayReflection (px,py, vx,vy, x0,y0,x1,y1, result)
 	
 		// r = d-2(d.n)n
 	d_dot_n = (vx * nx) + (vy * ny);
-	result.x = vx - (2 * d_dot_n * nx);
-	result.y = vy - (2 * d_dot_n * ny);
+	this.x = vx - (2 * d_dot_n * nx);
+	this.y = vy - (2 * d_dot_n * ny);
+	
+	return true;
 }

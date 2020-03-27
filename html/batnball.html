@@ -208,7 +208,8 @@ var BRICK_HEIGHT = 1.8;
 
 var NUM_BRICK_ROWS = 5;
 var NUM_BRICK_COLUMNS = 10;
-var BAT_WIDTH = 3;
+var BAT_WIDTH = BNB_BAT_WIDTH;
+var BAT_HEIGHT= BNB_BAT_HEIGHT;
 var once = 0;
 
 var DRAWLIST_INVALID_IDX = -1;
@@ -1279,6 +1280,7 @@ function DrawGame()
 
 	var i;
 	var n;
+	var first_dynamic_object;
 	
 	var first_brick;
 
@@ -1291,26 +1293,35 @@ function DrawGame()
 		1.0,0.7,0,
 		1.0,1.2,0.1,
 	];
+	
+	first_dynamic_object = 3;
 
-	n = BatObjectId;
-//	if (n == TestObjects.length)
-//	{
-//		TestObjects[n] = new Object3D(BatModel);
-//	}
-	TestObjects[n].state = OBJECT_ON;
-	TestObjects[n].x = BatX;
-	TestObjects[n].y = -5;
-	TestObjects[n].z = -10;
-	TestObjects[n].red = 1;
-	TestObjects[n].green = 1;
-	TestObjects[n].blue = 0;
-	n++;
+	n = first_dynamic_object;
 
 		// now turn all dynamic objects off.
 	for (i = n; i < TestObjects.length; i++)
 	{
 		TestObjects[i].state = OBJECT_OFF;
 	}
+
+		// add player bats to the screen.
+	for (i = 0; i < Player.length; i++)
+	{
+		if (n == TestObjects.length)
+		{
+			TestObjects[n] = new Object3D(BatModel);
+		}
+		TestObjects[n].state = OBJECT_ON;
+		TestObjects[n].model_ref = BatModel;
+		TestObjects[n].x = Player[i].x;
+		TestObjects[n].y = Player[i].y;
+		TestObjects[n].z = -10;
+		TestObjects[n].red = 1;
+		TestObjects[n].green = 1;
+		TestObjects[n].blue = 0;
+		n++;
+	}
+
 
 		// add any balls
 	for (i = 0; i < Balls.length; i++)
@@ -1332,13 +1343,13 @@ function DrawGame()
 			TestObjects[n].red = 1;
 			TestObjects[n].green = 1;
 			TestObjects[n].blue = 1;
+			
 			n++;
 		}
 	}
 
-
 		// now add bricks.
-	first_brick = n;
+//	first_brick = n;
 	for (i = 0; i < Bricks.length; i++)
 	{
 		if (Bricks[i].state == BNB_BRICK_ON)
@@ -1360,10 +1371,6 @@ function DrawGame()
 			n++;
 		}
 	}
-
-//	TestObjects[first_brick].x = 0;
-//	TestObjects[first_brick].y = 0;
-//	TestObjects[first_brick].rx = BallRotateX;
 }
 
 
@@ -1399,7 +1406,7 @@ function DoInputs()
 
 	if ((KeyPressed (KEY_RIGHT) == true) ||
 		(KeyPressed (KEY_D) == true) ||
-		(KeyPressed (KEY_D) == true))
+		(KeyPressed (KEY_L) == true))
 	{
 		right_pressed = true;
 	}
@@ -1418,11 +1425,11 @@ function DoInputs()
 	
 	if (left_pressed)
 	{
-		BNB_MovePlayerLeft(0);
+		BNB_LeftPressed(0);
 	}
 	if (right_pressed)
 	{
-		BNB_MovePlayerRight(0);
+		BNB_RightPressed(0);
 	}
 
 /*	item = document.getElementById ("Jstk");
@@ -1635,7 +1642,7 @@ function MakeModels()
 	TopWallModel = new Model3D (vertices, faces);
 	TopWallModel.initNormals();
 
-	MakeCuboid (BAT_WIDTH, 0.5, 2.5, vertices, faces);
+	MakeCuboid (BAT_WIDTH, BAT_HEIGHT, 2.5, vertices, faces);
 	BatModel = new Model3D (vertices, faces);
 	BatModel.initNormals();
 
@@ -1705,6 +1712,7 @@ function Init_3D_Objects()
 	TestObjects[i].blue = 1;
 	i++;
 
+/*
 	BatObjectId = i;
 	TestObjects[i] = new Object3D(BatModel);
 	TestObjects[i].state = OBJECT_ON;
@@ -1715,7 +1723,7 @@ function Init_3D_Objects()
 	TestObjects[i].green = 0.5;
 	TestObjects[i].blue = 0;
 	i++;
-/*
+
 	BallObjectId = i;
 	TestObjects[i] = new Object3D(BallModel);
 	TestObjects[i].state = OBJECT_ON;
