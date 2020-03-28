@@ -539,7 +539,6 @@ function Draw_DrawList()
 		if (DrawList_BucketArray[b] != DRAWLIST_INVALID_IDX)
 		{
 			i = DrawList_BucketArray[b];
-//			console.log ("i" + i);
 			while (i != DRAWLIST_INVALID_IDX)
 			{
 				d = DrawList[i];
@@ -1080,95 +1079,85 @@ function CreateDrawList(object_array, first, last)
 //	for (i = 0; i < object_array.length; i++)
 	for (i = first; i < last; i++)
 	{
-		p = object_array[i];
-		m = p.model_ref;
-		m.red = p.red;
-		m.green = p.green;
-		m.blue = p.blue;
-			// need to transform all the model points
-
-		m.rotateNormals (p.rx, p.ry, p.rz);
-		m.calcLighting  (0,0,400);
-//	TestModel.calcLighting (500,300,400);	//light_x, light_y, light_z)
-
-		m.transform
-		(
-			p.x, p.y, p.z,
-			p.rx, p.ry, p.rz,
-			p.sx, p.sy, p.sz
-		);
-
-			// do projection matrix.
-		MatrixVectorArrayMultiply ( ProjectionMatrix, m.vertices, m.vertices);
-//		MatrixVectorArrayMultiply ( m.vertices,ProjectionMatrix, m.vertices);
-
-			// finally do divide by w
-		for (k = 0; k < m.vertices.length; k += 4)
+		if (object_array[i].state != 0)
 		{
-			w = m.vertices[k+3];
-			if (w != 0)
+			p = object_array[i];
+			m = p.model_ref;
+			m.red = p.red;
+			m.green = p.green;
+			m.blue = p.blue;
+				// need to transform all the model points
+
+			m.rotateNormals (p.rx, p.ry, p.rz);
+			m.calcLighting  (0,0,400);
+
+			m.transform
+			(
+				p.x, p.y, p.z,
+				p.rx, p.ry, p.rz,
+				p.sx, p.sy, p.sz
+			);
+
+				// do projection matrix.
+			MatrixVectorArrayMultiply ( ProjectionMatrix, m.vertices, m.vertices);
+			//		MatrixVectorArrayMultiply ( m.vertices,ProjectionMatrix, m.vertices);
+
+				// finally do divide by w
+			for (k = 0; k < m.vertices.length; k += 4)
 			{
-				z = m.vertices[k+2];
-				m.vertices[k+0] /= w;
-				m.vertices[k+1] /= w;
-//				m.vertices[k+2] /= w;	// DO NOT DIVIDE Z BY W.
-			}
-		}
-
-			// convert to screen coords.
-
-		c = 0;
-		for (k = 0; k < m.faces.length; k += 3)
-		{
-			v0 = m.faces[k+0] * 4;
-			v1 = m.faces[k+1] * 4;
-			v2 = m.faces[k+2] * 4;
-
-			x0 = ox + (halfwidth * m.vertices[v0]);
-			y0 = oy - (halfheight* m.vertices[v0+1]);
-			z0 = m.vertices[v0+2];
-
-			x1 = ox + (halfwidth *m.vertices[v1]);
-			y1 = oy - (halfheight*m.vertices[v1+1]);
-			z1 = m.vertices[v1+2];
-
-			x2 = ox + (halfwidth * m.vertices[v2]);
-			y2 = oy - (halfheight *m.vertices[v2+1]);
-			z2 = m.vertices[v2+2];
-
-			z = (z0 + z1 + z2)/3;
-
-/*			if (ytytyt == 0)
-			{
-				console.log ("k:" + k + " v0:" + v0 + " v1:" + v1 + " v2:" + v2);
-				console.log ("x0:" + x0 + " y0:" + y0 + " z0:" + z0);
-				console.log ("x1:" + x1 + " y1:" + y1 + " z1:" + z1);
-				console.log ("x2:" + x2 + " y2:" + y2 + " z2:" + z2);
-			}
-
-//			if (once == 0) console.log ("k:" + k + "z:" + z + " z0 " + z0 + " z1 " + z1 + " z2 " + z2 + " ink:" + colours[c]);
-*/
-			backface_cull = false;
-			if (BackfaceCullEnabled == true)
-			{
-				backface_cull = true;
-				if (_BackfaceCullCheck (x0,y0,x1,y1,x2,y2) < 0)
+				w = m.vertices[k+3];
+				if (w != 0)
 				{
-					backface_cull = false;
+					z = m.vertices[k+2];
+					m.vertices[k+0] /= w;
+					m.vertices[k+1] /= w;
 				}
 			}
 
-			if (backface_cull == false)
-			{
-//				z = z;		// convert z to draw list range.
-				r = Math.floor (255 * m.r[c]);
-				g = Math.floor (255 * m.g[c]);
-				b = Math.floor (255 * m.b[c]);
+				// convert to screen coords.
 
-				rgbhex = "rgb(" +  r + ","+ g + "," + b + ")";
-				DrawList_AddItem (i, z, x0,y0,x1,y1,x2,y2, rgbhex);	//colours[c]);
+			c = 0;
+			for (k = 0; k < m.faces.length; k += 3)
+			{
+				v0 = m.faces[k+0] * 4;
+				v1 = m.faces[k+1] * 4;
+				v2 = m.faces[k+2] * 4;
+
+				x0 = ox + (halfwidth * m.vertices[v0]);
+				y0 = oy - (halfheight* m.vertices[v0+1]);
+				z0 = m.vertices[v0+2];
+
+				x1 = ox + (halfwidth *m.vertices[v1]);
+				y1 = oy - (halfheight*m.vertices[v1+1]);
+				z1 = m.vertices[v1+2];
+
+				x2 = ox + (halfwidth * m.vertices[v2]);
+				y2 = oy - (halfheight *m.vertices[v2+1]);
+				z2 = m.vertices[v2+2];
+
+				z = (z0 + z1 + z2)/3;
+
+				backface_cull = false;
+				if (BackfaceCullEnabled == true)
+				{
+					backface_cull = true;
+					if (_BackfaceCullCheck (x0,y0,x1,y1,x2,y2) < 0)
+					{
+						backface_cull = false;
+					}
+				}
+
+				if (backface_cull == false)
+				{
+					r = Math.floor (255 * m.r[c]);
+					g = Math.floor (255 * m.g[c]);
+					b = Math.floor (255 * m.b[c]);
+
+					rgbhex = "rgb(" +  r + ","+ g + "," + b + ")";
+					DrawList_AddItem (i, z, x0,y0,x1,y1,x2,y2, rgbhex);	//colours[c]);
+				}
+				c++;
 			}
-			c++;
 		}
  	}
  	ytytyt = 1;
@@ -1267,6 +1256,7 @@ function OverheadView()
 	}
 }
 
+var ppppp = 0;
 function DrawGame()
 {
 	// uses data from batnball.js to draw the game.
@@ -1293,9 +1283,11 @@ function DrawGame()
 		1.0,0.7,0,
 		1.0,1.2,0.1,
 	];
+
+//	TestObjects = [];
+//	n = 0;
 	
 	first_dynamic_object = 3;
-
 	n = first_dynamic_object;
 
 		// now turn all dynamic objects off.
@@ -1303,6 +1295,8 @@ function DrawGame()
 	{
 		TestObjects[i].state = OBJECT_OFF;
 	}
+	
+//	console.log (TestObjects.length);
 
 		// add player bats to the screen.
 	for (i = 0; i < Player.length; i++)
@@ -1350,6 +1344,8 @@ function DrawGame()
 
 		// now add bricks.
 //	first_brick = n;
+
+//console.log ("n:" + n);
 	for (i = 0; i < Bricks.length; i++)
 	{
 		if (Bricks[i].state == BNB_BRICK_ON)
@@ -1360,6 +1356,7 @@ function DrawGame()
 			}
 			TestObjects[n].state = OBJECT_ON;
 			TestObjects[n].model_ref = BrickModel;	// pointer to model data.
+			TestObjects[n].rx = ppppp;
 
 			TestObjects[n].x = Bricks[i].x;
 			TestObjects[n].y = Bricks[i].y;
@@ -1371,6 +1368,7 @@ function DrawGame()
 			n++;
 		}
 	}
+	ppppp++;
 }
 
 
@@ -1467,6 +1465,30 @@ function DoInputs()
 */
 }
 
+function ShowBricks()
+{
+	var x;
+	var y;
+	var i;
+	
+	Ctx.beginPath();
+	Ctx.fillStyle="#ffff00";
+
+	i = 0;
+	for (y = 0; y < 6; y++)
+	{
+		for (x = 0; x < 12; x++)
+		{
+			if (Bricks[i].state == BNB_BRICK_ON)
+			{
+				Ctx.rect (150 + x*8, 350 - y*8, 6,4);
+			}
+			i++;
+		}
+	}
+	Ctx.fill();
+}
+
 var busy = false;
 function UpdateGame()
 {
@@ -1555,6 +1577,7 @@ function UpdateGame()
 //	Draw_DrawList();
 
 
+	ShowBricks();
 //	OverheadView();
 
 
