@@ -10,7 +10,7 @@ Info	:	Version 0.0	10th March 2020
 
 Author	:	Nick Fleming
 
-Updated	:	25th March 2020
+Updated	:	28th March 2020
 
  11th March :
 ----------------
@@ -103,6 +103,12 @@ something that works.
 		This is probably more complicated than it needs to be,
 	but I'm trying to keep the game engine separate from the
 	rendering engine.
+	
+	 28th March 2020
+	------------------
+		Added a simple 'explosion' effect where the colour of the
+	object flashes and then dims, and the object scales to zero
+
 -->
 
 <html>
@@ -1271,6 +1277,7 @@ function DrawGame()
 	var i;
 	var n;
 	var first_dynamic_object;
+	var s;
 	
 	var first_brick;
 
@@ -1356,19 +1363,50 @@ function DrawGame()
 			}
 			TestObjects[n].state = OBJECT_ON;
 			TestObjects[n].model_ref = BrickModel;	// pointer to model data.
-			TestObjects[n].rx = ppppp;
+			//TestObjects[n].rx = ppppp;
 
 			TestObjects[n].x = Bricks[i].x;
 			TestObjects[n].y = Bricks[i].y;
 			TestObjects[n].z = -10;
+
+			TestObjects[n].ry = 0;
+
+			TestObjects[n].sx = 1;
+			TestObjects[n].sy = 1;
+			TestObjects[n].sz = 1;
 			
 			TestObjects[n].red = rgb[0 + (Math.floor((i/12))*3)];
 			TestObjects[n].green = rgb[1 + (Math.floor((i/12))*3)];
 			TestObjects[n].blue = rgb[2 + (Math.floor((i/12))*3)];
 			n++;
 		}
+		if (Bricks[i].state == BNB_BRICK_EXPLODING)
+		{
+			if (n == TestObjects.length)
+			{
+				TestObjects[n] = new Object3D(BrickModel);
+			}
+			TestObjects[n].state = OBJECT_ON;
+			TestObjects[n].model_ref = BrickModel;	// pointer to model data.
+			
+			TestObjects[n].x = Bricks[i].x;
+			TestObjects[n].y = Bricks[i].y;
+			TestObjects[n].z = -10;
+			
+			s = Bricks[i].exploding / BNB_EXPLOSION_TIME;
+//			TestObjects[n].ry = 360 * s;
+			TestObjects[n].sx = s;
+			TestObjects[n].sy = s;
+			TestObjects[n].sz = s;
+
+			TestObjects[n].red   = s*2;	//0.8;	//rgb[0 + (Math.floor((i/12))*3)];
+			TestObjects[n].green = s;	//0.8;	//rgb[1 + (Math.floor((i/12))*3)];
+			TestObjects[n].blue  = s * 0.25;	//0.8;	//rgb[2 + (Math.floor((i/12))*3)];
+
+
+			n++;
+		}
 	}
-	ppppp++;
 }
 
 
@@ -1523,44 +1561,8 @@ function UpdateGame()
 		BallRotateY -= 360;
 	}
 
-/*
-	TestObjects[BallObjectId].rx += 2.5;
-	TestObjects[BallObjectId].ry += 3;
-	if (TestObjects[BallObjectId].rx > 360)
-	{
-		TestObjects[BallObjectId].rx -= 360;
-	}
-	if (TestObjects[BallObjectId].ry > 360)
-	{
-		TestObjects[BallObjectId].ry -= 360;
-	}
-*/
 	PositionCamera();
 
-/*
-	BallX += BallIncX;
-	BallY += BallIncY;
-	
-	if (BallX <= (LeftWallX+WALL_WIDTH))
-	{
-		BallX = LeftWallX+WALL_WIDTH;
-		BallIncX *= -1;
-	}
-	if (BallX >= (RightWallX-WALL_WIDTH))
-	{
-		BallX = RightWallX-WALL_WIDTH;
-		BallIncX *= -1;
-	}
-	
-	if (BallY >= TopWallY)
-	{
-		BallY = TopWallY;
-		BallIncY *= -1;
-	}
-
-	TestObjects[BallObjectId].x = BallX;
-	TestObjects[BallObjectId].y = BallY;
-*/
 
 	DrawGame();
 
@@ -1572,12 +1574,8 @@ function UpdateGame()
 	CreateDrawList(TestObjects,3,TestObjects.length);
 	Draw_DrawList();
 
-//	CreateDrawList(TestObjects,3,65);
-//	CreateDrawList(TestObjects,3,5);
-//	Draw_DrawList();
 
-
-	ShowBricks();
+//	ShowBricks();
 //	OverheadView();
 
 

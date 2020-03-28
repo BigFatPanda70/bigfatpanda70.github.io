@@ -5,7 +5,7 @@
 	
 	Author	:	Nick Fleming
 	
-	Updated	:	25th March 2020
+	Updated	:	28th March 2020
 	
 	 Notes:
 	--------
@@ -35,6 +35,15 @@
 		There is no technical reason why the bricks need to be laid
 	out in a boring row by row fashion. Perhaps experiment with 
 	different size bricks at different angles ???
+
+	 28th march 2020
+	-----------------
+		Still under lockdown .. virus peak expected within the
+	next 14 days or so. 
+	
+		Hopefully, today is the day that I get proper brick-ball
+	collision detection working correctly, rather than the very
+	crude aabb checks currently in place.
 
 	 To Use :
 	----------
@@ -71,6 +80,9 @@ var NO_COLLISION = -1;
 
 var BNB_BRICK_OFF = 0;
 var BNB_BRICK_ON = 1;
+var BNB_BRICK_EXPLODING = 2;		// lets destroy the bricks creatively !!
+
+var BNB_EXPLOSION_TIME = 50;
 
 var BALL_OFF = 0;
 var BALL_ON = 1;
@@ -172,6 +184,8 @@ function BrickStruct()
 	this.red = 1;
 	this.green = 1;
 	this.blue = 1;
+	
+	this.exploding = 0;
 	
 		// AABB
 	this.left;
@@ -469,10 +483,29 @@ function BNB_BrickBallCollisions(dt)
 					if (r == true)
 					{
 						// collision found
-						Bricks[s].state = BNB_BRICK_OFF;
+						Bricks[s].state = BNB_BRICK_EXPLODING;
+						Bricks[s].exploding = BNB_EXPLOSION_TIME;
 						Balls[b].vy *= -1;
 					}
 				}
+			}
+		}
+	}
+}
+
+function BNB_ExplodeBricks()
+{
+	var i;
+
+	for (i = 0; i < Bricks.length; i++)
+	{
+		if (Bricks[i].state == BNB_BRICK_EXPLODING)
+		{
+			Bricks[i].exploding--;
+			if (Bricks[i].exploding < 1)
+			{
+				Bricks[i].exploding = 0;
+				Bricks[i].state= BNB_BRICK_OFF;
 			}
 		}
 	}
@@ -552,6 +585,8 @@ function BNB_InitBricks (level)
 			Bricks[i].red = 255;
 			Bricks[i].green = 255;
 			Bricks[i].blue = 255;
+			
+			Bricks[i].exploding = 0;
 			
 			Bricks[i].calcAABB(0);
 			i++;
@@ -655,6 +690,8 @@ function BNB_DoMainLoop(dt)
 	BNB_BrickBallCollisions(dt);
 
 	BNB_MoveBalls(dt);
+	
+	BNB_ExplodeBricks();
 }
 	// ========================================
 	//		Public Facing Routines
