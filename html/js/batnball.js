@@ -461,6 +461,10 @@ function BNB_BrickBallCollided (s,b,dt)
 	{
 		return false;
 	}
+	
+	// aabb collision.. so now need to do more detailed checks.
+	
+	
 	return true;
 }
 
@@ -482,7 +486,6 @@ function BNB_BrickBallCollisions(dt)
 					r = BNB_BrickBallCollided(s,b,dt);
 					if (r == true)
 					{
-						// collision found
 						Bricks[s].state = BNB_BRICK_EXPLODING;
 						Bricks[s].exploding = BNB_EXPLOSION_TIME;
 						Balls[b].vy *= -1;

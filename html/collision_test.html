@@ -1,0 +1,129 @@
+<!doctype html>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+
+<!-- 
+
+	2D circle & line Collision tests.
+-->
+
+
+<html>
+<head>
+<style>
+.mycanvas
+{
+	width:512px;
+	height:512px;
+	background-color: #fed;
+}
+</style>
+
+<script src="js/collisions.js"></script>
+
+<script>
+	
+var aaa = 0;
+var Ctx;
+
+var Grad;
+
+var busy = false;
+
+var hhhhh = 0;
+
+function CollisionTest(ctx)
+{
+	var c;
+	var x0;
+	var x1;
+	var x2;
+	var y2;
+	
+	var cx;
+	var cy;
+	var cr;
+	
+	var vx;
+	var vy;
+
+	var dt;
+	
+	dt = 5;
+	
+	c = new CollisionObject();
+
+	x0 = 10;
+	y0 = 500;
+	x1 = 500;
+	y1 = 200;
+	
+	cx = 150;
+	cy = 150;
+	cr = 80;
+	
+	vx = 8;
+	vy = 3;
+	
+	c.circleLineCollision (cx,cy,cr, vx, vy, dt, x0,y0,x1,y1);
+
+//	c.lineIntersectionTest (cx,cy,cx+vx,cy+vy, x0,y0,x1,y1)
+
+//	c.squaredDistancePointToLine (cx,cy, x0,y0,x1,y1);
+
+
+	if (hhhhh == 0)
+	{
+		console.log (c);
+		hhhhh = 1;
+	}
+	ctx.beginPath();
+	ctx.moveTo (x0,y0);
+	ctx.lineTo (x1,y1);
+	ctx.stroke();
+
+	ctx.beginPath();
+	ctx.arc (cx, cy, cr, 0, 2 * Math.PI);
+	ctx.stroke();
+
+	ctx.beginPath();
+	ctx.moveTo (cx,cy);
+	ctx.lineTo (cx+(vx*10),cy + (vy*10));
+	ctx.stroke();
+
+}
+
+
+function UpdateGame()
+{
+	if (busy == true)
+	{
+		return;
+	}
+	busy = true;
+
+	Ctx.clearRect (0,0, 512,512);
+	aaa++;
+	
+	CollisionTest(Ctx);
+	
+	requestAnimationFrame (UpdateGame);
+	busy = false;
+}
+
+function doInits()
+{
+	var item;
+	item = document.getElementById ("cv");
+	Ctx = item.getContext("2d");
+	
+
+	UpdateGame();
+}
+
+</script>
+</head>
+<body onload = "doInits();">
+	<canvas class="mycanvas" id="cv" width="512" height="512"></canvas>
+</body>
+</html>

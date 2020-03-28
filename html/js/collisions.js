@@ -283,9 +283,6 @@ CollisionObject.prototype.circleLineCollision = function (cx,cy,cr, vx, vy, dt, 
 	
 	// assumes AABB test has already been done.
 
-	// first need to find collision point on circle. To do this
-	// need to use point distance to line calculation.
-	
 	var dx;
 	var dy;
 	var d;
@@ -302,6 +299,9 @@ CollisionObject.prototype.circleLineCollision = function (cx,cy,cr, vx, vy, dt, 
 	var r1;
 	var r2;
 
+		// first need to find collision point on circle. To do this
+		// need to use point distance to line calculation.
+
 	this.squaredDistancePointToLine (cx,cy, x0,y0,x1,y1);
 	dx = this.x - cx;
 	dy = this.y - cy;
@@ -312,9 +312,13 @@ CollisionObject.prototype.circleLineCollision = function (cx,cy,cr, vx, vy, dt, 
 		dy /= d;
 	}
 
-	cpx = cx + (dx * r); 	// (cpx,cpy) = the point on the circle
-	cpy = cy + (dy * r);	// that will collide with the line first.
+	cpx = cx + (dx * cr); 	// (cpx,cpy) = the point on the circle
+	cpy = cy + (dy * cr);	// that will collide with the line first.
 	
+	Ctx.beginPath();
+	Ctx.rect (cpx - 3, cpy-3, 5,5);
+	Ctx.fill();
+
 		// now need ray-cast a line from (cpx,cpy) to the line to find
 		// the point of collision within dt seconds.
 
@@ -326,15 +330,19 @@ CollisionObject.prototype.circleLineCollision = function (cx,cy,cr, vx, vy, dt, 
 		// now need to see where lines cross. they have to cross
 		// between both end points for a collision to occur.
 
-	this.lineIntersectionTest (x0,y0,x1,y1, x2,y2,x3,y3)
+	this.lineIntersectionTest (x2,y2,x3,y3, x0,y0,x1,y1);
 	
 	if (this.info == INFO_LINES_INTERSECT)
 	{
+			// ** TO DO **
 		// circle will collide with line between line end points
 		// within dt seconds.
 		
+		// time of collision = this.u * dt 
+		this.info = INFO_COLLISION;
 	}
 
+	// ** TO DO **
 	// ---
 	// the circle could still collide the line end points,
 	// so this needs to be tested for separately.

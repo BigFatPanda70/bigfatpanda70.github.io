@@ -1395,14 +1395,13 @@ function DrawGame()
 			
 			s = Bricks[i].exploding / BNB_EXPLOSION_TIME;
 //			TestObjects[n].ry = 360 * s;
-			TestObjects[n].sx = s;
-			TestObjects[n].sy = s;
-			TestObjects[n].sz = s;
+			TestObjects[n].sx = s*1.2;
+			TestObjects[n].sy = s*1.2;
+			TestObjects[n].sz = s*1.2;
 
 			TestObjects[n].red   = s*2;	//0.8;	//rgb[0 + (Math.floor((i/12))*3)];
 			TestObjects[n].green = s;	//0.8;	//rgb[1 + (Math.floor((i/12))*3)];
 			TestObjects[n].blue  = s * 0.25;	//0.8;	//rgb[2 + (Math.floor((i/12))*3)];
-
 
 			n++;
 		}
