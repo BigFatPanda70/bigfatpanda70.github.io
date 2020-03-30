@@ -6,13 +6,22 @@ Info	;	Version 0.0	23rd March 2020
 
 Author	;	Nick Fleming
 
-Updated	:	23rd March 2020
+Updated	:	29th March 2020
 
 
 	 Notes:
 	---------
 	"Basic" 2D collision detection .. well.. possibly medium
 	level .. not quite using calculus yet.
+
+	 29th March 2020
+	------------------
+Almost done (famous last words!!)
+
+
+Collision between a point and a line...
+need to find the tangent of the circle in the direction of the point,
+then use this as the line to calculate the reflection vector.
 
 */
 
@@ -31,14 +40,23 @@ function CollisionObject()
 	// collision result stuff.
 	this.info;
 
-	this.x;		// (x,y) = collision point
+	this.x;		// (x,y) = collision point 
 	this.y;
+	
+	this.cpx;	// circle collision point
+	this.cpy;
 
 	this.u;		// for parametric stuff
 	this.v;
 	
 	this.t1;	// for ray-casting results.
 	this.t2;
+	
+	this.rx;	// reflection vector
+	this.ry;
+
+	this.nearest_endpoint;	// line endpoint nearest collision
+	this.t;		// time of collision (could be any value)
 }
 
 CollisionObject.prototype.overlapAABB = function (left1,top1,right1,bottom1, left2,top2,right2,bottom2)
@@ -116,6 +134,10 @@ CollisionObject.prototype.lineIntersectionTest = function (ax0,ay0,ax1,ay1, bx0,
 		this.info = INFO_PARALLEL_LINES;
 		return;
 	}
+	
+	Ctx.beginPath();
+	Ctx.rect (10,10, 10,10);
+	Ctx.fill();
 
 		//	na = (x4-x3)(y1-y3)-(y4-y3)(x1-x3)
 	na = ((bx1-bx0)*(ay0-by0)) - ((by1-by0)*(ax0-bx0));
@@ -130,6 +152,11 @@ CollisionObject.prototype.lineIntersectionTest = function (ax0,ay0,ax1,ay1, bx0,
 		return;
 	}
 
+	Ctx.beginPath();
+	Ctx.rect (30,10, 10,10);
+	Ctx.fill();
+
+
 	ua = na/denom;
 	ub = nb/denom;
 	
@@ -142,9 +169,19 @@ CollisionObject.prototype.lineIntersectionTest = function (ax0,ay0,ax1,ay1, bx0,
 	{
 		if ((0.0 <= ub) && (ub <= 1.0))
 		{
+				Ctx.beginPath();
+				Ctx.rect (50,10, 10,10);
+				Ctx.fill();
+
+			
 			// calculate intersection point.
 			this.x = ax0 + (ua*(ax1-ax0));
 			this.y = ay0 + (ua*(ay1-ay0));
+			
+//			Ctx.beginPath();
+//			Ctx.rect (this.x, this.y, 10,10);
+//			Ctx.fill();
+			
 			this.info = INFO_LINES_INTERSECT;
 		}
 	}
@@ -217,8 +254,8 @@ CollisionObject.prototype.rayCircleIntersection = function (cx,cy,r, x0,y0,dx,dy
 	var four_a_c;
 	var one_over_2_A;
 	var square_root_part;
-	var t1;
-	var t2;
+	var u1;
+	var u2;
 
 	ray_origin_x = x0;	//(float)point_x;
 	ray_origin_y = y0;	//(float)point_y;
@@ -255,26 +292,28 @@ CollisionObject.prototype.rayCircleIntersection = function (cx,cy,r, x0,y0,dx,dy
 		return false;
 	}
 
+	this.info = INFO_COLLISION;
 	one_over_2_A = 1 / (2 * A);
 
 	square_root_part = b_squared - four_a_c;
 	square_root_part = Math.sqrt (square_root_part);
 	
-	t1 = (-B + square_root_part) * one_over_2_A;
-	t2 = (-B - square_root_part) * one_over_2_A;
+	u1 = (-B + square_root_part) * one_over_2_A;
+	u2 = (-B - square_root_part) * one_over_2_A;
 
 //	result.t1 = t1;
 //	result.t2 = t2;
 		// select the value of t nearest to the ray's origin.
-	if (t2 < t1)
+	if (u2 < u1)
 	{
-		t1 = t2;
+		u1 = u2;
 	}
 
-	this.t1 = t1;
+	this.u = u1;
 	return true;
 }
 
+var jjkkll = 0;
 CollisionObject.prototype.circleLineCollision = function (cx,cy,cr, vx, vy, dt, x0,y0,x1,y1)
 {
 	// does a collision test between a circle (cx,cy,cr) moving
@@ -282,6 +321,12 @@ CollisionObject.prototype.circleLineCollision = function (cx,cy,cr, vx, vy, dt, 
 	// with a stationary line (x0,y0) to (x1,y1)
 	
 	// assumes AABB test has already been done.
+
+	// There are TWO circle line collision routines.
+	// This one handles a collision within a line segment
+	// and a circle. it does NOT handle the endpoint collision checks.
+	// Done this way as collision response is different for both
+	// cases.
 
 	var dx;
 	var dy;
@@ -298,6 +343,7 @@ CollisionObject.prototype.circleLineCollision = function (cx,cy,cr, vx, vy, dt, 
 	var t2;
 	var r1;
 	var r2;
+	var tc;
 
 		// first need to find collision point on circle. To do this
 		// need to use point distance to line calculation.
@@ -315,33 +361,166 @@ CollisionObject.prototype.circleLineCollision = function (cx,cy,cr, vx, vy, dt, 
 	cpx = cx + (dx * cr); 	// (cpx,cpy) = the point on the circle
 	cpy = cy + (dy * cr);	// that will collide with the line first.
 	
-	Ctx.beginPath();
-	Ctx.rect (cpx - 3, cpy-3, 5,5);
-	Ctx.fill();
+	this.cpx = cpx;
+	this.cpy = cpy;
+
+//	Ctx.beginPath();
+//	Ctx.fillStyle="#00f";
+//	Ctx.rect (cpx - 3, cpy-3, 5,5);
+//	Ctx.fill();
 
 		// now need ray-cast a line from (cpx,cpy) to the line to find
 		// the point of collision within dt seconds.
 
 	x2 = cpx;
 	y2 = cpy;
-	x3 = cpx + (vx * dt);
-	x4 = cpy + (vy * dt);
-	
+	x3 = cpx + (vx * dt * 10);		// NOTE : *10 for testing 
+	y3 = cpy + (vy * dt * 10);
+
+	Ctx.beginPath();
+	Ctx.moveTo (x2,y2);
+	Ctx.lineTo (x3,y3);
+	Ctx.stroke();
+
 		// now need to see where lines cross. they have to cross
 		// between both end points for a collision to occur.
 
 	this.lineIntersectionTest (x2,y2,x3,y3, x0,y0,x1,y1);
-	
-	if (this.info == INFO_LINES_INTERSECT)
+
+	if (this.info != INFO_LINES_INTERSECT)
 	{
-			// ** TO DO **
+		return false;
+	}
+	
+		// lines intersect, so 
+	
 		// circle will collide with line between line end points
 		// within dt seconds.
 		
+	// (this.x , this.y ) = point of collision on the line.
+		
 		// time of collision = this.u * dt 
-		this.info = INFO_COLLISION;
+	this.t = this.u * dt;			// untested ????
+
+	this.info = INFO_COLLISION;
+	return true;
+}
+
+CollisionObject.prototype.circlePointCollision = function (cx,cy,cr, vx,vy, x0,y0)
+{
+	// test to see if a circle and a point collide.
+	// useful test for collisions with line end points.
+	// returns true if a collision can occur, and this.t1 is
+	// set to the time of collision.
+
+	var r;
+
+	r = this.rayCircleIntersection (cx,cy,cr, x0,y0,-vx,-vy);
+
+	return r;
+}
+
+CollisionObject.prototype.circleLineEndCollision = function (cx,cy,cr, vx,vy, dt, x0,y0, x1,y1)
+{
+		// returns false if no collision is possible, 
+		// otherwise returns true and sets t1 to be the collision time
+		// and nearest_endpoint to which endpoint is being collided with.
+		
+		// x,y = line end point of collision.
+
+	var r0;
+	var t0;
+
+	var u0;
+	var u1;
+	
+	var dx;
+	var dy;
+
+	var m;
+	var p;
+	
+	var x;
+	var y;
+	
+	var uc;	// u at collsion 
+	
+	r0 = this.circlePointCollision (cx,cy,cr, vx,vy, x0,y0);
+	u0 = this.u;
+	r1 = this.circlePointCollision (cx,cy,cr, vx,vy, x1,y1);
+	u1 = this.u;
+
+	if ((r0 == false) && (r1 == false))
+	{
+		this.nearest_endpoint = -1;
+		return false; 	// no collision possible.
 	}
 
+	if ((r0 == true) && (r1 == false))
+	{
+		x = x0;
+		y = y0;
+		this.nearest_endpoint = 0;
+		uc = u0;
+	}
+
+	if ((r0 == false) && (r1 == true))
+	{
+		x = x1;
+		y = y1;
+		this.nearest_endpoint = 1;
+		uc = u1;
+	}
+
+	if ((r0 == true) && (r1 == true))
+	{
+		x = x0;
+		y = y0;
+		this.nearest_endpoint = 0;
+		uc = u0;
+		if (u1 < u0)
+		{
+			x = x1;
+			y = y1;
+			this.nearest_endpoint = 1;
+			uc = u1;
+		}
+	}
+	
+	this.cpx = x + (-vx * uc);
+	this.cpy = y + (-vy * uc);
+	this.x = x;
+	this.y = y;
+	this.u = uc;
+
+	if (uc < 0)
+	{
+		return false;
+	}
+
+	// one last check, to see if collision will occur in dt seconds.
+	// if a collision occurs, then the distance from line to circle point
+	// will be less than or greater than u * V.
+
+	// e.g. distance from line to circle collision point:
+	
+	// (dt*vx)^2 + (dt*vy)^2
+	
+	// distance amount u
+	// (u*vx)^2 + (u*vy)^2
+	
+	// so if u < dt, collision will occur.
+
+	if (this.u > dt)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+
+/*
 	// ** TO DO **
 	// ---
 	// the circle could still collide the line end points,
@@ -354,9 +533,62 @@ CollisionObject.prototype.circleLineCollision = function (cx,cy,cr, vx, vy, dt, 
 	// note the velocity vector is reversed as from end point towards
 	// the circle 
 	r1 = this.rayCircleIntersection (cx,cy,cr, x0,y0,-vx,-vy);
+	t1 = this.t1;
 	r2 = this.rayCircleIntersection (cx,cy,cr, x1,y1,-vx,-vy);
+	t2 = this.t1;
+	
+	if (jjkkll == 0)
+	{
+		console.log ("r1:" + r1 + " r2:" + r2 + " t1:" + t1 + " t2:" + t2);
+		jjkkll = 1;
+	}
 
+		// 4 condition pairs to test.
+	if ((r1 == false) && (r2 == false))
+	{
+		return; 	// no collision possible.
+	}
+	if ((r1 == true) && (r2 == false))
+	{
+		tc = t1;
+	}
+	if ((r1 == false) && (r2 == true))
+	{
+		tc = t2;
+	}
+	if ((r1 == true) && (r2 == true))
+	{
+		tc = t1;
+		if (t2 < t1)
+		{
+			tc = t2;
+		}
+	}
+	
+	
+	Ctx.beginPath();
+	Ctx.rect (x1 - 3 + (tc * -vx), y1 - 3+ (tc * -vy), 5,5);
+	Ctx.rect (x1 , y1 , 3,3);
+	Ctx.fill();
+	
+	Ctx.beginPath();
+	Ctx.rect (cx-3,cy-3,6,6);
+	Ctx.fill();
+	
+	Ctx.beginPath();
+	Ctx.moveTo (x0,y0);
+	Ctx.lineTo (x0-vx, y0-vy);
+	Ctx.stroke();
+
+	Ctx.beginPath();
+	Ctx.moveTo (x1,y1);
+	Ctx.lineTo (x1-(vx*150), y1-(vy*150));
+	Ctx.stroke();
+	
+	// for now return false
+	return false;
 }
+*/
 
 CollisionObject.prototype.rayReflection = function (px,py, vx,vy, x0,y0,x1,y1)
 {
@@ -385,14 +617,32 @@ CollisionObject.prototype.rayReflection = function (px,py, vx,vy, x0,y0,x1,y1)
 	var d;
 	var d_dot_n;
 	
-	r = new Geom_Result();
+//	console.log ("oeoeoeoe");
+	
+//	r = new Geom_Result();
 
 		// calculate n and normalise it.
-	Geom_DistancePointToLine (px,py, x0,y0,x1,y1, r);
+//	Geom_DistancePointToLine (px,py, x0,y0,x1,y1, r);
 
-	console.log (r);
-	nx = r.x - px;
-	ny = r.y - py;
+	Ctx.beginPath();
+	Ctx.rect (30,30, 50,50);
+	Ctx.fill();
+
+	this.squaredDistancePointToLine (px,py, x0,y0,x1,y1);
+
+	Ctx.beginPath();
+	Ctx.rect (this.x, this.y, 5,5);
+	Ctx.fill();
+
+	nx = this.x - px;
+	ny = this.y - py;
+	
+	Ctx.beginPath();
+	Ctx.strokeStyle="#0f0";
+	Ctx.moveTo (this.x, this.y);
+	Ctx.lineTo (this.x + (nx*50), this.y + (ny*50));
+	Ctx.stroke;
+	Ctx.strokeStyle="#000";
 
 	d = Math.sqrt ((nx*nx)+(ny*ny));
 	if (d == 0)
@@ -403,14 +653,14 @@ CollisionObject.prototype.rayReflection = function (px,py, vx,vy, x0,y0,x1,y1)
 	}
 	nx /= d;
 	ny /= d;
-	
-	result.u = nx;
-	result.v = ny;
-	
+
+	this.u = nx;
+	this.v = ny;
+
 		// r = d-2(d.n)n
 	d_dot_n = (vx * nx) + (vy * ny);
-	this.x = vx - (2 * d_dot_n * nx);
-	this.y = vy - (2 * d_dot_n * ny);
+	this.rx = vx - (2 * d_dot_n * nx);
+	this.ry = vy - (2 * d_dot_n * ny);
 	
 	return true;
 }

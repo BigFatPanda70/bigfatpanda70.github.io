@@ -430,6 +430,26 @@ function BNB_PlayerBallCollisionTests (dt)
 	}
 }
 
+function BNB_BrickBallCollisionTime (s,b,dt)
+{
+		// *** UNDER CONSTRUCTION **
+	var ct = [0,0,0,0];
+	var top;
+	var left;
+	var right;
+	var bottom;
+	
+	var i;
+	var x0;
+	var y0;
+	var x1;
+	var y1;
+	
+	left = 0; top = 1; right = 2; bottom = 3;
+
+
+}
+
 function BNB_BrickBallCollided (s,b,dt)
 {
 	// returns true if they collide, false otherwise.

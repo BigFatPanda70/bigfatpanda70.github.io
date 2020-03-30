@@ -28,9 +28,10 @@ var Ctx;
 
 var Grad;
 
-var busy = false;
+var offsetx = 0;
+var offsety = 0;
 
-var hhhhh = 0;
+var busy = false;
 
 function CollisionTest(ctx)
 {
@@ -49,47 +50,111 @@ function CollisionTest(ctx)
 
 	var dt;
 	
-	dt = 5;
+	var cpx;
+	var cpy;
+	
+	var ex;
+	var ey;
+	
+	var r;
+	
+	dt = 5;		// assume moving for 5 seconds (for test).
 	
 	c = new CollisionObject();
 
 	x0 = 10;
 	y0 = 500;
-	x1 = 500;
-	y1 = 200;
+	x1 = 336;
+	y1 = 370;
+
+	x0 = 300;
+	y0 = 500;
+	x1 = 300;
+	y1 = 270;
+
+
+//	x1 = 400;
+//	y1 = 370;
+
+	vx = -0.8;
+	vy = 0.3;
 	
-	cx = 150;
-	cy = 150;
+	offsetx += vx;
+	offsety += vy;
+	
+	cx = 410+offsetx;
+	cy = 240+offsety;
 	cr = 80;
-	
-	vx = 8;
-	vy = 3;
-	
-	c.circleLineCollision (cx,cy,cr, vx, vy, dt, x0,y0,x1,y1);
-
-//	c.lineIntersectionTest (cx,cy,cx+vx,cy+vy, x0,y0,x1,y1)
-
-//	c.squaredDistancePointToLine (cx,cy, x0,y0,x1,y1);
-
-
-	if (hhhhh == 0)
-	{
-		console.log (c);
-		hhhhh = 1;
-	}
-	ctx.beginPath();
-	ctx.moveTo (x0,y0);
-	ctx.lineTo (x1,y1);
-	ctx.stroke();
 
 	ctx.beginPath();
 	ctx.arc (cx, cy, cr, 0, 2 * Math.PI);
 	ctx.stroke();
 
 	ctx.beginPath();
-	ctx.moveTo (cx,cy);
-	ctx.lineTo (cx+(vx*10),cy + (vy*10));
+	ctx.moveTo (x0,y0);
+	ctx.lineTo (x1,y1);
 	ctx.stroke();
+
+	ctx.beginPath();
+	ctx.moveTo (cx,cy);
+	ctx.lineTo (cx+(vx*100),cy + (vy*100));
+	ctx.stroke();
+
+	r = c.circleLineCollision (cx,cy,cr, vx, vy, dt, x0,y0,x1,y1);
+	
+	if (r == true)
+	{
+		cpx = c.cpx + (vx * c.t * 10);
+		cpy = c.cpy + (vy * c.t * 10);
+		Ctx.fillStyle="#f00";
+//		cpx = c.x;
+//		cpy = c.y;
+		Ctx.beginPath();
+		Ctx.rect (cpx,cpy,4,4);
+		Ctx.fill();
+		Ctx.fillStyle="#000";
+		
+			// NOTE : RAY REFLECTION WON'T WORK FOR ENDPOINT COLLISION
+
+		c.rayReflection(cx,cy, vx,vy, x0,y0,x1,y1);
+
+		Ctx.beginPath();
+		Ctx.moveTo (cpx, cpy);
+		Ctx.lineTo (cpx + (c.rx*200), cpy + (c.ry*200));
+		Ctx.stroke();
+		
+		return;
+	}
+
+	r = c.circleLineEndCollision (cx,cy,cr, vx*10,vy*10, dt, x0,y0, x1,y1);
+	if (r == false)
+	{
+		// no collision.
+		return;
+	}
+	
+//	ex = x0;
+//	ey = y0;
+//	if (c.nearest_endpoint == 1)
+//	{
+//		ex = x1;
+//		ey = y1;
+	//}
+	
+	ex = c.x;
+	ey = c.y;
+
+	Ctx.beginPath();
+	Ctx.rect (ex-2,ey-2,5,5);
+	Ctx.fill();
+	
+	Ctx.beginPath();
+	Ctx.moveTo (ex,ey);
+	Ctx.lineTo (c.cpx, c.cpy);	//ex + (-vx * c.u), ey + (-vy * c.u));
+	Ctx.stroke();
+	
+//	** TO DO ** determine which line end has collided and then
+//	work out the collision response.
 
 }
 
@@ -117,6 +182,7 @@ function doInits()
 	item = document.getElementById ("cv");
 	Ctx = item.getContext("2d");
 	
+	offsetx = 0.0;
 
 	UpdateGame();
 }
