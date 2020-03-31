@@ -72,7 +72,7 @@ var BNB_LEFT_WALL_X = -9;
 var BNB_RIGHT_WALL_X= 9;
 var BNB_TOP_WALL_Y = 19.5;
 
-var MAX_BALL_SPEED = 0.3;
+var MAX_BALL_SPEED = 3.0;	// 0.3;
 
 var PLAYER_SPEED = 0.2;
 
@@ -154,11 +154,11 @@ BallStruct.prototype.calcAABB = function(dt)
 	{
 		right += dx;
 	}
-	if (dy < 0)
+	if (dy > 0)
 	{
 		top += dy;
 	}
-	if (dy > 0)
+	if (dy < 0)
 	{
 		bottom += dy;
 	}
@@ -202,7 +202,7 @@ BrickStruct.prototype.calcAABB = function(dt)
 	this.left = this.x - (this.width/2);
 	this.right = this.left + this.width;
 	this.top = this.y + (this.height/2);
-	this.bottom = this.top - this.height;
+	this.bottom = this.y - (this.height/2);
 }
 
 	// --- 
@@ -291,8 +291,8 @@ function BNB_MoveBalls(dt)
 		vx = Balls[i].vx;
 		vy = Balls[i].vy;
 		
-		x += vx;
-		y += vy;
+		x += vx * dt;
+		y += vy * dt;
 		
 		if (y < -6)		{	vy *= -1;	}			// test code to stop ball disappearing off the bottom
 
@@ -366,6 +366,7 @@ function BNB_PlayerBallCollision (p,b,dt)
 	x3 = Balls[b].right;
 	y3 = Balls[b].bottom;
 	
+	
 	r = c.overlapAABB(x0,y0,x1,y1,  x2,y2,x3,y3);
 	if (r == false)
 	{
@@ -407,11 +408,11 @@ function BNB_PlayerBallCollisionTests (dt)
 							inc_v = 0;
 							if (Player[p].vx < 0)
 							{
-								inc_v = -0.05;
+								inc_v = -0.5;
 							}
 							if (Player[p].vx > 0)
 							{
-								inc_v = 0.05;
+								inc_v = 0.5;
 							}
 							vx += inc_v;
 							if (vx > MAX_BALL_SPEED)
@@ -467,10 +468,12 @@ function BNB_BallBrickCollisionTime (ball_idx, brick_idx, dt)
 	
 	var nearest;
 	var nearest_idx;
+	var t;
 
 	c = new CollisionObject();
 	
 	ball = Balls[ball_idx];
+	brick = Bricks[brick_idx];
 	
 	cx = ball.x;
 	cy = ball.y;
@@ -482,16 +485,16 @@ function BNB_BallBrickCollisionTime (ball_idx, brick_idx, dt)
 	{
 		console.log ("BALL");
 		console.log (ball);
-		console.log ("cx==:" + cx + " cy==:" + cy);
+		console.log ("BRICK");
+		console.log (brick);
+//		console.log ("cx==:" + cx + " cy==:" + cy);
 	}
-
-	brick = Bricks[brick_idx];
 
 	x0 = brick.x - (brick.width/2);
 	x1 = x0 + brick.width;
 
 	y0 = brick.y + (brick.height/2);
-	y1 = y0 - brick.height;
+	y1 = brick.y - (brick.height/2);	//y0 - brick.height;
 	
 	if (tibbs == 0)
 	{
@@ -500,14 +503,18 @@ function BNB_BallBrickCollisionTime (ball_idx, brick_idx, dt)
 		console.log ("y : " + brick.y + " h/2:" + (brick.height/2));
 		console.log ("x0:" + x0 + " y0" + y0 + " x1:" + x1 + " y1:" + y1);
 		console.log (brick);
-		tibbs = 1;
+		
+//		ball.vy = 0;
 	}
 
 
-/*	r = c.circleLineCollision (cx,cy,cr, vx, vy, dt, x0,y0,x1,y0);		// check top
+	r = c.circleLineCollision (cx,cy,cr, vx, vy, dt, x0,y0,x1,y0);		// check top
+
 	if (r == true)
 	{
-		if (ct <= dt)
+			if (tibbs == 0)	{ console.log ("collide top"); }
+
+		if (c.t <= dt)
 		{
 			ct[0] = c.t;
 		}
@@ -516,33 +523,44 @@ function BNB_BallBrickCollisionTime (ball_idx, brick_idx, dt)
 	r = c.circleLineCollision (cx,cy,cr, vx, vy, dt, x1,y0,x1,y1);	// check right
 	if (r == true)
 	{
-		if (ct <= dt)
+		if (c.t <= dt)
 		{
 			ct[1] = c.t;
 		}
 	}
-*/
+
 	r = c.circleLineCollision (cx,cy,cr, vx, vy, dt, x0,y1,x1,y1);	// check bottom
+	
 	if (r == true)
 	{
-		brick.state = BNB_BRICK_EXPLODING;
-		brick.exploding = BNB_EXPLOSION_TIME;
-		if (ct <= dt)
+			if (tibbs == 0)	{ console.log ("collide bot: ct:" + c.t + " dt:" + dt); }
+
+
+//		brick.state = BNB_BRICK_EXPLODING;
+//		brick.exploding = BNB_EXPLOSION_TIME;
+		if (c.t <= dt)
 		{
 			ct[2] = c.t;
 		}
 	}
-/*	r = c.circleLineCollision (cx,cy,cr, vx, vy, dt, x0,y0,x0,y1);	// check left
+
+	r = c.circleLineCollision (cx,cy,cr, vx, vy, dt, x0,y0,x0,y1);	// check left
 	if (r == true)
 	{
-		if (ct <= dt)
+		if (c.t <= dt)
 		{
 			ct[3] = c.t;
 		}
 	}
-*/	
+	
 	if ((ct[0] == -1) && (ct[1] == -1) && (ct[2] == -1) && (ct[3] == -1))
 	{
+		if (tibbs == 0)
+		{
+			console.log ("not colliding");
+		tibbs = 1;
+		}
+
 		return;	// not colliding
 	}
 
@@ -556,9 +574,11 @@ function BNB_BallBrickCollisionTime (ball_idx, brick_idx, dt)
 			{
 				nearest = ct[i];
 				nearest_idx = i;
+				
 			}
 		}
 	}
+		tibbs = 1;
 	
 	if (nearest_idx == -1)
 	{
@@ -579,6 +599,7 @@ function BNB_BallBrickCollisionTime (ball_idx, brick_idx, dt)
 	brick.exploding = BNB_EXPLOSION_TIME;
 }
 
+	var monkey = 0;
 function BNB_BrickBallCollided (s,b,dt)
 {
 	// returns true if their AABB area collide, false otherwise.
@@ -603,17 +624,21 @@ function BNB_BrickBallCollided (s,b,dt)
 	x3 = Balls[b].right;
 	y3 = Balls[b].bottom;
 	
-	
+		// womble
 	var ox;
 	var oy;
 	var s;
 	s = 20;
-	ox = 250;
+	ox = 150;
 	oy = 200;
 	Ctx.beginPath();
 	Ctx.strokeStyle = "#ff0000";
 	Ctx.moveTo (ox + (x0*s), oy - (y0*s));
 	Ctx.lineTo (ox + (x1*s), oy - (y0*s));
+	Ctx.stroke();
+	Ctx.beginPath();
+	Ctx.strokeStyle = "#888888";
+	Ctx.moveTo (ox + (x1*s), oy - (y0*s));
 	Ctx.lineTo (ox + (x1*s), oy - (y1*s));
 	Ctx.lineTo (ox + (x0*s), oy - (y1*s));
 	Ctx.lineTo (ox + (x0*s), oy - (y0*s));
@@ -623,12 +648,22 @@ function BNB_BrickBallCollided (s,b,dt)
 	Ctx.strokeStyle = "#ff00ff";
 	Ctx.moveTo (ox + (x2*s), oy - (y2*s));
 	Ctx.lineTo (ox + (x3*s), oy - (y2*s));
+	Ctx.stroke();
+	Ctx.beginPath();
+	Ctx.strokeStyle = "#888888";
+	Ctx.moveTo (ox + (x3*s), oy - (y2*s));
 	Ctx.lineTo (ox + (x3*s), oy - (y3*s));
 	Ctx.lineTo (ox + (x2*s), oy - (y3*s));
 	Ctx.lineTo (ox + (x2*s), oy - (y2*s));
 	Ctx.stroke();
 	
-
+	if (monkey == 0)
+	{
+		console.log ("monkey");
+		console.log ("x0:" + x0 + " x1:" + x1 + " y0:" + y0 + " y1:" + y1);
+		console.log ("x2:" + x2 + " x3:" + x3 + " y2:" + y2 + " y3:" + y3);
+		monkey = 1;
+	}
 	
 	
 	c = new CollisionObject();
@@ -750,7 +785,7 @@ function BNB_InitBricks (level)
 	}
 	
 	// test value.
-	i = 0;
+/*	i = 0;
 	Bricks
 	if (i == Bricks.length)
 	{
@@ -771,7 +806,7 @@ function BNB_InitBricks (level)
 	Bricks[i].calcAABB(0);
 
 	return;
-
+*/
 	ox = -((BNB_NUM_COLUMNS-1) * BNB_BRICK_WIDTH) / 2;
 	oy = BNB_BRICK_WALL_Y;
 	i = 0;
@@ -792,9 +827,9 @@ function BNB_InitBricks (level)
 			Bricks[i].red = 255;
 			Bricks[i].green = 255;
 			Bricks[i].blue = 255;
-			
+
 			Bricks[i].exploding = 0;
-			
+
 			Bricks[i].calcAABB(0);
 			i++;
 		}
@@ -822,9 +857,15 @@ function BNB_InitBalls()
 
 	Balls[i].state = BALL_ON;
 	Balls[i].x = 0;
-	Balls[i].y = 0;
-	Balls[i].vx = 0
-	Balls[i].vy = +0.005
+//	Balls[i].y = 2.849000000000032;	//2;
+//	Balls[i].vx = 0
+//	Balls[i].vy = 0.15
+
+	Balls[i].y = 2;
+	Balls[i].vx = 3;
+	Balls[i].vy = 4;
+
+
 	Balls[i].radius = 0.25;
 	return;
 
@@ -913,6 +954,8 @@ function BNB_DoMainLoop(dt)
 	BNB_BrickBallCollisions(dt);
 
 	BNB_MoveBalls(dt);
+	
+//	console.log (Balls[0].y);
 	
 	BNB_ExplodeBricks();
 }

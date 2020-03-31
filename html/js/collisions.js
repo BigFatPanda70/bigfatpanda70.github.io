@@ -23,6 +23,13 @@ Collision between a point and a line...
 need to find the tangent of the circle in the direction of the point,
 then use this as the line to calculate the reflection vector.
 
+
+	 31st March 2020
+	-----------------
+	Problems with rounding errors abound !!!  Need to check that 
+	circle and line are not initially colliding as this could occur
+	due to rounding errors and very small numbers.
+
 */
 
 var INFO_LINES_INTERSECT = 0;
