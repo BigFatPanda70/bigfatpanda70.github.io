@@ -374,8 +374,8 @@ CollisionObject.prototype.circleLineCollision = function (cx,cy,cr, vx, vy, dt, 
 
 	x2 = cpx;
 	y2 = cpy;
-	x3 = cpx + (vx * dt * 10);		// NOTE : *10 for testing 
-	y3 = cpy + (vy * dt * 10);
+	x3 = cpx + (vx * dt);	// * 10);		// NOTE : *10 for testing 
+	y3 = cpy + (vy * dt);	// * 10);
 
 	Ctx.beginPath();
 	Ctx.moveTo (x2,y2);
@@ -385,13 +385,30 @@ CollisionObject.prototype.circleLineCollision = function (cx,cy,cr, vx, vy, dt, 
 		// now need to see where lines cross. they have to cross
 		// between both end points for a collision to occur.
 
+
 	this.lineIntersectionTest (x2,y2,x3,y3, x0,y0,x1,y1);
+	
+	if (jjkkll == 0)
+	{
+		console.log ("oooooo");
+		console.log ("cpx:" + cpx + " cpy:" + cpy + " cx:" + cx + " cy :" + cy + " cr:" + cr);
+		console.log ("x0:" + x0 + " y0:" + y0 + " x1:" + x1 + " y1:" + y1);
+		console.log ("..");
+		console.log ("x2:" + x2 + " y2:" + y2 + " x3:" + x3 + " y3:" + y3);
+		jjkkll = 1;
+	}
+
 
 	if (this.info != INFO_LINES_INTERSECT)
 	{
 		return false;
 	}
 	
+	if (jjkkll == 0)
+	{
+		console.log ("COLLIIISSSOOONNN");
+		jjkkll = 1;
+	}
 		// lines intersect, so 
 	
 		// circle will collide with line between line end points

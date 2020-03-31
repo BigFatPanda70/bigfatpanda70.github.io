@@ -152,7 +152,7 @@ body
 		padding:0;
 		overflow: hidden;
 		display:block;
-		background-color:#000000;
+		background-color:#ffffff;
 		width:100%;					/* width = container width */
 		height:100%;				/* height = container height */
 }
@@ -1544,10 +1544,12 @@ function UpdateGame()
 	dt = 1/50;		// timing is 1/50th of a second.
 	
 	DoInputs();
-	
-	BNB_DoGame(dt);
 
 	Ctx.clearRect(0,0,Canvas.width, Canvas.height);
+
+	Ctx.strokeStyle = "#000000";
+	BNB_DoGame(dt);
+
 	
 	BallRotateX += 2.5;
 	BallRotateY += 3.1;

@@ -352,6 +352,7 @@ function BNB_PlayerBallCollision (p,b,dt)
 	var y2;
 	var x3;
 	var y3;
+	
 
 	c = new CollisionObject();
 
@@ -430,14 +431,22 @@ function BNB_PlayerBallCollisionTests (dt)
 	}
 }
 
-function BNB_BrickBallCollisionTime (s,b,dt)
+var tibbs = 0;
+function BNB_BallBrickCollisionTime (ball_idx, brick_idx, dt)
 {
+		// there are 8 collisions to test for
+		// 4 corners and 4 sides.
+		
+		// this seems like complete overkill..
+	
 		// *** UNDER CONSTRUCTION **
-	var ct = [0,0,0,0];
+
+	var ct = [-1,-1,-1,-1,-1,-1,-1,-1];	// 4 walls, 4 points.
 	var top;
 	var left;
 	var right;
 	var bottom;
+	var c;
 	
 	var i;
 	var x0;
@@ -445,14 +454,134 @@ function BNB_BrickBallCollisionTime (s,b,dt)
 	var x1;
 	var y1;
 	
-	left = 0; top = 1; right = 2; bottom = 3;
+	var cx;
+	var cy;
+	var cr;
+	var vx;
+	var vy;
+	
+	var ball;
+	var brick;
+	
+	var r;
+	
+	var nearest;
+	var nearest_idx;
+
+	c = new CollisionObject();
+	
+	ball = Balls[ball_idx];
+	
+	cx = ball.x;
+	cy = ball.y;
+	cr = ball.radius;
+	vx = ball.vx;
+	vy = ball.vy;
+
+	if (tibbs == 0)
+	{
+		console.log ("BALL");
+		console.log (ball);
+		console.log ("cx==:" + cx + " cy==:" + cy);
+	}
+
+	brick = Bricks[brick_idx];
+
+	x0 = brick.x - (brick.width/2);
+	x1 = x0 + brick.width;
+
+	y0 = brick.y + (brick.height/2);
+	y1 = y0 - brick.height;
+	
+	if (tibbs == 0)
+	{
+		console.log ("BRICK");
+		console.log (brick_idx);
+		console.log ("y : " + brick.y + " h/2:" + (brick.height/2));
+		console.log ("x0:" + x0 + " y0" + y0 + " x1:" + x1 + " y1:" + y1);
+		console.log (brick);
+		tibbs = 1;
+	}
 
 
+/*	r = c.circleLineCollision (cx,cy,cr, vx, vy, dt, x0,y0,x1,y0);		// check top
+	if (r == true)
+	{
+		if (ct <= dt)
+		{
+			ct[0] = c.t;
+		}
+	}
+	
+	r = c.circleLineCollision (cx,cy,cr, vx, vy, dt, x1,y0,x1,y1);	// check right
+	if (r == true)
+	{
+		if (ct <= dt)
+		{
+			ct[1] = c.t;
+		}
+	}
+*/
+	r = c.circleLineCollision (cx,cy,cr, vx, vy, dt, x0,y1,x1,y1);	// check bottom
+	if (r == true)
+	{
+		brick.state = BNB_BRICK_EXPLODING;
+		brick.exploding = BNB_EXPLOSION_TIME;
+		if (ct <= dt)
+		{
+			ct[2] = c.t;
+		}
+	}
+/*	r = c.circleLineCollision (cx,cy,cr, vx, vy, dt, x0,y0,x0,y1);	// check left
+	if (r == true)
+	{
+		if (ct <= dt)
+		{
+			ct[3] = c.t;
+		}
+	}
+*/	
+	if ((ct[0] == -1) && (ct[1] == -1) && (ct[2] == -1) && (ct[3] == -1))
+	{
+		return;	// not colliding
+	}
+
+	nearest = dt;
+	nearest_idx = -1;
+	for (i = 0; i < 4; i++)
+	{
+		if (ct[i] != -1)
+		{
+			if (ct[i] <= nearest)
+			{
+				nearest = ct[i];
+				nearest_idx = i;
+			}
+		}
+	}
+	
+	if (nearest_idx == -1)
+	{
+		// gone wrong somewhere ???
+		return;
+	}
+	
+	// for now.. assume axis aligned walls for easy reflection.
+	switch (nearest_idx)
+	{
+		case 0:		ball.vy *= -1;  break;
+		case 1:		ball.vx *= -1;	break;
+		case 2:		ball.vy *= -1;	break;
+		case 3:		ball.vx *= -1;	break;
+	}
+
+	brick.state = BNB_BRICK_EXPLODING;
+	brick.exploding = BNB_EXPLOSION_TIME;
 }
 
 function BNB_BrickBallCollided (s,b,dt)
 {
-	// returns true if they collide, false otherwise.
+	// returns true if their AABB area collide, false otherwise.
 	var r;
 	var c;
 	var x0;
@@ -474,7 +603,37 @@ function BNB_BrickBallCollided (s,b,dt)
 	x3 = Balls[b].right;
 	y3 = Balls[b].bottom;
 	
+	
+	var ox;
+	var oy;
+	var s;
+	s = 20;
+	ox = 250;
+	oy = 200;
+	Ctx.beginPath();
+	Ctx.strokeStyle = "#ff0000";
+	Ctx.moveTo (ox + (x0*s), oy - (y0*s));
+	Ctx.lineTo (ox + (x1*s), oy - (y0*s));
+	Ctx.lineTo (ox + (x1*s), oy - (y1*s));
+	Ctx.lineTo (ox + (x0*s), oy - (y1*s));
+	Ctx.lineTo (ox + (x0*s), oy - (y0*s));
+	Ctx.stroke();
+
+	Ctx.beginPath();
+	Ctx.strokeStyle = "#ff00ff";
+	Ctx.moveTo (ox + (x2*s), oy - (y2*s));
+	Ctx.lineTo (ox + (x3*s), oy - (y2*s));
+	Ctx.lineTo (ox + (x3*s), oy - (y3*s));
+	Ctx.lineTo (ox + (x2*s), oy - (y3*s));
+	Ctx.lineTo (ox + (x2*s), oy - (y2*s));
+	Ctx.stroke();
+	
+
+	
+	
 	c = new CollisionObject();
+	
+	
 
 	r = c.overlapAABB (x0,y0,x1,y1, x2,y2,x3,y3);
 	if (r == false)
@@ -488,7 +647,7 @@ function BNB_BrickBallCollided (s,b,dt)
 	return true;
 }
 
-
+var gggk = 0;
 function BNB_BrickBallCollisions(dt)
 {
 	var s;
@@ -506,9 +665,11 @@ function BNB_BrickBallCollisions(dt)
 					r = BNB_BrickBallCollided(s,b,dt);
 					if (r == true)
 					{
-						Bricks[s].state = BNB_BRICK_EXPLODING;
-						Bricks[s].exploding = BNB_EXPLOSION_TIME;
-						Balls[b].vy *= -1;
+							// need to do some more checks.
+						BNB_BallBrickCollisionTime (b,s,dt);
+//						Bricks[s].state = BNB_BRICK_EXPLODING;
+//						Bricks[s].exploding = BNB_EXPLOSION_TIME;
+//						Balls[b].vy *= -1;
 					}
 				}
 			}
@@ -587,6 +748,29 @@ function BNB_InitBricks (level)
 	{
 		Bricks[i].status = BNB_BRICK_OFF;
 	}
+	
+	// test value.
+	i = 0;
+	Bricks
+	if (i == Bricks.length)
+	{
+		Bricks[i] = new BrickStruct();
+	}
+	Bricks[i].state = BNB_BRICK_ON;
+	Bricks[i].x = 0;
+	Bricks[i].y = 4;
+	Bricks[i].number_of_hits_required = 1;
+	Bricks[i].width = BNB_BRICK_WIDTH;
+	Bricks[i].height= BNB_BRICK_HEIGHT;
+	Bricks[i].red = 255;
+	Bricks[i].green = 255;
+	Bricks[i].blue = 255;
+			
+	Bricks[i].exploding = 0;
+			
+	Bricks[i].calcAABB(0);
+
+	return;
 
 	ox = -((BNB_NUM_COLUMNS-1) * BNB_BRICK_WIDTH) / 2;
 	oy = BNB_BRICK_WALL_Y;
@@ -627,6 +811,22 @@ function BNB_InitBalls()
 	{
 		Balls[i] = BALL_OFF;
 	}
+	
+	
+	// test values
+	i = 0;
+	if (i == Balls.length)
+	{
+			Balls[i] = new BallStruct();
+	}
+
+	Balls[i].state = BALL_ON;
+	Balls[i].x = 0;
+	Balls[i].y = 0;
+	Balls[i].vx = 0
+	Balls[i].vy = +0.005
+	Balls[i].radius = 0.25;
+	return;
 
 	i = 0;
 	while (i < 2)
