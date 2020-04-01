@@ -6,7 +6,7 @@
 //
 //	Author	:	Nick Fleming.
 //
-//	Updated	:	26th March 2020
+//	Updated	:	1st April 2020
 //
 //
 // some code to handle joysticks.
@@ -223,6 +223,11 @@ axes[3]      Vertical axis for right stick (negative up/positive down)
 	Ok.. so.. Left button cluster is a problem.. as
 	they ALL appear to map to the axes when a stick is not available.
 
+	 1st April 2020
+	----------------
+		Chrome browser doesn't like my joystick code.. so disabling it for now.
+	Works perfectly well in firefox using standard code.
+
 */
 
 	// joystick identifiers 
@@ -257,6 +262,7 @@ var JOYSTICK_LBC_BOTTOM = 13;
 var JOYSTICK_LBC_LEFT   = 14;
 var JOYSTICK_LBC_RIGHT  = 15;
 
+var Joystick_isChrome = false;
 
 var joystick_map_standard =
 [
@@ -431,6 +437,9 @@ function Joystick_GetMapIndex(jstk)
 	var id_str;
 	var id;
 
+	if (jstk == null)	return JOYSTICK_ID_STANDARD;
+	if (typeof jstk.id === 'undefined')	return  JOYSTICK_ID_STANDARD;	//for chrome
+
 	id_str = jstk.id.substring (0,4);
 	
 	switch (id_str)
@@ -478,6 +487,9 @@ function Joystick_GetMapIndex(jstk)
 
 function Joystick_Available()
 {
+	var Joystick_isChrome = !!window.chrome && (!!window.chrome.webstore || !!window.chrome.runtime);
+	
+	
 	var r;
     r = "getGamepads" in navigator;
     if (r)
@@ -548,6 +560,13 @@ function Joystick_AxisCount(jidx)
 
 function Joystick_LBC (mapidx, jidx, standard_button_idx)
 {
+//	if (Joystick_isChrome)	return 0;
+//	if (typeof Joystick === 'undefined')	return 0;
+//	if (Joystick == null) return 0;
+//	if ((jidx < 0) || (Joystick.length <= jidx))	return 0;
+	if (Joystick[jidx] == null)	return 0;
+	
+
 		// LBC - left button cluster. These 'standard' buttons
 		// are often reported as axis values. To provide
 		// consistency, if app wants to know the standard button
@@ -657,6 +676,7 @@ function Joystick_LBC (mapidx, jidx, standard_button_idx)
 function Joystick_GetButton (jidx, standard_button_idx)
 {
 		// standard_button_idx = standard button index.
+	if (Joystick_isChrome)	return 0;
 
 	var mapidx;
 	var map;
@@ -695,6 +715,8 @@ function Joystick_GetButton (jidx, standard_button_idx)
 
 function Joystick_GetAxis (jidx, axis_idx)
 {
+	if (Joystick_isChrome)	return 0;
+
 	if (Joystick == null)	return 0;
 	if (Joystick.length < 1)	return 0;
 	if ((jidx < 0) || (Joystick.length <= jidx))	return 0;
