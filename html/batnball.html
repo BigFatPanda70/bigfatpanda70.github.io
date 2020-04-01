@@ -10,7 +10,7 @@ Info	:	Version 0.0	10th March 2020
 
 Author	:	Nick Fleming
 
-Updated	:	28th March 2020
+Updated	:	1st April 2020
 
  11th March :
 ----------------
@@ -109,6 +109,9 @@ something that works.
 		Added a simple 'explosion' effect where the colour of the
 	object flashes and then dims, and the object scales to zero
 
+	 1st April 2020
+	-----------------
+		Doing a little code cleanup..
 -->
 
 <html>
@@ -127,15 +130,6 @@ body
 	text-align:center;
 }
 
-/*.container
-{
-	width:50%;
-	height:100%;
-	background-color:red;
-	margin: 0 auto;
-}
-*/
-
 .frame_counter
 {
 	position:absolute;
@@ -152,7 +146,8 @@ body
 		padding:0;
 		overflow: hidden;
 		display:block;
-		background-color:#ffffff;
+		background-color:#eecc00;
+		background-image: linear-gradient(#ff0000, #ffff00, #00ffff); 
 		width:100%;					/* width = container width */
 		height:100%;				/* height = container height */
 }
@@ -226,13 +221,6 @@ var far_z = 1000;
 
 var Canvas;
 var Ctx;
-
-
-//var BallX = 0;
-//var BallY = -4;
-//var BallZ = -10;	// constant.
-//var BallIncX = -0.1;
-//var BallIncY = 0.1;
 
 var BallObjectId;
 var BatObjectId;
@@ -336,41 +324,6 @@ var faces =
 	23,20,22
 ];
 
-/*var WallVertices = 
-[
-	-1,  1, -1,
-	 1,  1, -1,
-	 1, -1, -1,
-	-1, -1, -1,
-	
-	 1,  1,  1,
-	-1,  1,  1,
-	-1, -1,  1,
-	 1, -1,  1
-];
-
-var WallFaces = 
-[
-	0,1,2,		// front
-	2,3,0,
-
-	4,5,6,		// back
-	6,7,4,
-	
-	5,0,3,		// left
-	3,6,5,
-	
-	1,4,7,		// right
-	7,2,1,
-	
-	5,4,1,		// top
-	1,0,5,
-	
-	3,2,7,		// bottom
-	7,6,3
-];
-*/
-
 var ProjectionMatrix;
 var Camera;
 var CameraAngle = 0;
@@ -447,8 +400,6 @@ function DrawList_AddItem (object_index, object_z, x0,y0,x1,y1,x2,y2, rgbhex)
 //	{
 //		return;
 //	}
-
-//	console.log ("object z" + object_z);
 
 	b= ((object_z - near_z) * DRAWLIST_MAXBUCKETS) / (far_z - near_z);
 	b = Math.floor(b);
@@ -540,7 +491,6 @@ function Draw_DrawList()
 	var d;
 
 	for (b = DrawList_BucketArray.length-1; b >= 0; b--)
-//	for (b = 0; b < DrawList_BucketArray.length; b++)
 	{
 		if (DrawList_BucketArray[b] != DRAWLIST_INVALID_IDX)
 		{
@@ -631,10 +581,6 @@ function Model3D (vertex_array, face_array)
 		this.b[i] = this.ia;
 		i++;
 	}
-
-//	console.log (this.initial_verts);
-//	console.log ("num v:" + this.initial_verts.length);
-//	console.log ("num f:" + this.faces.length);
 }
 
 Model3D.prototype.initNormals = function()
@@ -679,10 +625,6 @@ Model3D.prototype.initNormals = function()
 	
 	var w;
 
-//	if (once == 0)
-//	{
-//		console.log (this.initial_verts);
-//	}
 
 	w = 1;		// 4th value for normal vector
 	i = 0;
@@ -704,33 +646,16 @@ Model3D.prototype.initNormals = function()
 		y2 = this.initial_verts[v2+1];
 		z2 = this.initial_verts[v2+2];
 		
-//		if (once == 0)
-//		{
-//			console.log ("i:" + i + " v0:" + v0 + " x0:" + x0 + " y0:" + y0 + " z0:" + z0);
-//			console.log ("i:" + i + " v1:" + v1 + " x1:" + x1 + " y1:" + y1 + " z1:" + z1);
-//			console.log ("i:" + i + " v2:" + v2 + " x2:" + x2 + " y2:" + y2 + " z2:" + z2);
-//		}
-
 			// U = p1 - p0
 		ux = x1 - x0;	//this.initial_verts[v1+0] - this.initial_verts[v0+0];
 		uy = y1 - y0;	//this.initial_verts[v1+1] - this.initial_verts[v0+1];
 		uz = z1 - z0;	//this.initial_verts[v1+2] - this.initial_verts[v0+2];
 		
-//		if (once == 0)
-//		{
-//			console.log ("i:" + i + " ux:" + ux + " uy:" + uy + " uz:" + uz);
-//		}
-
 
 			// V = p2 = p0
 		vx = x2 - x0;	//this.initial_verts[v2+0] - this.initial_verts[v0+0];
 		vy = y2 - y0;	//this.initial_verts[v2+1] - this.initial_verts[v0+1];
 		vz = z2 - z0;	//this.initial_verts[v2+2] - this.initial_verts[v0+2];
-
-//		if (once == 0)
-//		{
-//			console.log ("i:" + i + " vx:" + vx + " vy:" + vy + " vz:" + vz);
-//		}
 
 			// normal is cross product of two edge  vectors N = U X V
 		nx = (uy*vz)-(uz*vy);	// Nx = UyVz - UzVy
@@ -749,12 +674,6 @@ Model3D.prototype.initNormals = function()
 		this.initial_normal[i++] = ny;
 		this.initial_normal[i++] = nz;
 		this.initial_normal[i++] = w;
-//		if (once == 0)
-//		{
-//			console.log ("i:" + i + " nx:" + nx);
-//			console.log ("i:" + i + " ny:" + ny);
-//			console.log ("i:" + i + " nz:" + nz);
-//		}
 	}
 }
 
@@ -821,12 +740,6 @@ Model3D.prototype.calcLighting = function (light_x, light_y, light_z)
 		lz /= dl;
 	}
 
-//	if (once == 0)
-//	{
-//		console.log ("lx:" + lx + " ly:" + ly + " lz:" + lz);
-//		console.log (this.normal);
-//	}
-
 	k =0.5;		// k = diffuse intensity
 
 
@@ -862,51 +775,17 @@ Model3D.prototype.transform = function (tx,ty,tz, rx,ry,rz, sx,sy,sz)
 	m = MatrixIdentity();
 
 		// do normal rotations
-//	n = MatrixIdentity();
-//	n = MatrixRotate (n,rx,ry,rz);
-//	MatrixVectorArrayMultiply (m, this.initial_verts, this.vertices);
-
-//	console.log ("identity ");
-//	console.log (m);
 	m = MatrixScale (m, sx,sy,sz);
 	m = MatrixRotate (m, rx,ry,rz);
 	m = MatrixTranslate (m, tx,ty,tz);
-/*
-	if (once == 0)
-	{
-		console.log ("before transform .....");
-		console.log ("z0:" + this.vertices[2]);
-		console.log ("z1:" + this.vertices[5]);
-		console.log ("z2:" + this.vertices[8]);
-		console.log ("z3:" + this.vertices[11]);
-	}
-*/
+
 	if (EnableCamera == true)
 	{
 		m = MatrixMultiply (Camera.cam_matrix, m);
-//		m = MatrixRotate (m, 0,90,0);
-
 	}
 
 	MatrixVectorArrayMultiply (m, this.initial_verts, this.vertices);
 
-/*	if (once == 0)
-	{
-		console.log ("after transform .....");
-		console.log ("z0:" + this.vertices[2]);
-		console.log ("z1:" + this.vertices[6]);
-		console.log ("z2:" + this.vertices[10]);
-		console.log ("z3:" + this.vertices[14]);
-
-		console.log ("z0:" + this.vertices[18]);
-		console.log ("z1:" + this.vertices[22]);
-		console.log ("z2:" + this.vertices[26]);
-		console.log ("z3:" + this.vertices[30]);
-	}
-*/
-
-//	console.log ("verts");
-//	console.log (this.vertices);
 }
 
 function Object3D(ref_model_3d)
@@ -1206,9 +1085,9 @@ function PositionCamera()
 //		CameraAngle -= 360;
 //	}
 
-	x = 0;
-	y = 0;
-	z = 44;
+//	x = 0;
+//	y = 0;
+//	z = 44;
 
 	Camera.setCamera (x,y,z, 0, 0, 0);
 }
@@ -1283,13 +1162,18 @@ function DrawGame()
 
 	var rgb = 
 	[
-		0, 0, 0.9,
-		0,0.7,0.7,
-		0.8,0,0.5,
-		1.0,0.5,0,
-		1.0,0.7,0,
-		1.0,1.2,0.1,
+		0, 0, 1,
+		0, 1, 1,
+		1, 0, 1,
+		1, 1, 0,
+		1, 0, 0,
+		0, 0.5, 0,
 	];
+	
+	var r;
+	var g;
+	var b;
+	var ink;
 
 //	TestObjects = [];
 //	n = 0;
@@ -1375,9 +1259,21 @@ function DrawGame()
 			TestObjects[n].sy = 1;
 			TestObjects[n].sz = 1;
 			
-			TestObjects[n].red = rgb[0 + (Math.floor((i/12))*3)];
-			TestObjects[n].green = rgb[1 + (Math.floor((i/12))*3)];
-			TestObjects[n].blue = rgb[2 + (Math.floor((i/12))*3)];
+			ink =  Math.floor (i / 12);
+			r = rgb[(ink*3)+0];
+			g = rgb[(ink*3)+1];
+			b = rgb[(ink*3)+2];
+			
+			if (Bricks[i].number_of_hits_required > 1)
+			{
+				r = 1;
+				g = 1;
+				b = 1;
+			}
+
+			TestObjects[n].red = r;	//rgb[0 + (Math.floor((i/12))*3)];
+			TestObjects[n].green = g;	//rgb[1 + (Math.floor((i/12))*3)];
+			TestObjects[n].blue = b;	//rgb[2 + (Math.floor((i/12))*3)];
 			n++;
 		}
 		if (Bricks[i].state == BNB_BRICK_EXPLODING)
@@ -1690,17 +1586,6 @@ function Init_3D_Objects()
 	var y;
 	var i;
 	var ox;
-/*	
-	var rgb = 
-	[
-		0, 0, 0.9,
-		0,0.7,0.7,
-		0.8,0,0.5,
-		1.0,0.5,0,
-		1.0,0.7,0,
-		1.0,1.2,0.1,
-	];
-*/
 	
 	i = 0;
 	TestObjects[i] = new Object3D(WallModel);
@@ -1733,49 +1618,6 @@ function Init_3D_Objects()
 	TestObjects[i].blue = 1;
 	i++;
 
-/*
-	BatObjectId = i;
-	TestObjects[i] = new Object3D(BatModel);
-	TestObjects[i].state = OBJECT_ON;
-	TestObjects[i].x = 0;
-	TestObjects[i].y = -5;
-	TestObjects[i].z = -10;
-	TestObjects[i].red = 1;
-	TestObjects[i].green = 0.5;
-	TestObjects[i].blue = 0;
-	i++;
-
-	BallObjectId = i;
-	TestObjects[i] = new Object3D(BallModel);
-	TestObjects[i].state = OBJECT_ON;
-	TestObjects[i].x = 0;
-	TestObjects[i].y = -3;
-	TestObjects[i].z = -10;
-	TestObjects[i].red = 0.95;
-	TestObjects[i].green = 0.9;
-	TestObjects[i].blue = 0.8;
-	i++;
-*/	
-	
-	
-	
-/*
-	ox = -(11 * BRICK_WIDTH) /2;
-	for (y = 0; y < 6; y++)
-	{
-		for (x = 0; x < 12; x++)
-		{
-			TestObjects[i] = new Object3D(BrickModel);
-			TestObjects[i].x = ox + (x * BRICK_WIDTH);
-			TestObjects[i].y = 4 + (y * BRICK_HEIGHT);
-			TestObjects[i].z = -10;
-			TestObjects[i].red = rgb[y*3];			//)(y/5);
-			TestObjects[i].green = rgb[1+(y*3)];	//(y/5);
-			TestObjects[i].blue = rgb[2+(y*3)];		//0.8;
-			i++;
-		}
-	}
-*/
 }
 
 function file_load_callback (txt_file)
@@ -1852,6 +1694,8 @@ function DoInits()
 <br>
 <!-- </div> -->
 <p class="frame_counter" id="fps">X</p>
-<div class="joystickdiv" id="Jstk">joystick</div>
+
+<!-- <div class="joystickdiv" id="Jstk">joystick</div> -->
+
 </body>
 </html>

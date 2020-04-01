@@ -5,7 +5,7 @@
 	
 	Author	:	Nick Fleming
 	
-	Updated	:	28th March 2020
+	Updated	:	1st April 2020
 	
 	 Notes:
 	--------
@@ -49,6 +49,28 @@
 	----------
 		Call BNB_Init() to do one time initialisations.
 		Call BNB_DoGame (dt) to run the game for dt seconds.
+
+	 1st April 2020
+	-----------------
+		Ball & Brick collisions, while not perfect, are now usable,
+	so working on getting the rest of the game ready..
+
+	.. instead of 3 lives, just have a health bar, but this goes down
+	each time the ball hits the floor.
+
+		.. have some bricks that take more than one hit to be destroyed.
+
+	.. fire lazers .. I like lazers.
+
+		.. some levels to have multiple bullets.
+
+	.. definitely do a two player mode.
+
+
+	TO DO:
+	--------
+		GET TOUCH SCREEN SUPPORT WORKING.
+
 */
 
 	// === constants ===
@@ -101,6 +123,121 @@ var BNB_GAME_MODE_PAUSE 		= 6;
 var BNB_GAME_MODE_END_LIFE 		= 7;
 var BNB_GAME_MODE_SHOW_HISCORES	= 8;
 var BNB_GAME_MODE_RESTART_GAME	= 9;
+
+var level_0 = 
+[
+ 1,1,1,1,1,1,1,1,1,1,1,1,
+ 1,1,1,1,1,1,1,1,1,1,1,1,
+ 1,1,1,1,1,1,1,1,1,1,1,1,
+ 1,1,1,1,1,1,1,1,1,1,1,1,
+ 1,1,1,1,1,1,1,1,1,1,1,1,
+ 1,1,1,1,1,1,1,1,1,1,1,1
+];
+
+var level_1 = 
+[
+ 0,0,1,1,1,1,1,1,1,1,0,0,
+ 0,1,1,1,1,1,1,1,1,1,1,0,
+ 0,1,1,1,1,1,1,1,1,1,1,0,
+ 0,1,1,1,1,1,1,1,1,1,1,0,
+ 0,0,1,1,1,1,1,1,1,1,0,0,
+ 0,0,0,1,1,1,1,1,1,0,0,0
+];
+
+var level_2 = 
+[
+ 1,1,1,1,1,1,1,1,1,1,1,1,
+ 1,1,1,1,1,1,1,1,1,1,0,0,
+ 1,1,1,1,1,1,1,1,0,0,0,0,
+ 1,1,1,1,1,1,0,0,0,0,0,0,
+ 1,1,1,1,0,0,0,0,0,0,0,0,
+ 1,1,0,0,0,0,0,0,0,0,0,0
+];
+
+var level_3 =
+[
+ 1,1,1,1,1,1,1,1,1,1,1,1,
+ 1,5,1,1,1,1,1,1,1,1,5,1,
+ 1,5,1,1,1,1,1,1,1,1,5,1,
+ 1,5,1,1,1,1,1,1,1,1,5,1,
+ 1,1,5,5,5,5,5,5,5,5,1,1,
+ 1,1,1,1,1,1,1,1,1,1,1,1
+];
+
+var level_4 =
+[
+ 1,1,1,1,5,5,5,5,1,1,1,1,
+ 1,1,5,1,1,1,1,1,1,5,1,1,
+ 1,1,5,1,5,5,5,5,1,5,1,1,
+ 1,1,5,1,1,1,1,1,1,5,1,1,
+ 1,1,5,1,5,5,5,5,1,5,1,1,
+ 1,1,1,1,1,1,1,1,1,1,1,1
+];
+
+var level_5 =
+[
+ 1,1,1,1,1,1,1,1,1,1,1,1,
+ 0,0,1,1,1,1,1,1,1,1,1,1,
+ 0,0,0,0,1,1,1,1,1,1,1,1,
+ 0,0,0,0,0,0,1,1,1,1,1,1,
+ 0,0,0,0,0,0,0,0,1,1,1,1,
+ 0,0,0,0,0,0,0,0,0,0,1,1
+];
+
+
+var level_6 = 
+[
+ 5,1,1,1,1,1,1,1,1,1,1,5,
+ 1,5,1,1,1,1,1,1,1,1,5,1,
+ 1,1,5,1,1,1,1,1,1,5,1,1,
+ 1,1,1,5,1,1,1,1,5,1,1,1,
+ 1,1,1,1,5,1,1,5,1,1,1,1,
+ 1,1,1,1,1,5,5,1,1,1,1,1
+];
+
+var level_7 =
+[
+ 1,1,1,1,1,1,1,1,1,1,1,1,
+ 1,1,1,1,1,1,1,1,1,1,1,1,
+ 1,1,1,1,1,5,5,1,1,1,1,1,
+ 1,1,1,1,1,1,1,1,1,1,1,1,
+ 1,1,1,1,1,1,1,1,1,1,1,1,
+ 5,5,1,5,5,1,1,5,5,1,5,5
+];
+
+level_8 =
+[
+ 1,1,1,1,1,1,1,1,1,1,1,1,
+ 1,1,1,1,1,1,1,1,1,1,1,1,
+ 1,1,1,1,1,1,1,1,1,1,1,1,
+ 1,1,1,5,5,1,1,5,5,1,1,1,
+ 1,5,5,1,1,0,0,1,1,5,5,1,
+ 5,1,1,1,0,0,0,0,1,1,1,5
+];
+
+level_9 =
+[
+ 5,1,1,1,1,5,5,1,1,1,1,5,
+ 5,1,1,5,1,5,5,1,5,1,1,5,
+ 5,1,1,5,1,1,1,1,5,1,1,5,
+ 5,1,1,5,1,5,5,1,5,1,1,5,
+ 5,1,1,5,1,5,5,1,5,1,1,5,
+ 5,1,5,5,1,1,1,1,5,5,1,5
+];
+
+var LevelData =
+[
+	level_0, 
+	level_1,
+	level_2,
+	level_3,
+	level_4,
+	level_5,
+	level_6,
+	level_7,
+	level_8,
+	level_9,
+];
 
 	// -----
 	// Ball Structure
@@ -595,11 +732,20 @@ function BNB_BallBrickCollisionTime (ball_idx, brick_idx, dt)
 		case 3:		ball.vx *= -1;	break;
 	}
 
+	if (brick.number_of_hits_required > 0)
+	{
+		brick.number_of_hits_required--;
+		if (brick.number_of_hits_required > 0)
+		{
+			return;
+		}
+	}
+
 	brick.state = BNB_BRICK_EXPLODING;
 	brick.exploding = BNB_EXPLOSION_TIME;
 }
 
-	var monkey = 0;
+//	var monkey = 0;
 function BNB_BrickBallCollided (s,b,dt)
 {
 	// returns true if their AABB area collide, false otherwise.
@@ -631,7 +777,7 @@ function BNB_BrickBallCollided (s,b,dt)
 	s = 20;
 	ox = 150;
 	oy = 200;
-	Ctx.beginPath();
+/*	Ctx.beginPath();
 	Ctx.strokeStyle = "#ff0000";
 	Ctx.moveTo (ox + (x0*s), oy - (y0*s));
 	Ctx.lineTo (ox + (x1*s), oy - (y0*s));
@@ -664,7 +810,7 @@ function BNB_BrickBallCollided (s,b,dt)
 		console.log ("x2:" + x2 + " x3:" + x3 + " y2:" + y2 + " y3:" + y3);
 		monkey = 1;
 	}
-	
+*/	
 	
 	c = new CollisionObject();
 	
@@ -682,7 +828,7 @@ function BNB_BrickBallCollided (s,b,dt)
 	return true;
 }
 
-var gggk = 0;
+//var gggk = 0;
 function BNB_BrickBallCollisions(dt)
 {
 	var s;
@@ -767,7 +913,7 @@ function BNB_MovePlayer(player_number)
 	Player[i].vx = vx;
 }
 
-function BNB_InitBricks (level)
+function BNB_InitBricks (level_number)
 {
 	// for now, all bricks for all levels are the same starting
 	// position.. THIS WILL CHANGE.
@@ -778,12 +924,15 @@ function BNB_InitBricks (level)
 	var r;
 	var c;
 	var i;
+	var lev;
 	
 	for (i = 0; i < Bricks.length; i++)
 	{
 		Bricks[i].status = BNB_BRICK_OFF;
 	}
 	
+	lev = LevelData[level_number];
+
 	// test value.
 /*	i = 0;
 	Bricks
@@ -818,10 +967,16 @@ function BNB_InitBricks (level)
 			{
 				Bricks[i] = new BrickStruct();
 			}
+			
 			Bricks[i].state = BNB_BRICK_ON;
+			if (lev[i] == 0)
+			{
+				Bricks[i].state = BNB_BRICK_OFF;
+			}
+				
 			Bricks[i].x = ox + (c * BNB_BRICK_WIDTH);
 			Bricks[i].y = oy + (r * BNB_BRICK_HEIGHT);
-			Bricks[i].number_of_hits_required = 1;
+			Bricks[i].number_of_hits_required = lev[i];
 			Bricks[i].width = BNB_BRICK_WIDTH;
 			Bricks[i].height= BNB_BRICK_HEIGHT;
 			Bricks[i].red = 255;
@@ -857,18 +1012,15 @@ function BNB_InitBalls()
 
 	Balls[i].state = BALL_ON;
 	Balls[i].x = 0;
-//	Balls[i].y = 2.849000000000032;	//2;
-//	Balls[i].vx = 0
-//	Balls[i].vy = 0.15
 
 	Balls[i].y = 2;
-	Balls[i].vx = 3;
-	Balls[i].vy = 4;
+	Balls[i].vx = 6;
+	Balls[i].vy = 6;
 
 
 	Balls[i].radius = 0.25;
 	return;
-
+/*
 	i = 0;
 	while (i < 2)
 	{
@@ -885,6 +1037,7 @@ function BNB_InitBalls()
 		Balls[i].radius = 0.25;
 		i++;
 	}
+*/
 }
 
 function BNB_InitPlayers()
@@ -921,7 +1074,7 @@ function BNB_InitGame()
 	console.log ("BNB_InitGame");
 	
 	BNB_InitPlayers();
-	BNB_InitBricks (0);
+	BNB_InitBricks (6);
 	BNB_InitBalls();
 	BNB_SetTransition (BNB_GAME_MODE_START_GAME);
 }

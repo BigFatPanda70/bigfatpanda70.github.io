@@ -142,9 +142,9 @@ CollisionObject.prototype.lineIntersectionTest = function (ax0,ay0,ax1,ay1, bx0,
 		return;
 	}
 	
-	Ctx.beginPath();
-	Ctx.rect (10,10, 10,10);
-	Ctx.fill();
+//	Ctx.beginPath();
+//	Ctx.rect (10,10, 10,10);
+//	Ctx.fill();
 
 		//	na = (x4-x3)(y1-y3)-(y4-y3)(x1-x3)
 	na = ((bx1-bx0)*(ay0-by0)) - ((by1-by0)*(ax0-bx0));
@@ -159,9 +159,9 @@ CollisionObject.prototype.lineIntersectionTest = function (ax0,ay0,ax1,ay1, bx0,
 		return;
 	}
 
-	Ctx.beginPath();
-	Ctx.rect (30,10, 10,10);
-	Ctx.fill();
+//	Ctx.beginPath();
+//	Ctx.rect (30,10, 10,10);
+//	Ctx.fill();
 
 
 	ua = na/denom;
@@ -176,9 +176,9 @@ CollisionObject.prototype.lineIntersectionTest = function (ax0,ay0,ax1,ay1, bx0,
 	{
 		if ((0.0 <= ub) && (ub <= 1.0))
 		{
-				Ctx.beginPath();
-				Ctx.rect (50,10, 10,10);
-				Ctx.fill();
+//				Ctx.beginPath();
+//				Ctx.rect (50,10, 10,10);
+//				Ctx.fill();
 
 			
 			// calculate intersection point.
@@ -320,7 +320,7 @@ CollisionObject.prototype.rayCircleIntersection = function (cx,cy,r, x0,y0,dx,dy
 	return true;
 }
 
-var jjkkll = 0;
+//var jjkkll = 0;
 CollisionObject.prototype.circleLineCollision = function (cx,cy,cr, vx, vy, dt, x0,y0,x1,y1)
 {
 	// does a collision test between a circle (cx,cy,cr) moving
@@ -384,38 +384,38 @@ CollisionObject.prototype.circleLineCollision = function (cx,cy,cr, vx, vy, dt, 
 	x3 = cpx + (vx * dt);	// * 10);		// NOTE : *10 for testing 
 	y3 = cpy + (vy * dt);	// * 10);
 
-	Ctx.beginPath();
-	Ctx.moveTo (x2,y2);
-	Ctx.lineTo (x3,y3);
-	Ctx.stroke();
+//	Ctx.beginPath();
+//	Ctx.moveTo (x2,y2);
+//	Ctx.lineTo (x3,y3);
+//	Ctx.stroke();
 
 		// now need to see where lines cross. they have to cross
 		// between both end points for a collision to occur.
 
 
 	this.lineIntersectionTest (x2,y2,x3,y3, x0,y0,x1,y1);
-	
-	if (jjkkll == 0)
-	{
-		console.log ("oooooo");
+/*	
+//	if (jjkkll == 0)
+//	{
+//		console.log ("oooooo");
 		console.log ("cpx:" + cpx + " cpy:" + cpy + " cx:" + cx + " cy :" + cy + " cr:" + cr);
 		console.log ("x0:" + x0 + " y0:" + y0 + " x1:" + x1 + " y1:" + y1);
 		console.log ("..");
 		console.log ("x2:" + x2 + " y2:" + y2 + " x3:" + x3 + " y3:" + y3);
 		jjkkll = 1;
 	}
-
+*/
 
 	if (this.info != INFO_LINES_INTERSECT)
 	{
 		return false;
 	}
 	
-	if (jjkkll == 0)
-	{
-		console.log ("COLLIIISSSOOONNN");
-		jjkkll = 1;
-	}
+//	if (jjkkll == 0)
+//	{
+//		console.log ("COLLIIISSSOOONNN");
+//		jjkkll = 1;
+//	}
 		// lines intersect, so 
 	
 		// circle will collide with line between line end points
@@ -648,25 +648,25 @@ CollisionObject.prototype.rayReflection = function (px,py, vx,vy, x0,y0,x1,y1)
 		// calculate n and normalise it.
 //	Geom_DistancePointToLine (px,py, x0,y0,x1,y1, r);
 
-	Ctx.beginPath();
-	Ctx.rect (30,30, 50,50);
-	Ctx.fill();
+//	Ctx.beginPath();
+//	Ctx.rect (30,30, 50,50);
+//	Ctx.fill();
 
 	this.squaredDistancePointToLine (px,py, x0,y0,x1,y1);
 
-	Ctx.beginPath();
-	Ctx.rect (this.x, this.y, 5,5);
-	Ctx.fill();
+//	Ctx.beginPath();
+//	Ctx.rect (this.x, this.y, 5,5);
+//	Ctx.fill();
 
 	nx = this.x - px;
 	ny = this.y - py;
 	
-	Ctx.beginPath();
-	Ctx.strokeStyle="#0f0";
-	Ctx.moveTo (this.x, this.y);
-	Ctx.lineTo (this.x + (nx*50), this.y + (ny*50));
-	Ctx.stroke;
-	Ctx.strokeStyle="#000";
+//	Ctx.beginPath();
+//	Ctx.strokeStyle="#0f0";
+//	Ctx.moveTo (this.x, this.y);
+//	Ctx.lineTo (this.x + (nx*50), this.y + (ny*50));
+//	Ctx.stroke;
+//	Ctx.strokeStyle="#000";
 
 	d = Math.sqrt ((nx*nx)+(ny*ny));
 	if (d == 0)
