@@ -5,7 +5,7 @@
 	
 	Author	:	Nick Fleming
 	
-	Updated	:	1st April 2020
+	Updated	:	2nd April 2020
 	
 	 Notes:
 	--------
@@ -94,7 +94,9 @@ var BNB_LEFT_WALL_X = -9;
 var BNB_RIGHT_WALL_X= 9;
 var BNB_TOP_WALL_Y = 19.5;
 
-var MAX_BALL_SPEED = 3.0;	// 0.3;
+var BNB_BOTTOM_Y = -6.5;
+
+var MAX_BALL_SPEED = 6.0;	// 0.3;
 
 var PLAYER_SPEED = 0.2;
 
@@ -123,6 +125,7 @@ var BNB_GAME_MODE_PAUSE 		= 6;
 var BNB_GAME_MODE_END_LIFE 		= 7;
 var BNB_GAME_MODE_SHOW_HISCORES	= 8;
 var BNB_GAME_MODE_RESTART_GAME	= 9;
+var BNB_GAME_MODE_PRESS_PLAY	= 10;
 
 var level_0 = 
 [
@@ -239,6 +242,16 @@ var LevelData =
 	level_9,
 ];
 
+function Particle()
+{
+	this.id;			// used for drawing purposes
+	this.countdown;	// how long the particle will exist for
+
+	this.x;
+	this.y;
+	this.vx;
+	this.vy;
+}
 	// -----
 	// Ball Structure
 	// ----
@@ -357,6 +370,8 @@ function PlayerStruct()
 	this.bat_width;
 	this.score;
 	
+	this.lives;
+	
 		// AABB.
 	this.left;
 	this.right;
@@ -393,10 +408,48 @@ var num_balls = 1;
 
 var Player = [];
 
-function InitLevel (level_number)
+var Particles = [];
+
+
+function BNB_MoveParticles (dt)
 {
+	// particles move, but do not do any collisions.
+	var i;
+	
+	for (i = 0; i < Particles.length; i++)
+	{
+		if (Particles[i].countdown > 0)
+		{
+			Particles[i].x += Particles[i].vx * dt;
+			Particles[i].y += Particles[i].vy * dt;
+			Particles[i].countdown--;
+		}
+	}
 }
 
+function BNB_CreateExplosion (x,y)
+{
+	var i;
+	var s;
+
+	for (i = 0; i < 50; i++)
+	{
+		if (i == Particles.length)
+		{
+			Particles[i] = new Particle();
+		}
+		Particles[i].x = x - 1 +  Math.floor (Math.random() * 1);
+		Particles[i].y = y - 1 +  Math.floor (Math.random() * 1);
+
+		s = 30 + Math.floor (Math.random() * 30	);
+		Particles[i].countdown = s;
+
+		s /= 2;
+		Particles[i].vx = -8 + (Math.random() * 16);
+		Particles[i].vy = 1 + (Math.random() * s);
+	}
+//	console.log ("i:" + i);
+}
 
 function BNB_MoveBalls(dt)
 {
@@ -431,7 +484,12 @@ function BNB_MoveBalls(dt)
 		x += vx * dt;
 		y += vy * dt;
 		
-		if (y < -6)		{	vy *= -1;	}			// test code to stop ball disappearing off the bottom
+		if (y < BNB_BOTTOM_Y)
+		{
+			vy *= -1;			// test code to stop ball disappearing off the bottom
+			BNB_CreateExplosion (x,y);
+			BNB_SetTransition (BNB_GAME_MODE_END_LIFE);
+		}
 
 		if (y > BNB_TOP_WALL_Y)
 		{
@@ -569,7 +627,6 @@ function BNB_PlayerBallCollisionTests (dt)
 	}
 }
 
-var tibbs = 0;
 function BNB_BallBrickCollisionTime (ball_idx, brick_idx, dt)
 {
 		// there are 8 collisions to test for
@@ -618,39 +675,16 @@ function BNB_BallBrickCollisionTime (ball_idx, brick_idx, dt)
 	vx = ball.vx;
 	vy = ball.vy;
 
-	if (tibbs == 0)
-	{
-		console.log ("BALL");
-		console.log (ball);
-		console.log ("BRICK");
-		console.log (brick);
-//		console.log ("cx==:" + cx + " cy==:" + cy);
-	}
-
 	x0 = brick.x - (brick.width/2);
 	x1 = x0 + brick.width;
 
 	y0 = brick.y + (brick.height/2);
 	y1 = brick.y - (brick.height/2);	//y0 - brick.height;
 	
-	if (tibbs == 0)
-	{
-		console.log ("BRICK");
-		console.log (brick_idx);
-		console.log ("y : " + brick.y + " h/2:" + (brick.height/2));
-		console.log ("x0:" + x0 + " y0" + y0 + " x1:" + x1 + " y1:" + y1);
-		console.log (brick);
-		
-//		ball.vy = 0;
-	}
-
-
 	r = c.circleLineCollision (cx,cy,cr, vx, vy, dt, x0,y0,x1,y0);		// check top
 
 	if (r == true)
 	{
-			if (tibbs == 0)	{ console.log ("collide top"); }
-
 		if (c.t <= dt)
 		{
 			ct[0] = c.t;
@@ -670,9 +704,6 @@ function BNB_BallBrickCollisionTime (ball_idx, brick_idx, dt)
 	
 	if (r == true)
 	{
-			if (tibbs == 0)	{ console.log ("collide bot: ct:" + c.t + " dt:" + dt); }
-
-
 //		brick.state = BNB_BRICK_EXPLODING;
 //		brick.exploding = BNB_EXPLOSION_TIME;
 		if (c.t <= dt)
@@ -692,11 +723,6 @@ function BNB_BallBrickCollisionTime (ball_idx, brick_idx, dt)
 	
 	if ((ct[0] == -1) && (ct[1] == -1) && (ct[2] == -1) && (ct[3] == -1))
 	{
-		if (tibbs == 0)
-		{
-			console.log ("not colliding");
-		tibbs = 1;
-		}
 
 		return;	// not colliding
 	}
@@ -715,7 +741,6 @@ function BNB_BallBrickCollisionTime (ball_idx, brick_idx, dt)
 			}
 		}
 	}
-		tibbs = 1;
 	
 	if (nearest_idx == -1)
 	{
@@ -741,6 +766,7 @@ function BNB_BallBrickCollisionTime (ball_idx, brick_idx, dt)
 		}
 	}
 
+	Player[0].score += 1 + (Math.floor((brick_idx/12)) * 2);
 	brick.state = BNB_BRICK_EXPLODING;
 	brick.exploding = BNB_EXPLOSION_TIME;
 }
@@ -1040,6 +1066,29 @@ function BNB_InitBalls()
 */
 }
 
+function BNB_Restart()
+{
+	console.log ("aaa");
+	i = 0;
+
+	Player[i].state = PLAYER_ON;
+	Player[i].flags = 0;
+	Player[i].x = 0;
+	Player[i].y = BNB_PLAYER_Y;
+	Player[i].vx = 0;
+	Player[i].vy = 0;
+
+	i = 0;
+	Balls[i].state = BALL_ON;
+	Balls[i].x = 0;
+	Balls[i].y = 2;
+	Balls[i].vx = 6;
+	Balls[i].vy = 6;
+
+	BNB_SetTransition (BNB_GAME_MODE_MAIN_LOOP);
+
+}
+
 function BNB_InitPlayers()
 {
 	var i;
@@ -1059,6 +1108,7 @@ function BNB_InitPlayers()
 		Player[i].bat_width = BNB_BAT_WIDTH;
 		Player[i].bat_height= BNB_BAT_HEIGHT;
 		Player[i].score = 0;
+		Player[i].lives = 3;
 	}
 
 }
@@ -1074,7 +1124,7 @@ function BNB_InitGame()
 	console.log ("BNB_InitGame");
 	
 	BNB_InitPlayers();
-	BNB_InitBricks (6);
+	BNB_InitBricks (0);
 	BNB_InitBalls();
 	BNB_SetTransition (BNB_GAME_MODE_START_GAME);
 }
@@ -1085,9 +1135,19 @@ function BNB_Transition()
 	BNB_GameMode = BNB_NextState;
 }
 
-function BNB_StartGame()
+function BNB_PressPlay()
+{
+	// does nothing. waits for controlling program to signal play pressed.
+}
+
+function BNB_PlayPressed()
 {
 	BNB_SetTransition (BNB_GAME_MODE_MAIN_LOOP);
+}
+
+function BNB_StartGame()
+{
+	BNB_SetTransition (BNB_GAME_MODE_PRESS_PLAY);
 }
 
 function BNB_DoMainLoop(dt)
@@ -1107,6 +1167,8 @@ function BNB_DoMainLoop(dt)
 	BNB_BrickBallCollisions(dt);
 
 	BNB_MoveBalls(dt);
+
+	BNB_MoveParticles (dt);
 	
 //	console.log (Balls[0].y);
 	
@@ -1124,6 +1186,30 @@ function BNB_LeftPressed (player_number)
 function BNB_RightPressed (player_number)
 {
 	Player[player_number].vx = PLAYER_SPEED;
+}
+
+function BNB_EndLife(dt)
+{
+	var i;
+
+	BNB_MoveParticles (dt);
+
+	for (i = 0; i < Particles.length; i++)
+	{
+		if (Particles[i].countdown > 0)
+		{
+			return;	// not finished exploding
+		}
+	}
+
+	i = 0;
+	Player[i].lives--;
+	if (Player[i].lives > 0)
+	{
+		BNB_SetTransition (BNB_GAME_MODE_RESTART_GAME);
+		return;
+	}
+	
 }
 
 function BNB_DoGame (dt)
@@ -1148,11 +1234,16 @@ function BNB_DoGame (dt)
 				break;
 		case BNB_GAME_MODE_PAUSE:
 				break;
+		case BNB_GAME_MODE_PRESS_PLAY:
+				BNB_PressPlay();
+				break;
 		case BNB_GAME_MODE_END_LIFE:
+				BNB_EndLife(dt);
 				break;
 		case BNB_GAME_MODE_SHOW_HISCORES:
 				break;
 		case BNB_GAME_MODE_RESTART_GAME:
+				BNB_Restart();
 				break;
 		default:
 				console.log ("BNB_DoGame: Unknown game state " + BNB_GameMode);

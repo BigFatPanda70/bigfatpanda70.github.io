@@ -141,7 +141,7 @@ body
 
 .gamecanvas
 	{
-		cursor:none;
+		/* cursor:none; */
 		margin:0;
 		padding:0;
 		overflow: hidden;
@@ -228,10 +228,12 @@ var BatObjectId;
 var BallRotateX;
 var BallRotateY;
 
-
 var TopWallY = 19.5;
 var LeftWallX = -9.4;
 var RightWallX = 9.4;
+
+var ImgText = new Image();
+ImgText.src = "./../images/text3c.png";
 
 var TestMap =
 [
@@ -1354,6 +1356,18 @@ function DoInputs()
 		right_pressed = true;
 	}
 	
+	
+	if (BNB_GameMode == BNB_GAME_MODE_PRESS_PLAY)
+	{
+		if ((left_pressed == true) || (right_pressed == true))
+		{
+			BNB_PlayPressed();
+			return;
+		}
+	
+	}
+	
+	
 	if (left_pressed)
 	{
 		BNB_LeftPressed(0);
@@ -1422,6 +1436,159 @@ function ShowBricks()
 	Ctx.fill();
 }
 
+function DrawNumber (x,y,scale, num)
+{
+	var d;
+	var u;
+	var ix;
+	var iy;
+	var dy;
+
+	var digit_width;
+	var digit_height;
+	
+	var screen_width;
+	var screen_height;
+	
+//	var scale;
+	
+	digit_width = 42;
+	digit_height = 52;
+	
+	screen_width = digit_width * scale;
+	screen_height= digit_height * scale;
+
+	u = 1;
+	while ((u*10) <= num)
+	{
+		u *= 10;
+	}
+
+	n = num;
+	dx = x;
+	while (u > 0)
+	{
+		d = Math.floor (n / u);
+		if (d < 5)
+		{
+			ix = d * digit_width;
+			iy = 0;
+		}
+		else
+		{
+			ix = (d-5) * digit_width;
+			iy = digit_height;
+		}
+		
+		Ctx.drawImage (ImgText, ix,iy,digit_width, digit_height, dx, y, screen_width, screen_height);
+		n -= (d * u);
+		u = Math.floor (u/10);
+		dx += screen_width;
+	}
+}
+
+function DrawLives()
+{
+		// for now, assume single player.
+
+	var i;
+	var lives;
+	var ix;
+	var iy;
+	var x;
+	var y;
+	
+	var width;
+	var height;
+	var screen_width;
+	var screen_height;
+
+	ix = 210;
+	iy = 0;
+
+	width = 42;
+	height= 52;
+
+	x = width/4;
+	y = 40;
+	
+
+	
+	screen_width = width/2;
+	screen_height = height/2;
+
+	Ctx.drawImage (ImgText, ix,iy,width, height, x, y, screen_width, screen_height);
+
+	lives = Player[0].lives;
+
+	DrawNumber (x+(screen_width),y+4,0.4, lives);
+}
+
+function DrawPlayButton()
+{
+	var x;
+	var y;
+	var w;
+	var h;
+	var sw;
+	var sh;
+
+	if (BNB_GameMode != BNB_GAME_MODE_PRESS_PLAY)
+	{
+		return;
+	}
+
+	w = 52;
+	h = 52;
+	sw = 52;
+	sh = 52;
+	x = (Canvas.width - sw)>>1;
+	y = 318;	//(Canvas.height - sh)>>1;
+
+	Ctx.drawImage (ImgText, 0, 104, w, h, x, y, sw, sh);
+}
+
+function DrawExplosions()
+{
+	var i;
+	var x;
+	var y;
+	var w;
+	var h;
+	var sw;
+	var sh;
+	
+	var ox;
+	var oy;
+	
+	var ix;
+	var iy;
+	
+	var k;
+
+	w = 12;
+	h = 12;
+
+	sw = 12;
+	sh = 12;
+
+	for (i = 0; i < Particles.length; i++)
+	{
+		if (Particles[i].countdown > 0)
+		{
+			x = (Canvas.width/2) + (Particles[i].x * 24);
+//			y = 200 (Canvas.height/2)- (Particles[i].y * 16);
+			y = 400 - (Particles[i].y * 16);
+			k = Math.floor (i % 6);
+			ix = 216 + (Math.floor(k%3) * w);
+			iy = 52 + (Math.floor(k/3) * h);
+			Ctx.drawImage (ImgText, ix, iy, w, h, x, y, sw, sh);
+		}
+	}
+	
+//	console.log ("i:"+i);
+}
+	
 var busy = false;
 function UpdateGame()
 {
@@ -1442,6 +1609,9 @@ function UpdateGame()
 	DoInputs();
 
 	Ctx.clearRect(0,0,Canvas.width, Canvas.height);
+
+//	console.log (ImgText);
+
 
 	Ctx.strokeStyle = "#000000";
 	BNB_DoGame(dt);
@@ -1470,6 +1640,15 @@ function UpdateGame()
 	CreateDrawList(TestObjects,3,TestObjects.length);
 	Draw_DrawList();
 
+	DrawNumber (2, 10, 0.5, Player[0].score);
+	DrawLives();
+	
+	DrawPlayButton();
+
+	DrawExplosions();
+	
+//	DrawNumber (10, 50, 56789);
+//	DrawNumber (10, 90, 9876543210);
 
 //	ShowBricks();
 //	OverheadView();
