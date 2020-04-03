@@ -496,9 +496,21 @@ function DrawList_AddItem (object_index, object_z, x0,y0,x1,y1,x2,y2, rgbhex)
 
 function Draw_DrawList()
 {
+		// NOTE : THIS MAY LOOK A LITTLE WEIRD..
+		
+		// .. after profiling, found there was a lot of calls
+		// to recalcualte style..a LOT of calls. .. so ..
+		// this code now only changes fill & stroke styles when
+		// the stroke style changes.. initial tests indicate that
+		// this has some good frame rate gains.
 	var b;
 	var i;
 	var d;
+	
+	var rgbhex;
+
+	rgbhex = "";
+	Ctx.beginPath();
 
 	for (b = DrawList_BucketArray.length-1; b >= 0; b--)
 	{
@@ -508,17 +520,29 @@ function Draw_DrawList()
 			while (i != DRAWLIST_INVALID_IDX)
 			{
 				d = DrawList[i];
-				Ctx.beginPath();
-				Ctx.fillStyle = d.rgbhex;
-				Ctx.strokeStyle = d.rgbhex;
+				if (d.rgbhex != rgbhex)
+				{
+					Ctx.fill();		// flush buffer
+					Ctx.stroke();
+
+					Ctx.beginPath();
+					Ctx.fillStyle = d.rgbhex;		// reduce style changes.
+					Ctx.strokeStyle = d.rgbhex;
+				}
 				Ctx.moveTo (d.x0, d.y0);
 				Ctx.lineTo (d.x1, d.y1);
 				Ctx.lineTo (d.x2+0.5, d.y2);
 				Ctx.lineTo (d.x0, d.y0);
-				Ctx.fill();
-				Ctx.stroke();
+
+				if (d.rgbhex != rgbhex)
+				{
+					rgbhex = d.rgbhex;
+				}
 				i = d.next_idx;
 			}
+			Ctx.fill();		// flush buffers
+			Ctx.stroke();
+
 		}
 	}
 }

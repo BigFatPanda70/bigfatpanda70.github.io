@@ -114,7 +114,10 @@ function keys_DoKeyDown (e)
 	{
 		return true;	// allow function keys as normal.
 	};	
-	
+	if (e.keycode == '1')
+	{
+		return true;
+	}
 	e.preventDefault(); 
 //	console.log (e.keyCode);
 };
