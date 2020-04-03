@@ -1269,7 +1269,7 @@ function BNB_PlayPressed()
 	BNB_SetTransition (BNB_GAME_MODE_MAIN_LOOP);
 }
 
-function BNB_PausePressed()
+function BNB_TogglePause()
 {
 		// toggles between pause and play for main loop.
 	if (BNB_GameMode == BNB_GAME_MODE_MAIN_LOOP)

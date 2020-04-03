@@ -77,9 +77,9 @@ function TouchScreen_TouchStart()
 		ty = canvas.height-1;
 	}
 
-	TouchInfo[0].x = tx;
-	TouchInfo[0].y = ty;
-	TouchInfo[0].flags = TOUCHSCREEN_FLAG_TOUCHDOWN;
+	TouchInfo.x[0] = tx;
+	TouchInfo.y[0] = ty;
+	TouchInfo.flags[0] = TOUCHSCREEN_FLAG_TOUCHDOWN;
 }
 
 function TouchScreen_TouchMove()
@@ -122,9 +122,9 @@ function TouchScreen_TouchMove()
 
 //	alert ("x:" + tx + " y:" + ty);
 
-	TouchInfo[0].x = tx;
-	TouchInfo[0].y = ty;
-	TouchInfo[0].flags = TOUCHSCREEN_FLAG_TOUCHMOVE;
+	TouchInfo.x[0] = tx;
+	TouchInfo.y[0] = ty;
+	TouchInfo.flags[0] = TOUCHSCREEN_FLAG_TOUCHMOVE;
 
 //	e.preventDefault();
 }
@@ -149,9 +149,9 @@ function TouchScreen_TouchEnd()
 
 //	alert ("x:" + tx + " y:" + ty);
 
-	TouchInfo[0].x = tx;
-	TouchInfo[0].y = ty;
-	TouchInfo[0].flags = TOUCHSCREEN_FLAG_TOUCHUP;
+	TouchInfo.x[0] = tx;
+	TouchInfo.y[0] = ty;
+	TouchInfo.flags[0] = TOUCHSCREEN_FLAG_TOUCHUP;
 
 //	e.preventDefault();
 }
@@ -167,16 +167,20 @@ function TouchScreenAvailable()
 	// returns true if available, false otherwise
 	
 	supportsTouch = 'ontouchstart' in window || navigator.msMaxTouchPoints;
+
+	TouchInfo.available = false;
+	TouchInfo.x[0] = -1;		// at least one touch info record to be available.
+	TouchInfo.y[0] = -1;
+	TouchInfo.flags[0] = 0;
+
 	if (supportsTouch == true)
 	{
 		return true;
 	}
 	
 	TouchInfo.available = true;
-	TouchInfo[0] = new TouchScreenStruct();
-	TouchInfo[0].x = -1;		// at least one touch info record to be available.
-	TouchInfo[0].y = -1;
-	TouchInfo[0].flags = 0;
+	
+	return false;
 }
 
 function TouchScreen_InitEvents(canvas_id)
@@ -199,7 +203,12 @@ function TouchScreen_InitEvents(canvas_id)
 
 function TouchScreen_ResetTouchInfo()
 {
-	TouchInfo.x = [];
-	TouchInfo.y = [];
-	TouchInfo.flags = [];
+	var i;
+	
+	for (i = 0; i < TouchInfo.x.length; i++)
+	{
+		TouchInfo.x[i] = -1;
+		TouchInfo.y[i] = -1;
+		TouchInfo.flags[i] = 0;
+	}
 }

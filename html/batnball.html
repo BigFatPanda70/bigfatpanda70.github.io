@@ -1375,10 +1375,10 @@ function DoInputs()
 		
 	if (TouchInfo.available == true)
 	{
-		if ((TouchInfo[0].flags == TOUCHSCREEN_FLAG_TOUCHMOVE) ||
-			(TouchInfo[0].flags == TOUCHSCREEN_FLAG_TOUCHDOWN))
+		if ((TouchInfo.flags[0] == TOUCHSCREEN_FLAG_TOUCHMOVE) ||
+			(TouchInfo.flags[0] == TOUCHSCREEN_FLAG_TOUCHDOWN))
 		{
-			if (TouchInfo[0].x < (Canvas.width>>1))	
+			if (TouchInfo.x[0] < (Canvas.width>>1))	
 			{
 				left_pressed = true;
 			}
