@@ -1378,13 +1378,16 @@ function DoInputs()
 		if ((TouchInfo.flags[0] == TOUCHSCREEN_FLAG_TOUCHMOVE) ||
 			(TouchInfo.flags[0] == TOUCHSCREEN_FLAG_TOUCHDOWN))
 		{
-			if (TouchInfo.x[0] < (Canvas.width>>1))	
+			if (TouchInfo.x[0] != -1)
 			{
-				left_pressed = true;
-			}
-			else
-			{
-				right_pressed = true;
+				if (TouchInfo.x[0] < (Canvas.width>>1))	
+				{
+					left_pressed = true;
+				}
+				else
+				{
+					right_pressed = true;
+				}
 			}
 		}
 	}

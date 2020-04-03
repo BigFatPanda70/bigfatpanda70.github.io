@@ -175,6 +175,7 @@ function TouchScreenAvailable()
 
 	if (supportsTouch == true)
 	{
+		console.log ("touch screen is available");
 		return true;
 	}
 	
