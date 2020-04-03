@@ -126,6 +126,10 @@ var BNB_GAME_MODE_END_LIFE 		= 7;
 var BNB_GAME_MODE_SHOW_HISCORES	= 8;
 var BNB_GAME_MODE_RESTART_GAME	= 9;
 var BNB_GAME_MODE_PRESS_PLAY	= 10;
+var BNB_GAME_MODE_NEXT_LEVEL    = 11;
+var BNB_GAME_MODE_DEMO			= 12;
+var BNB_GAME_MODE_GAME_OVER		= 13;
+
 
 var level_0 = 
 [
@@ -396,7 +400,7 @@ PlayerStruct.prototype.calcAABB = function (dt)
 var BNB_GameMode;
 var BNB_NextState;
 
-
+var BNB_Level = 0;
 var Bricks = [];
 var Balls = [];
 
@@ -526,6 +530,7 @@ function BNB_CalcAABBs (dt)
 	{
 		Player[i].calcAABB(dt);
 	}
+	
 	for (i = 0; i < Balls.length; i++)
 	{
 		Balls[i].calcAABB(dt);
@@ -954,7 +959,7 @@ function BNB_InitBricks (level_number)
 	
 	for (i = 0; i < Bricks.length; i++)
 	{
-		Bricks[i].status = BNB_BRICK_OFF;
+		Bricks[i].state = BNB_BRICK_OFF;
 	}
 	
 	lev = LevelData[level_number];
@@ -1015,6 +1020,14 @@ function BNB_InitBricks (level_number)
 			i++;
 		}
 	}
+
+		// test 
+//	for (i = 1; i < Bricks.length; i++)
+//	{
+//		Bricks[i].state = BNB_BRICK_OFF;
+//	}
+
+
 }
 
 function BNB_InitBalls()
@@ -1025,7 +1038,7 @@ function BNB_InitBalls()
 
 	for (i = 0; i < Balls.length; i++)
 	{
-		Balls[i] = BALL_OFF;
+		Balls[i].state = BALL_OFF;
 	}
 	
 	
@@ -1068,12 +1081,12 @@ function BNB_InitBalls()
 
 function BNB_Restart()
 {
-	console.log ("aaa");
+//	console.log ("aaa");
 	i = 0;
 
 	Player[i].state = PLAYER_ON;
 	Player[i].flags = 0;
-	Player[i].x = 0;
+//	Player[i].x = 0;
 	Player[i].y = BNB_PLAYER_Y;
 	Player[i].vx = 0;
 	Player[i].vy = 0;
@@ -1110,7 +1123,6 @@ function BNB_InitPlayers()
 		Player[i].score = 0;
 		Player[i].lives = 3;
 	}
-
 }
 
 function BNB_SetTransition(next_state)
@@ -1121,10 +1133,11 @@ function BNB_SetTransition(next_state)
 
 function BNB_InitGame()
 {
-	console.log ("BNB_InitGame");
-	
+//	console.log ("BNB_InitGame");
+
+	BNB_Level = 0;
 	BNB_InitPlayers();
-	BNB_InitBricks (0);
+	BNB_InitBricks (BNB_Level);
 	BNB_InitBalls();
 	BNB_SetTransition (BNB_GAME_MODE_START_GAME);
 }
@@ -1140,14 +1153,25 @@ function BNB_PressPlay()
 	// does nothing. waits for controlling program to signal play pressed.
 }
 
-function BNB_PlayPressed()
-{
-	BNB_SetTransition (BNB_GAME_MODE_MAIN_LOOP);
-}
 
 function BNB_StartGame()
 {
 	BNB_SetTransition (BNB_GAME_MODE_PRESS_PLAY);
+}
+
+function BNB_TestForLevelCleared()
+{
+	var i;
+	
+	for (i = 0; i < Bricks.length; i++)
+	{
+		if (Bricks[i].state != BNB_BRICK_OFF)
+		{
+			return false;
+		}
+	}
+
+	BNB_SetTransition (BNB_GAME_MODE_NEXT_LEVEL);
 }
 
 function BNB_DoMainLoop(dt)
@@ -1173,19 +1197,8 @@ function BNB_DoMainLoop(dt)
 //	console.log (Balls[0].y);
 	
 	BNB_ExplodeBricks();
-}
-	// ========================================
-	//		Public Facing Routines
-	// ========================================
 	
-function BNB_LeftPressed (player_number)
-{
-	Player[player_number].vx = -PLAYER_SPEED;
-}
-
-function BNB_RightPressed (player_number)
-{
-	Player[player_number].vx = PLAYER_SPEED;
+	BNB_TestForLevelCleared();
 }
 
 function BNB_EndLife(dt)
@@ -1209,7 +1222,67 @@ function BNB_EndLife(dt)
 		BNB_SetTransition (BNB_GAME_MODE_RESTART_GAME);
 		return;
 	}
+}
+
+function BNB_NextLevel()
+{
+	console.log ("NextLevel");
+	BNB_Level++;
+	if (BNB_Level >= 10)
+	{
+		BNB_Level = 0;
+	}
+	BNB_InitBricks (BNB_Level);
+	BNB_InitBalls();
+	BNB_SetTransition (BNB_GAME_MODE_RESTART_GAME);
 	
+	console.log (Balls);
+
+}
+
+function BNB_DoPause()
+{
+	// nothing to do while paused ??
+}
+
+	// ========================================
+	//		Public Facing Routines
+	// ========================================
+	
+function BNB_LeftPressed (player_number)
+{
+	Player[player_number].vx = -PLAYER_SPEED;
+}
+
+function BNB_RightPressed (player_number)
+{
+	Player[player_number].vx = PLAYER_SPEED;
+}
+
+function BNB_PlayPressed()
+{
+	if (BNB_GameMode != BNB_GAME_MODE_PRESS_PLAY)
+	{
+		return;
+	}
+
+	BNB_SetTransition (BNB_GAME_MODE_MAIN_LOOP);
+}
+
+function BNB_PausePressed()
+{
+		// toggles between pause and play for main loop.
+	if (BNB_GameMode == BNB_GAME_MODE_MAIN_LOOP)
+	{
+		BNB_GameMode = BNB_GAME_MODE_PAUSE;
+		return;
+	}
+
+	if (BNB_GameMode == BNB_GAME_MODE_PAUSE)
+	{
+		BNB_GameMode = BNB_GAME_MODE_MAIN_LOOP;
+		return;
+	}
 }
 
 function BNB_DoGame (dt)
@@ -1233,6 +1306,7 @@ function BNB_DoGame (dt)
 				BNB_DoMainLoop(dt);
 				break;
 		case BNB_GAME_MODE_PAUSE:
+				BNB_DoPause();
 				break;
 		case BNB_GAME_MODE_PRESS_PLAY:
 				BNB_PressPlay();
@@ -1244,6 +1318,11 @@ function BNB_DoGame (dt)
 				break;
 		case BNB_GAME_MODE_RESTART_GAME:
 				BNB_Restart();
+				break;
+		case BNB_GAME_MODE_NEXT_LEVEL:
+				BNB_NextLevel();
+				break;
+		case BNB_GAME_MODE_GAME_OVER:
 				break;
 		default:
 				console.log ("BNB_DoGame: Unknown game state " + BNB_GameMode);

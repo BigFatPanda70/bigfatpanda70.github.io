@@ -10,7 +10,7 @@ Info	:	Version 0.0	10th March 2020
 
 Author	:	Nick Fleming
 
-Updated	:	1st April 2020
+Updated	:	3rd April 2020
 
  11th March :
 ----------------
@@ -112,6 +112,10 @@ something that works.
 	 1st April 2020
 	-----------------
 		Doing a little code cleanup..
+		
+	 3rd April 2020
+	----------------
+		Doing logo..
 -->
 
 <html>
@@ -196,6 +200,7 @@ body
 <script src="js/icosphere.js"></script>
 <script src="js/collisions.js"></script>
 <script src="js/batnball.js"></script>
+<script src="js/touchscreen.js"></script>
 
 <script>
 
@@ -234,6 +239,9 @@ var RightWallX = 9.4;
 
 var ImgText = new Image();
 ImgText.src = "./../images/text3c.png";
+
+var ImgLogo = new Image();
+ImgLogo.src="./../images/logo.png";
 
 var TestMap =
 [
@@ -1326,6 +1334,13 @@ function DoInputs()
 	var ldown;
 	var lleft;
 	var lright;
+	
+	if (KeyPressed (KEY_P) == true)
+	{
+			// do pause.
+		BNB_TogglePause();
+		KeyClear (KEY_P);
+	}
 
 	left_pressed = false;
 	right_pressed = false;
@@ -1356,6 +1371,26 @@ function DoInputs()
 		right_pressed = true;
 	}
 	
+		// and touch screen 
+		
+	if (TouchInfo.available == true)
+	{
+		if ((TouchInfo[0].flags == TOUCHSCREEN_FLAG_TOUCHMOVE) ||
+			(TouchInfo[0].flags == TOUCHSCREEN_FLAG_TOUCHDOWN))
+		{
+			if (TouchInfo[0].x < (Canvas.width>>1))	
+			{
+				left_pressed = true;
+			}
+			else
+			{
+				right_pressed = true;
+			}
+		}
+	}
+		
+		// ---- deal with inputs below ----
+	
 	
 	if (BNB_GameMode == BNB_GAME_MODE_PRESS_PLAY)
 	{
@@ -1364,10 +1399,8 @@ function DoInputs()
 			BNB_PlayPressed();
 			return;
 		}
-	
 	}
-	
-	
+
 	if (left_pressed)
 	{
 		BNB_LeftPressed(0);
@@ -1503,7 +1536,7 @@ function DrawLives()
 	var screen_width;
 	var screen_height;
 
-	ix = 210;
+	ix = 212;
 	iy = 0;
 
 	width = 42;
@@ -1511,7 +1544,6 @@ function DrawLives()
 
 	x = width/4;
 	y = 40;
-	
 
 	
 	screen_width = width/2;
@@ -1547,6 +1579,34 @@ function DrawPlayButton()
 
 	Ctx.drawImage (ImgText, 0, 104, w, h, x, y, sw, sh);
 }
+
+function DrawLogo()
+{
+		// for now, logo gets displayed when play button does.
+
+	var x;
+	var y;
+	var w;
+	var h;
+	var sw;
+	var sh;
+
+	if (BNB_GameMode != BNB_GAME_MODE_PRESS_PLAY)
+	{
+		return;
+	}
+
+	w = ImgLogo.width;
+	h = ImgLogo.height;
+	sw = w>>1;
+	sh = h>>1;
+	x = (Canvas.width - sw)>>1;
+	y = (Canvas.height * 0.25);	//- sh)>>1;
+
+	Ctx.drawImage (ImgLogo, 0, 0, w, h, x, y, sw, sh);
+}
+
+
 
 function DrawExplosions()
 {
@@ -1587,6 +1647,15 @@ function DrawExplosions()
 	}
 	
 //	console.log ("i:"+i);
+}
+
+function MouseClick()
+{
+	if (BNB_GameMode == BNB_GAME_MODE_PRESS_PLAY)
+	{
+		BNB_PlayPressed();
+			return;
+	}
 }
 	
 var busy = false;
@@ -1644,7 +1713,7 @@ function UpdateGame()
 	DrawLives();
 	
 	DrawPlayButton();
-
+	DrawLogo();
 	DrawExplosions();
 	
 //	DrawNumber (10, 50, 56789);
@@ -1820,6 +1889,12 @@ function DoInits()
 		console.log ("joystick is available");
 		Joystick_ListenForConnect();
 	}
+	
+	if (TouchScreenAvailable() == true)
+	{
+		TouchScreen_InitEvents("gc");
+	}
+
 
 	MatrixTest();
 
@@ -1869,7 +1944,7 @@ function DoInits()
 </head>
 <body onload ="DoInits();">
 <!--<div class="outer" id="area"> -->
-<canvas class="gamecanvas" id="gc" width="512;" height="512;"></canvas>
+<canvas class="gamecanvas" id="gc" width="512;" height="512;" onclick="MouseClick();"></canvas>
 <br>
 <!-- </div> -->
 <p class="frame_counter" id="fps">X</p>
