@@ -181,18 +181,18 @@ function TouchScreenAvailable()
 	
 	supportsTouch = 'ontouchstart' in window || navigator.msMaxTouchPoints;
 
-	TouchInfo.available = false;
 	TouchInfo.x[0] = -1;		// at least one touch info record to be available.
 	TouchInfo.y[0] = -1;
 	TouchInfo.flags[0] = 0;
 
 	if (supportsTouch == true)
 	{
+		TouchInfo.available = true;
 		console.log ("touch screen is available");
 		return true;
 	}
 	
-	TouchInfo.available = true;
+	TouchInfo.available = false;
 
 	console.log ("no touch screen available");
 	
