@@ -16,14 +16,19 @@
 	Note : for now, just doing single touch events, but multi touch
 	events are on the to do list 
 
+	 debugging
+	-------------
+		Chrome was used on desktop with phone connected via usb and
+	used remote debugging from developer tools menu.
+
 	 To Use:
 	----------
-
 
 	Call TouchScreenAvailable() for an intial check.
 	Call TouchScreen_InitEvents(canvas_id) to set touch events for a canvas
 
 	then examine TouchInfo structure whenever you require touch info.
+
  */
  
  var TOUCHSCREEN_FLAG_TOUCHDOWN = 1;
@@ -56,11 +61,11 @@ function TouchScreen_TouchStart()
 
 	canvas = document.getElementById (TouchInfo.canvas_id);
 	
-	console.log (e);
+//	console.log (e);
 
 	rect = canvas.getBoundingClientRect();
 	
-	console.log (rect);
+//	console.log (rect);
 
 	tx = e.changedTouches[0].pageX - rect.left;
 	ty = e.changedTouches[0].pageY - rect.top;
@@ -88,7 +93,7 @@ function TouchScreen_TouchStart()
 	TouchInfo.y[0] = ty;
 	TouchInfo.flags[0] = TOUCHSCREEN_FLAG_TOUCHDOWN;
 	
-	console.log ("touch down tx:" + tx + " ty:" + ty);
+//	console.log ("touch down tx:" + tx + " ty:" + ty);
 }
 
 function TouchScreen_TouchMove()
@@ -136,7 +141,7 @@ function TouchScreen_TouchMove()
 	TouchInfo.flags[0] = TOUCHSCREEN_FLAG_TOUCHMOVE;
 
 //	e.preventDefault();
-	console.log ("touch move");
+//	console.log ("touch move");
 }
 
 function TouchScreen_TouchEnd()
@@ -165,7 +170,7 @@ function TouchScreen_TouchEnd()
 
 //	e.preventDefault();
 
-	console.log ("touch end");
+//	console.log ("touch end");
 
 }
 

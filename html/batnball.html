@@ -1334,16 +1334,34 @@ function DoInputs()
 	var ldown;
 	var lleft;
 	var lright;
+
+
+	left_pressed = false;
+	right_pressed = false;
+
+		// joystick tests too.
+
+	Joystick_Update();
+	if (Joystick_GetButton (0, JOYSTICK_LBC_LEFT) == true)
+	{
+		left_pressed = true;
+	}
+	if (Joystick_GetButton (0, JOYSTICK_LBC_RIGHT) == true)
+	{
+		right_pressed = true;
+	}
 	
-	if (KeyPressed (KEY_P) == true)
+		// check for pause
+	
+	if ((KeyPressed (KEY_P) == true) || (Joystick_GetButton (0, JOYSTICK_RBC_TOP) == true))
 	{
 			// do pause.
 		BNB_TogglePause();
 		KeyClear (KEY_P);
+		return;
 	}
+	
 
-	left_pressed = false;
-	right_pressed = false;
 	
 	if ((KeyPressed (KEY_LEFT) == true) || 
 		(KeyPressed (KEY_A) == true) ||
@@ -1359,17 +1377,6 @@ function DoInputs()
 		right_pressed = true;
 	}
 
-		// joystick tests too.
-
-	Joystick_Update();
-	if (Joystick_GetButton (0, JOYSTICK_LBC_LEFT) == true)
-	{
-		left_pressed = true;
-	}
-	if (Joystick_GetButton (0, JOYSTICK_LBC_RIGHT) == true)
-	{
-		right_pressed = true;
-	}
 	
 		// and touch screen 
 		
