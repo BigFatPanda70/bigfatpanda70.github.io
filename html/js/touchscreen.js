@@ -59,6 +59,9 @@ function TouchScreen_TouchStart()
 	console.log (e);
 
 	rect = canvas.getBoundingClientRect();
+	
+	console.log (rect);
+
 	tx = e.changedTouches[0].pageX - rect.left;
 	ty = e.changedTouches[0].pageY - rect.top;
 	
