@@ -186,6 +186,8 @@ function TouchScreenAvailable()
 	}
 	
 	TouchInfo.available = true;
+
+	console.log ("no touch screen available");
 	
 	return false;
 }
