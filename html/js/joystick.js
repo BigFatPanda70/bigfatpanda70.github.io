@@ -426,6 +426,8 @@ var Joystick_DeadZone = 0.1;
 
 var Joystick = null;
 
+var _joystickAvailable = false;
+
 	// -------------------------------------------
 	//		---- joystick mapping stuff ----
 	// -------------------------------------------
@@ -494,8 +496,10 @@ function Joystick_Available()
     r = "getGamepads" in navigator;
     if (r)
     {
+		_joystickAvailable = true;
 		return true;
 	}
+	_joystickAvailable = false;
 	return false;
 }
 
@@ -527,6 +531,11 @@ function Joystick_ListenForConnect()
 //var gggh = 0
 function Joystick_Update()
 {
+	if (_joystickAvailable != true)
+	{
+		return;
+	}
+
 	Joystick = navigator.getGamepads();
 	if (Joystick == null)	return 0;
 	if (Joystick.length < 1)	return 0;
