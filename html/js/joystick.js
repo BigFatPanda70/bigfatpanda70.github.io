@@ -686,6 +686,11 @@ function Joystick_GetButton (jidx, standard_button_idx)
 	if (Joystick.length < 1)	return 0;
 	if ((jidx < 0) || (Joystick.length <= jidx))	return 0;
 
+	if (JoystickConnected != true)
+	{
+		return;
+	}
+
 //	function Joystick_GetIdNum (jstk)
 
 	mapidx = Joystick_GetMapIndex (Joystick[jidx]);
@@ -707,6 +712,11 @@ function Joystick_GetButton (jidx, standard_button_idx)
 	if (button_idx == -1)
 	{
 		return 0;		// button not available.
+	}
+	
+	if (Joystick[jidx].buttons.length < 1)
+	{
+		return 0;
 	}
 	button = Joystick[jidx].buttons[button_idx].pressed;
 	

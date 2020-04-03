@@ -93,17 +93,17 @@ something that works.
 		calculations for diffuse light appear to be working ok.
 	rejigging the normal calculations so i can have dynamic lighting
 	(hopefully).
-	
+
 	 24th March 2020
 	------------------
 	experimenting with layouts.
-	
+
 	 25th March 2020
 	--------------------
 		This is probably more complicated than it needs to be,
 	but I'm trying to keep the game engine separate from the
 	rendering engine.
-	
+
 	 28th March 2020
 	------------------
 		Added a simple 'explosion' effect where the colour of the
@@ -112,7 +112,7 @@ something that works.
 	 1st April 2020
 	-----------------
 		Doing a little code cleanup..
-		
+
 	 3rd April 2020
 	----------------
 		Doing logo..
@@ -138,7 +138,7 @@ body
 {
 	position:absolute;
 	left:0;
-	top:0;
+	bottom:0;
 	background-color:#fff;
 	z-index:1;
 }
@@ -151,7 +151,7 @@ body
 		overflow: hidden;
 		display:block;
 		background-color:#eecc00;
-		background-image: linear-gradient(#ff0000, #ffff00, #00ffff); 
+		background-image: linear-gradient(#ff0000, #ffff00, #00ffff);
 		width:100%;					/* width = container width */
 		height:100%;				/* height = container height */
 }
@@ -545,7 +545,7 @@ NormalVector.prototype.normalise = function()
 	}
 }
 
-                            
+
 function Model3D (vertex_array, face_array)
 {
 		// creates a 3D model from vertex and face data.
@@ -609,7 +609,7 @@ Model3D.prototype.initNormals = function()
 	var v0;
 	var v1;
 	var v2;
-	
+
 	var x0;
 	var y0;
 	var z0;
@@ -632,7 +632,7 @@ Model3D.prototype.initNormals = function()
 	var ny;
 	var nz;
 	var d;
-	
+
 	var w;
 
 
@@ -643,7 +643,7 @@ Model3D.prototype.initNormals = function()
 		v0 = this.faces[lp+0] * 4;
 		v1 = this.faces[lp+1] * 4;
 		v2 = this.faces[lp+2] * 4;
-		
+
 		x0 = this.initial_verts[v0+0];
 		y0 = this.initial_verts[v0+1];
 		z0 = this.initial_verts[v0+2];
@@ -655,12 +655,12 @@ Model3D.prototype.initNormals = function()
 		x2 = this.initial_verts[v2+0];
 		y2 = this.initial_verts[v2+1];
 		z2 = this.initial_verts[v2+2];
-		
+
 			// U = p1 - p0
 		ux = x1 - x0;	//this.initial_verts[v1+0] - this.initial_verts[v0+0];
 		uy = y1 - y0;	//this.initial_verts[v1+1] - this.initial_verts[v0+1];
 		uz = z1 - z0;	//this.initial_verts[v1+2] - this.initial_verts[v0+2];
-		
+
 
 			// V = p2 = p0
 		vx = x2 - x0;	//this.initial_verts[v2+0] - this.initial_verts[v0+0];
@@ -679,7 +679,7 @@ Model3D.prototype.initNormals = function()
 			ny /= d;
 			nz /= d;
 		}
-		
+
 		this.initial_normal[i++] = nx;
 		this.initial_normal[i++] = ny;
 		this.initial_normal[i++] = nz;
@@ -692,7 +692,7 @@ Model3D.prototype.rotateNormals = function (rx,ry,rz)
 	// for now, just copies normal data over while testing.
 	var m;
 	var i;
-	
+
 	m = MatrixIdentity();
 	m = MatrixRotate (m,rx,ry,rz);
 	MatrixVectorArrayMultiply (m, this.initial_normal, this.normal);
@@ -728,7 +728,7 @@ Model3D.prototype.calcLighting = function (light_x, light_y, light_z)
 	var nz;
 	var w;
 	var cos_a;
-	
+
 	var n;
 
 	var k;
@@ -1071,8 +1071,12 @@ function PositionCamera()
 	var a;
 
 	r = 5.75;	//cam_dist;
-	
-	CameraAngle = 120;
+
+	if (CameraAngle < 120)
+	{
+		CameraAngle += 2;
+	}
+//	CameraAngle = 120;
 
 	a = (CameraAngle * Math.PI)/180;
 	cos_a = r * Math.cos (a);
@@ -1082,14 +1086,18 @@ function PositionCamera()
 //	y = 10;
 //	z = r * sin_a;
 
-	x = 0;	
+	x = 0;
 	y = r * cos_a;
 	z = r * sin_a;
+
+//	x = 0;
+//	y = r * cos_a;
+//	z = r * sin_a;
 
 //	y = -80;
 //	z = -70;
 
-	CameraAngle += 1;
+//	CameraAngle += 1;
 //	while (CameraAngle >= 360)
 //	{
 //		CameraAngle -= 360;
@@ -1155,11 +1163,11 @@ var ppppp = 0;
 function DrawGame()
 {
 	// uses data from batnball.js to draw the game.
-	
+
 	// Objects 0,1 & 2 are walls.. they do *not* change.
-	
+
 	// Object 3 is the bat - also always exists.
-	
+
 	// objects 4 and up are are created dynamically each frame so that
 	// the number of balls/bricks can change as required.
 
@@ -1167,10 +1175,10 @@ function DrawGame()
 	var n;
 	var first_dynamic_object;
 	var s;
-	
+
 	var first_brick;
 
-	var rgb = 
+	var rgb =
 	[
 		0, 0, 1,
 		0, 1, 1,
@@ -1179,7 +1187,7 @@ function DrawGame()
 		1, 0, 0,
 		0, 0.5, 0,
 	];
-	
+
 	var r;
 	var g;
 	var b;
@@ -1187,7 +1195,7 @@ function DrawGame()
 
 //	TestObjects = [];
 //	n = 0;
-	
+
 	first_dynamic_object = 3;
 	n = first_dynamic_object;
 
@@ -1196,7 +1204,7 @@ function DrawGame()
 	{
 		TestObjects[i].state = OBJECT_OFF;
 	}
-	
+
 //	console.log (TestObjects.length);
 
 		// add player bats to the screen.
@@ -1238,7 +1246,7 @@ function DrawGame()
 			TestObjects[n].red = 1;
 			TestObjects[n].green = 1;
 			TestObjects[n].blue = 1;
-			
+
 			n++;
 		}
 	}
@@ -1268,12 +1276,12 @@ function DrawGame()
 			TestObjects[n].sx = 1;
 			TestObjects[n].sy = 1;
 			TestObjects[n].sz = 1;
-			
+
 			ink =  Math.floor (i / 12);
 			r = rgb[(ink*3)+0];
 			g = rgb[(ink*3)+1];
 			b = rgb[(ink*3)+2];
-			
+
 			if (Bricks[i].number_of_hits_required > 1)
 			{
 				r = 1;
@@ -1294,11 +1302,11 @@ function DrawGame()
 			}
 			TestObjects[n].state = OBJECT_ON;
 			TestObjects[n].model_ref = BrickModel;	// pointer to model data.
-			
+
 			TestObjects[n].x = Bricks[i].x;
 			TestObjects[n].y = Bricks[i].y;
 			TestObjects[n].z = -10;
-			
+
 			s = Bricks[i].exploding / BNB_EXPLOSION_TIME;
 //			TestObjects[n].ry = 360 * s;
 			TestObjects[n].sx = s*1.2;
@@ -1329,17 +1337,18 @@ function DoInputs()
 	var right;
 	var l1;
 	var r1;
-	
+
 	var lup;
 	var ldown;
 	var lleft;
 	var lright;
 
 
+
 	left_pressed = false;
 	right_pressed = false;
 
-		// joystick tests too.
+		// joystick tests .
 
 	Joystick_Update();
 	if (Joystick_GetButton (0, JOYSTICK_LBC_LEFT) == true)
@@ -1350,9 +1359,9 @@ function DoInputs()
 	{
 		right_pressed = true;
 	}
-	
+
 		// check for pause
-	
+
 	if ((KeyPressed (KEY_P) == true) || (Joystick_GetButton (0, JOYSTICK_RBC_TOP) == true))
 	{
 			// do pause.
@@ -1360,10 +1369,10 @@ function DoInputs()
 		KeyClear (KEY_P);
 		return;
 	}
-	
 
-	
-	if ((KeyPressed (KEY_LEFT) == true) || 
+
+
+	if ((KeyPressed (KEY_LEFT) == true) ||
 		(KeyPressed (KEY_A) == true) ||
 		(KeyPressed (KEY_J) == true))
 	{
@@ -1377,9 +1386,9 @@ function DoInputs()
 		right_pressed = true;
 	}
 
-	
-		// and touch screen 
-		
+
+		// and touch screen
+
 	if (TouchInfo.available == true)
 	{
 		if ((TouchInfo.flags[0] == TOUCHSCREEN_FLAG_TOUCHMOVE) ||
@@ -1387,7 +1396,7 @@ function DoInputs()
 		{
 			if (TouchInfo.x[0] != -1)
 			{
-				if (TouchInfo.x[0] < (Canvas.width>>1))	
+				if (TouchInfo.x[0] < (Canvas.width>>1))
 				{
 					left_pressed = true;
 				}
@@ -1398,10 +1407,10 @@ function DoInputs()
 			}
 		}
 	}
-		
+
 		// ---- deal with inputs below ----
-	
-	
+
+
 	if (BNB_GameMode == BNB_GAME_MODE_PRESS_PLAY)
 	{
 		if ((left_pressed == true) || (right_pressed == true))
@@ -1411,6 +1420,13 @@ function DoInputs()
 		}
 	}
 
+
+	if (CameraAngle != 120)
+	{
+		return;
+	}
+
+
 	if (left_pressed)
 	{
 		BNB_LeftPressed(0);
@@ -1419,40 +1435,6 @@ function DoInputs()
 	{
 		BNB_RightPressed(0);
 	}
-
-/*	item = document.getElementById ("Jstk");
-
-	up =  Joystick_GetButton (0, JOYSTICK_RBC_TOP);
-	down= Joystick_GetButton (0, JOYSTICK_RBC_BOTTOM);
-	left= Joystick_GetButton (0, JOYSTICK_RBC_LEFT);
-	right=Joystick_GetButton (0, JOYSTICK_RBC_RIGHT);
-
-	lup =  Joystick_GetButton (0, JOYSTICK_LBC_TOP);
-	ldown= Joystick_GetButton (0, JOYSTICK_LBC_BOTTOM);
-	lleft= Joystick_GetButton (0, JOYSTICK_LBC_LEFT);
-	lright=Joystick_GetButton (0, JOYSTICK_LBC_RIGHT);
-
-
-	l1 = Joystick_GetButton (0, JOYSTICK_FB_TOP_LEFT);
-	r1 = Joystick_GetButton (0, JOYSTICK_FB_TOP_RIGHT);
-	str ="";
-	
-	str += "up:" + up + " down:" + down + " left:" + left + " right:" + right + "<br>";
-	str += "lup:" + lup + " ldown:" + ldown + " lleft:" + lleft + " lright:" + lright + "<br>";
-	str += "L1:" + l1 + " R1:" + r1 + "<br>";
-
-	for (i = 0; i < Joystick_ButtonCount(0); i++)
-	{
-		str = str + i + ":" + Joystick_GetButton (0, i) + " ";
-	}
-	str += "<br>";
-	for (i = 0; i < Joystick_AxisCount(0); i++)
-	{
-		str = str + i + ":" + Joystick_GetAxis (0, i) + " ";
-	}
-
-	item.innerHTML = str;
-*/
 }
 
 function ShowBricks()
@@ -1460,7 +1442,7 @@ function ShowBricks()
 	var x;
 	var y;
 	var i;
-	
+
 	Ctx.beginPath();
 	Ctx.fillStyle="#ffff00";
 
@@ -1489,15 +1471,15 @@ function DrawNumber (x,y,scale, num)
 
 	var digit_width;
 	var digit_height;
-	
+
 	var screen_width;
 	var screen_height;
-	
+
 //	var scale;
-	
+
 	digit_width = 42;
 	digit_height = 52;
-	
+
 	screen_width = digit_width * scale;
 	screen_height= digit_height * scale;
 
@@ -1522,7 +1504,7 @@ function DrawNumber (x,y,scale, num)
 			ix = (d-5) * digit_width;
 			iy = digit_height;
 		}
-		
+
 		Ctx.drawImage (ImgText, ix,iy,digit_width, digit_height, dx, y, screen_width, screen_height);
 		n -= (d * u);
 		u = Math.floor (u/10);
@@ -1540,7 +1522,7 @@ function DrawLives()
 	var iy;
 	var x;
 	var y;
-	
+
 	var width;
 	var height;
 	var screen_width;
@@ -1555,7 +1537,7 @@ function DrawLives()
 	x = width/4;
 	y = 40;
 
-	
+
 	screen_width = width/2;
 	screen_height = height/2;
 
@@ -1574,6 +1556,11 @@ function DrawPlayButton()
 	var h;
 	var sw;
 	var sh;
+
+	if (CameraAngle != 120)
+	{
+		return;
+	}
 
 	if (BNB_GameMode != BNB_GAME_MODE_PRESS_PLAY)
 	{
@@ -1627,13 +1614,13 @@ function DrawExplosions()
 	var h;
 	var sw;
 	var sh;
-	
+
 	var ox;
 	var oy;
-	
+
 	var ix;
 	var iy;
-	
+
 	var k;
 
 	w = 12;
@@ -1655,7 +1642,7 @@ function DrawExplosions()
 			Ctx.drawImage (ImgText, ix, iy, w, h, x, y, sw, sh);
 		}
 	}
-	
+
 //	console.log ("i:"+i);
 }
 
@@ -1667,7 +1654,7 @@ function MouseClick()
 			return;
 	}
 }
-	
+
 var busy = false;
 function UpdateGame()
 {
@@ -1679,12 +1666,14 @@ function UpdateGame()
 	}
 	busy = true;
 	requestAnimationFrame (UpdateGame);
-	UpdateFrameCounter();
+
+
+	UpdateFrameCounter();		// for now, no frame counter.
 
 	if (!Ctx)	return;
-	
+
 	dt = 1/50;		// timing is 1/50th of a second.
-	
+
 	DoInputs();
 
 	Ctx.clearRect(0,0,Canvas.width, Canvas.height);
@@ -1694,7 +1683,7 @@ function UpdateGame()
 
 	Ctx.strokeStyle = "#000000";
 	BNB_DoGame(dt);
-	
+
 	BallRotateX += 2.5;
 	BallRotateY += 3.1;
 	if (BallRotateX >= 360)
@@ -1721,11 +1710,11 @@ function UpdateGame()
 
 	DrawNumber (2, 10, 0.5, Player[0].score);
 	DrawLives();
-	
+
 	DrawPlayButton();
 	DrawLogo();
 	DrawExplosions();
-	
+
 //	DrawNumber (10, 50, 56789);
 //	DrawNumber (10, 90, 9876543210);
 
@@ -1750,7 +1739,7 @@ function FullSizeCanvas()
 	item = document.getElementById ("gc");
 	item.style.width = w + "px";
 	item.style.height = h + "px";
-	
+
 	document.body.scrollTop = 0; // <-- pull the page back up to the top
 	document.body.style.overflow = 'hidden';
 
@@ -1761,11 +1750,11 @@ function MakeCuboid (width, height, depth, vertices, faces)
 	var hh;
 	var hw;
 	var hd;
-	
+
 	hh = height/2;
 	hw = width/2;
 	hd = depth/2;
-	
+
 	vertices[0] = -hw; vertices[1] = hh; vertices[2] = -hd;
 	vertices[3] =  hw; vertices[4] = hh; vertices[5] = -hd;
 	vertices[6] =  hw; vertices[7] =-hh; vertices[8] = -hd;
@@ -1778,19 +1767,19 @@ function MakeCuboid (width, height, depth, vertices, faces)
 
 	faces[0] = 0; faces[1] = 1; faces[2] = 2;	// front
 	faces[3] = 2; faces[4] = 3; faces[5] = 0;
-	
+
 	faces[6] = 4; faces[7] = 5; faces[8] = 6;
 	faces[9] = 6; faces[10]= 7; faces[11]= 4;
 
 	faces[12]= 5; faces[13]= 0; faces[14]=3;
 	faces[15]= 3; faces[16]= 6; faces[17]=5;
-	
+
 	faces[18]= 1; faces[19]= 4; faces[20]=7;
 	faces[21]= 7; faces[22]= 2; faces[23]=1;
-	
+
 	faces[24]= 5; faces[25]= 4; faces[26]=1;
 	faces[27]= 1; faces[28]= 0; faces[29]=5;
-	
+
 	faces[30]= 3; faces[31]= 2; faces[32]=7;
 	faces[33]= 7; faces[34]= 6; faces[35]=3;
 }
@@ -1803,10 +1792,10 @@ function MakeModels()
 	var sy;
 	var half_wall_length;
 	var ww;
-	
+
 	var vertices = [];
 	var faces = [];
-	
+
 	MakeCuboid (WALL_WIDTH, 24, 2.5, vertices, faces);
 	WallModel = new Model3D (vertices, faces);
 	WallModel.initNormals();
@@ -1844,7 +1833,7 @@ function Init_3D_Objects()
 	var y;
 	var i;
 	var ox;
-	
+
 	i = 0;
 	TestObjects[i] = new Object3D(WallModel);
 	TestObjects[i].state = OBJECT_ON;
@@ -1899,7 +1888,7 @@ function DoInits()
 		console.log ("joystick is available");
 		Joystick_ListenForConnect();
 	}
-	
+
 	if (TouchScreenAvailable() == true)
 	{
 		TouchScreen_InitEvents("gc");
@@ -1932,16 +1921,12 @@ function DoInits()
 	Init_3D_Objects();
 
 	BNB_Init();
-	
+
 	console.log ("bricks");
 	console.log (Bricks);
 
 	BallRotateX = 0;
 	BallRotateY = 0;
-
-//	ClearDrawList();
-//	CreateDrawList(TestObjects);
-//	Draw_DrawList();
 
 	once = 1;
 
