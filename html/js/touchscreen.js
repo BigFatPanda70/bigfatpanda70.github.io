@@ -80,6 +80,8 @@ function TouchScreen_TouchStart()
 	TouchInfo.x[0] = tx;
 	TouchInfo.y[0] = ty;
 	TouchInfo.flags[0] = TOUCHSCREEN_FLAG_TOUCHDOWN;
+	
+	console.log ("touch down");
 }
 
 function TouchScreen_TouchMove()
@@ -127,6 +129,7 @@ function TouchScreen_TouchMove()
 	TouchInfo.flags[0] = TOUCHSCREEN_FLAG_TOUCHMOVE;
 
 //	e.preventDefault();
+	console.log ("touch move");
 }
 
 function TouchScreen_TouchEnd()
@@ -154,6 +157,9 @@ function TouchScreen_TouchEnd()
 	TouchInfo.flags[0] = TOUCHSCREEN_FLAG_TOUCHUP;
 
 //	e.preventDefault();
+
+	console.log ("touch end");
+
 }
 
 
