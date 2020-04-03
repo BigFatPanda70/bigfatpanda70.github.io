@@ -49,6 +49,7 @@ function TouchScreen_TouchStart()
 	var rect;
 	var tx;
 	var ty;
+	var canvas;
 
 	e = event;
 	e.preventDefault();
@@ -84,7 +85,7 @@ function TouchScreen_TouchStart()
 	TouchInfo.y[0] = ty;
 	TouchInfo.flags[0] = TOUCHSCREEN_FLAG_TOUCHDOWN;
 	
-	console.log ("touch down");
+	console.log ("touch down tx:" + tx + " ty:" + ty);
 }
 
 function TouchScreen_TouchMove()
