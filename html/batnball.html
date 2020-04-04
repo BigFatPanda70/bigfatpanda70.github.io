@@ -213,6 +213,7 @@ body
 <script src="js/collisions.js"></script>
 <script src="js/batnball.js"></script>
 <script src="js/touchscreen.js"></script>
+<script src="js/hiscores.js"></script>
 
 <script>
 
@@ -1251,6 +1252,7 @@ function DrawGame()
 	var n;
 	var first_dynamic_object;
 	var s;
+	var chk;
 
 	var first_brick;
 
@@ -1333,7 +1335,7 @@ function DrawGame()
 //console.log ("n:" + n);
 	for (i = 0; i < Bricks.length; i++)
 	{
-		if (Bricks[i].state == BNB_BRICK_ON)
+		if ((Bricks[i].state == BNB_BRICK_ON) || (Bricks[i].state == BNB_BRICK_DEAD))
 		{
 			if (n == TestObjects.length)
 			{
@@ -1363,6 +1365,21 @@ function DrawGame()
 				r = 1;
 				g = 1;
 				b = 1;
+			}
+			if (Bricks[i].state == BNB_BRICK_DEAD)
+			{
+					// colour using checkerboard pattern
+				chk = (i&1)^(1&Math.floor(i/12));
+				r = 0.4;
+				g = 0.4;
+				b = 0.4;
+				if (chk == 1)
+				{
+					r += 0.2;
+					g += 0.2;
+					b += 0.2;
+				}
+
 			}
 
 			TestObjects[n].red = r;	//rgb[0 + (Math.floor((i/12))*3)];
@@ -1495,6 +1512,16 @@ function DoInputs()
 			return;
 		}
 	}
+	
+	if (BNB_GameMode == BNB_GAME_MODE_SHOW_HISCORES)
+	{
+		if ((left_pressed == true) || (right_pressed == true))
+		{
+			BNB_SetTransition (BNB_GAME_MODE_INIT_GAME);
+			return;
+		}
+	}
+
 
 
 	if (CameraAngle != 120)
@@ -1624,6 +1651,22 @@ function DrawLives()
 	DrawNumber (x+(screen_width),y+4,0.4, lives);
 }
 
+function DrawLevel()
+{
+		// for now, assume single player.
+
+	var x;
+	var y;
+
+	y = 16;
+	x = Canvas.width - 32;
+	level = BNB_Level;
+
+	DrawNumber (x,y,0.4, level);
+}
+
+
+
 function DrawPlayButton()
 {
 	var x;
@@ -1679,8 +1722,6 @@ function DrawLogo()
 	Ctx.drawImage (ImgLogo, 0, 0, w, h, x, y, sw, sh);
 }
 
-
-
 function DrawExplosions()
 {
 	var i;
@@ -1720,6 +1761,54 @@ function DrawExplosions()
 	}
 
 //	console.log ("i:"+i);
+}
+
+function DrawHiscores()
+{
+	var i;
+	var x;
+	var y;
+	var idx;
+	var score;
+	var ox;
+	var d;
+	var w;
+	
+	if (BNB_GameMode !== BNB_GAME_MODE_SHOW_HISCORES)
+	{
+		return;
+	}
+	
+	x = (Canvas.width-200)>>1;
+	y = 100;
+
+	w = 20;
+	idx = Hiscores.length - 1;
+	for (i = 0; i < Hiscores.length; i++)
+	{
+		score = Hiscores[Hiscores.length-i-1].score;
+
+		d = score;
+		ox = 0;
+		d = Math.floor (d/10);
+		while (d > 0)
+		{
+			d = Math.floor (d/10);
+			ox++;
+		}
+
+		if (i < 9)
+		{
+			DrawNumber (x,y,0.5, i+1);
+		}
+		else
+		{
+			DrawNumber (x-20,y,0.5, i+1);
+		}
+		DrawNumber (x + 180 - (ox*w), y, 0.5, score);
+		y += 40;
+		idx--;
+	}
 }
 
 function MouseClick()
@@ -1790,6 +1879,8 @@ function UpdateGame()
 	DrawPlayButton();
 	DrawLogo();
 	DrawExplosions();
+	DrawLevel();
+	DrawHiscores();
 
 //	DrawNumber (10, 50, 56789);
 //	DrawNumber (10, 90, 9876543210);
@@ -2006,6 +2097,13 @@ function DoInits()
 
 	BallRotateX = 0;
 	BallRotateY = 0;
+	
+	
+	HiscoresInit();
+	
+//	HiscoresUpdate (501, "haha");
+	
+	console.log (Hiscores);
 
 	once = 1;
 

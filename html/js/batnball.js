@@ -5,7 +5,7 @@
 	
 	Author	:	Nick Fleming
 	
-	Updated	:	2nd April 2020
+	Updated	:	4th April 2020
 	
 	 Notes:
 	--------
@@ -67,6 +67,16 @@
 	.. definitely do a two player mode.
 
 
+
+	 4th April 2020
+	-----------------
+		Working on the game modes and transitions. Got the 'game over'
+	section done.. which is really hard to do without using the
+	words 'game over'.. I think people will understand .
+
+		Extra lives added every 1000 points.. and also adjusted 
+	the number of times you have to hit a white brick.
+
 	TO DO:
 	--------
 		GET TOUCH SCREEN SUPPORT WORKING.
@@ -76,6 +86,9 @@
 	// === constants ===
 
 //var DEFAULT_BAT_WIDTH = 64;
+
+var BNB_EXTRA_LIFE = 1000;
+
 var BNB_BAT_WIDTH = 3;
 var BNB_BAT_HEIGHT = 0.5;
 
@@ -85,6 +98,8 @@ var BAT_WIDTH = 2;
 var BALL_RADIUS = 0.25;
 
 var BNB_PLAYER_Y = -4.5;
+
+var BNB_GAMEOVER_DELAY = 250;
 
 var BNB_NUM_ROWS = 6;
 var BNB_NUM_COLUMNS = 12;
@@ -102,9 +117,12 @@ var PLAYER_SPEED = 0.2;
 
 var NO_COLLISION = -1;
 
+var BNB_STATE_DELAY = 200;		// delay for press play + view hiscores.
+
 var BNB_BRICK_OFF = 0;
 var BNB_BRICK_ON = 1;
 var BNB_BRICK_EXPLODING = 2;		// lets destroy the bricks creatively !!
+var BNB_BRICK_DEAD = 3;
 
 var BNB_EXPLOSION_TIME = 50;
 
@@ -129,6 +147,7 @@ var BNB_GAME_MODE_PRESS_PLAY	= 10;
 var BNB_GAME_MODE_NEXT_LEVEL    = 11;
 var BNB_GAME_MODE_DEMO			= 12;
 var BNB_GAME_MODE_GAME_OVER		= 13;
+var BNB_GAME_MODE_COUNTDOWN		= 14;
 
 
 var level_0 = 
@@ -164,20 +183,20 @@ var level_2 =
 var level_3 =
 [
  1,1,1,1,1,1,1,1,1,1,1,1,
- 1,5,1,1,1,1,1,1,1,1,5,1,
- 1,5,1,1,1,1,1,1,1,1,5,1,
- 1,5,1,1,1,1,1,1,1,1,5,1,
- 1,1,5,5,5,5,5,5,5,5,1,1,
+ 1,1,1,1,1,1,1,1,1,1,1,1,
+ 1,1,1,1,2,2,2,2,1,1,1,1,
+ 1,1,1,1,2,2,2,2,1,1,1,1,
+ 1,1,1,1,2,2,2,2,1,1,1,1,
  1,1,1,1,1,1,1,1,1,1,1,1
 ];
 
 var level_4 =
 [
- 1,1,1,1,5,5,5,5,1,1,1,1,
- 1,1,5,1,1,1,1,1,1,5,1,1,
- 1,1,5,1,5,5,5,5,1,5,1,1,
- 1,1,5,1,1,1,1,1,1,5,1,1,
- 1,1,5,1,5,5,5,5,1,5,1,1,
+ 1,1,1,1,3,3,3,3,1,1,1,1,
+ 1,1,3,1,1,1,1,1,1,3,1,1,
+ 1,1,3,1,3,3,3,3,1,3,1,1,
+ 1,1,3,1,1,1,1,1,1,3,1,1,
+ 1,1,3,1,3,3,3,3,1,3,1,1,
  1,1,1,1,1,1,1,1,1,1,1,1
 ];
 
@@ -194,22 +213,22 @@ var level_5 =
 
 var level_6 = 
 [
- 5,1,1,1,1,1,1,1,1,1,1,5,
- 1,5,1,1,1,1,1,1,1,1,5,1,
- 1,1,5,1,1,1,1,1,1,5,1,1,
- 1,1,1,5,1,1,1,1,5,1,1,1,
- 1,1,1,1,5,1,1,5,1,1,1,1,
- 1,1,1,1,1,5,5,1,1,1,1,1
+ 3,1,1,1,1,1,1,1,1,1,1,3,
+ 1,3,1,1,1,1,1,1,1,1,3,1,
+ 1,1,3,1,1,1,1,1,1,3,1,1,
+ 1,1,1,3,1,1,1,1,3,1,1,1,
+ 1,1,1,1,3,1,1,3,1,1,1,1,
+ 1,1,1,1,1,3,3,1,1,1,1,1
 ];
 
 var level_7 =
 [
  1,1,1,1,1,1,1,1,1,1,1,1,
  1,1,1,1,1,1,1,1,1,1,1,1,
- 1,1,1,1,1,5,5,1,1,1,1,1,
+ 1,1,1,1,1,3,3,1,1,1,1,1,
  1,1,1,1,1,1,1,1,1,1,1,1,
  1,1,1,1,1,1,1,1,1,1,1,1,
- 5,5,1,5,5,1,1,5,5,1,5,5
+ 3,3,1,3,3,1,1,3,3,1,3,3
 ];
 
 level_8 =
@@ -217,9 +236,9 @@ level_8 =
  1,1,1,1,1,1,1,1,1,1,1,1,
  1,1,1,1,1,1,1,1,1,1,1,1,
  1,1,1,1,1,1,1,1,1,1,1,1,
- 1,1,1,5,5,1,1,5,5,1,1,1,
- 1,5,5,1,1,0,0,1,1,5,5,1,
- 5,1,1,1,0,0,0,0,1,1,1,5
+ 1,1,1,4,4,1,1,4,4,1,1,1,
+ 1,4,4,1,1,0,0,1,1,4,4,1,
+ 4,1,1,1,0,0,0,0,1,1,1,4
 ];
 
 level_9 =
@@ -407,12 +426,19 @@ var Balls = [];
 //var BatX;
 //var Baty;
 
+var BNB_GameOverDelay = 0;
+
+var BNB_Countdown = 0;
+
+
 var num_players = 1;
 var num_balls = 1;
 
 var Player = [];
 
 var Particles = [];
+
+var BNB_ExtraLife;	// = BNB_EXTRA_LIFE;
 
 
 function BNB_MoveParticles (dt)
@@ -774,6 +800,12 @@ function BNB_BallBrickCollisionTime (ball_idx, brick_idx, dt)
 	Player[0].score += 1 + (Math.floor((brick_idx/12)) * 2);
 	brick.state = BNB_BRICK_EXPLODING;
 	brick.exploding = BNB_EXPLOSION_TIME;
+	
+	if (Player[0].score >= BNB_ExtraLife)
+	{
+		Player[0].lives++;
+		BNB_ExtraLife += BNB_EXTRA_LIFE;
+	}
 }
 
 //	var monkey = 0;
@@ -1054,7 +1086,11 @@ function BNB_InitBalls()
 
 	Balls[i].y = 2;
 	Balls[i].vx = 6;
-	Balls[i].vy = 6;
+	Balls[i].vy = -6;
+	if (Math.random() > 0.5)
+	{
+		Balls[i].vx *= -1;
+	}	
 
 
 	Balls[i].radius = 0.25;
@@ -1086,7 +1122,7 @@ function BNB_Restart()
 
 	Player[i].state = PLAYER_ON;
 	Player[i].flags = 0;
-//	Player[i].x = 0;
+	Player[i].x = 0;
 	Player[i].y = BNB_PLAYER_Y;
 	Player[i].vx = 0;
 	Player[i].vy = 0;
@@ -1096,10 +1132,14 @@ function BNB_Restart()
 	Balls[i].x = 0;
 	Balls[i].y = 2;
 	Balls[i].vx = 6;
-	Balls[i].vy = 6;
+	Balls[i].vy = -6;
+	if (Math.random() > 0.5)
+	{
+		Balls[i].vx *= -1;
+	}	
 
-	BNB_SetTransition (BNB_GAME_MODE_MAIN_LOOP);
-
+	BNB_Countdown = 60;
+	BNB_SetTransition (BNB_GAME_MODE_COUNTDOWN);
 }
 
 function BNB_InitPlayers()
@@ -1127,6 +1167,15 @@ function BNB_InitPlayers()
 
 function BNB_SetTransition(next_state)
 {
+	if (next_state == BNB_GAME_MODE_PRESS_PLAY)
+	{
+		BNB_Countdown = BNB_STATE_DELAY * 4;
+	}
+	if (next_state == BNB_GAME_MODE_SHOW_HISCORES)
+	{
+		BNB_Countdown = BNB_STATE_DELAY * 4;
+	}
+
 	BNB_NextState = next_state;
 	BNB_GameMode = BNB_GAME_MODE_TRANSITION;
 }
@@ -1139,6 +1188,9 @@ function BNB_InitGame()
 	BNB_InitPlayers();
 	BNB_InitBricks (BNB_Level);
 	BNB_InitBalls();
+
+	BNB_ExtraLife = BNB_EXTRA_LIFE;
+
 	BNB_SetTransition (BNB_GAME_MODE_START_GAME);
 }
 
@@ -1147,12 +1199,6 @@ function BNB_Transition()
 	// for now, just go straight to next state
 	BNB_GameMode = BNB_NextState;
 }
-
-function BNB_PressPlay()
-{
-	// does nothing. waits for controlling program to signal play pressed.
-}
-
 
 function BNB_StartGame()
 {
@@ -1222,6 +1268,9 @@ function BNB_EndLife(dt)
 		BNB_SetTransition (BNB_GAME_MODE_RESTART_GAME);
 		return;
 	}
+
+	BNB_GameOverDelay = BNB_GAMEOVER_DELAY;
+	BNB_SetTransition (BNB_GAME_MODE_GAME_OVER);
 }
 
 function BNB_NextLevel()
@@ -1245,6 +1294,70 @@ function BNB_DoPause()
 	// nothing to do while paused ??
 }
 
+function BNB_GameOver()
+{
+	var i;
+	var idx;
+
+	idx = -1;
+	for (i = 0; i < Bricks.length; i++)
+	{
+		if (idx == -1)
+		{
+			if (Bricks[i].state == BNB_BRICK_ON)
+			{
+				idx = i;
+			}
+		}
+	}
+	
+	if (idx != -1)
+	{
+		Bricks[idx].state = BNB_BRICK_DEAD;
+	}
+	
+	BNB_GameOverDelay--;
+	if (BNB_GameOverDelay < 1)
+	{
+			// womble.
+		HiscoresUpdate (Player[0].score, "aaa");	// update hiscore table.
+		BNB_SetTransition (BNB_GAME_MODE_SHOW_HISCORES);
+	}
+	
+
+}
+
+function BNB_DoCountdown()
+{
+	BNB_Countdown--;
+	if (BNB_Countdown < 1)
+	{
+		BNB_SetTransition (BNB_GAME_MODE_MAIN_LOOP);
+	}
+}
+
+function BNB_ShowHiscores()
+{
+	BNB_Countdown--;
+	if (BNB_Countdown < 1)
+	{
+		BNB_SetTransition (BNB_GAME_MODE_PRESS_PLAY);
+	}
+}	
+
+function BNB_PressPlay()
+{
+	// does nothing. waits for controlling program to signal play pressed.
+	BNB_Countdown--;
+	
+	if (BNB_Countdown < 1)
+	{
+		BNB_SetTransition (BNB_GAME_MODE_SHOW_HISCORES);
+	}
+}
+
+
+
 	// ========================================
 	//		Public Facing Routines
 	// ========================================
@@ -1261,12 +1374,14 @@ function BNB_RightPressed (player_number)
 
 function BNB_PlayPressed()
 {
+	console.log ("play pressed");
 	if (BNB_GameMode != BNB_GAME_MODE_PRESS_PLAY)
 	{
 		return;
 	}
 
-	BNB_SetTransition (BNB_GAME_MODE_MAIN_LOOP);
+	BNB_Countdown = 60;
+	BNB_SetTransition (BNB_GAME_MODE_COUNTDOWN);
 }
 
 function BNB_TogglePause()
@@ -1315,6 +1430,7 @@ function BNB_DoGame (dt)
 				BNB_EndLife(dt);
 				break;
 		case BNB_GAME_MODE_SHOW_HISCORES:
+				BNB_ShowHiscores();
 				break;
 		case BNB_GAME_MODE_RESTART_GAME:
 				BNB_Restart();
@@ -1323,6 +1439,10 @@ function BNB_DoGame (dt)
 				BNB_NextLevel();
 				break;
 		case BNB_GAME_MODE_GAME_OVER:
+				BNB_GameOver();
+				break;
+		case BNB_GAME_MODE_COUNTDOWN:
+				BNB_DoCountdown();
 				break;
 		default:
 				console.log ("BNB_DoGame: Unknown game state " + BNB_GameMode);
