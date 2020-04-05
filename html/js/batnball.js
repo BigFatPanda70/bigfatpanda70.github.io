@@ -1319,12 +1319,10 @@ function BNB_GameOver()
 	BNB_GameOverDelay--;
 	if (BNB_GameOverDelay < 1)
 	{
-			// womble.
 		HiscoresUpdate (Player[0].score, "aaa");	// update hiscore table.
 		BNB_SetTransition (BNB_GAME_MODE_SHOW_HISCORES);
+//		BNB_SetTransition (BNB_GAME_MODE_SHOW_HISCORES);
 	}
-	
-
 }
 
 function BNB_DoCountdown()
@@ -1341,7 +1339,8 @@ function BNB_ShowHiscores()
 	BNB_Countdown--;
 	if (BNB_Countdown < 1)
 	{
-		BNB_SetTransition (BNB_GAME_MODE_PRESS_PLAY);
+//		BNB_SetTransition (BNB_GAME_MODE_PRESS_PLAY);
+		BNB_SetTransition (BNB_GAME_MODE_INIT_GAME);
 	}
 }	
 
