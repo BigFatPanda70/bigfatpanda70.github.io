@@ -9,6 +9,7 @@
 	display: table;
 	width: 100%;
 	background-color: red;
+	margin-bottom:4px;
 }
 .navitem
 {
@@ -17,6 +18,23 @@
 }
 
 	/* left side menu */
+
+.vmenu
+{
+  border-style: solid;
+  border-width: 1px;
+  border-color: black;
+  margin:4px;
+}
+
+.vmenu div
+{
+	text-align: center;
+	background-color: #ddeeff;
+	display:inline-block;
+	width:100%;
+}
+
 .vmenu a
 {
 	color: black;
@@ -24,6 +42,7 @@
 	text-decoration: none;
 	padding:1em;
 	display: block;
+
 }
 .vmenu a:hover
 {
@@ -111,30 +130,37 @@ html, body
 	text-decoration:none;
 }
 
+.left
+{
+	background-color:grey;
+}
+
 
 /* responsive design stuff from w3schools */
 /* design for mobile first */
 
 /* Use a media query to add a breakpoint at 800px: */
 
-.left, .main, .right 
+.left, .main, .right
 {
 	width: 100%; /* The width is 100%, when the viewport is 800px or smaller */
 }
 
-@media only screen and (min-width: 800px) 
+@media only screen and (min-width: 800px)
 {
 	.left
 	{
-		width: 20%;
+		width: 19%;
+		margin: 0.5%;
 	}
 	.main
 	{
-		width: 60%;
+		width: 58%;
 	}
 	.right
 	{
-		width: 20%;
+		width: 19%;
+		margin: 0.5%;
 	}
 }
 
@@ -157,7 +183,7 @@ html, body
 	margin-top:7px;
 }
 
-.main 
+.main
 {
 	margin-top:7px;
 	background-color:#ffffff;
@@ -165,12 +191,13 @@ html, body
 /*	width: 60%;  */ /* The width is 60%, by default */
 }
 
-.right 
+.right
 {
 	background-color:#ffffff;
 	float: left;
 /*	width: 20%;*/  /* The width is 20%, by default */
 	margin-top:7px;
+
 }
 
 .leftbox
@@ -186,5 +213,10 @@ html, body
 	border-style:solid;
 	background-color: #ffeedd;
 	height :20%;
+}
+
+body
+{
+	background-color:grey;
 }
 
