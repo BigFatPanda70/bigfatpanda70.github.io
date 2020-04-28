@@ -5,7 +5,7 @@
 	
 	Author	:	Nick Fleming
 	
-	Updated	:	4th April 2020
+	Updated	:	15th April 2020
 	
 	 Notes:
 	--------
@@ -81,6 +81,10 @@
 	--------
 		GET TOUCH SCREEN SUPPORT WORKING.
 
+	 15th April 2020
+	------------------
+		to help with colour updates, adding a flag to say
+	if changed, so that colour is only updated when item changes.
 */
 
 	// === constants ===
@@ -281,7 +285,8 @@ function Particle()
 
 function BallStruct()
 {
-	var state;	// BALL_ON BALL_OFF
+/*	var state;	// BALL_ON BALL_OFF
+	var updated;
 	var x;
 	var y;
 	var vx;
@@ -293,6 +298,21 @@ function BallStruct()
 	var right;
 	var top;
 	var bottom;
+*/
+
+	this.state;	// BALL_ON BALL_OFF
+	this.updated;
+	this.x;
+	this.y;
+	this.vx;
+	this.vy;
+	this.radius;
+	
+		// AABB
+	this.left;
+	this.right;
+	this.top;
+	this.bottom;
 }
 
 BallStruct.prototype.calcAABB = function(dt)
@@ -349,6 +369,7 @@ BallStruct.prototype.calcAABB = function(dt)
 function BrickStruct()
 {
 	this.state = BNB_BRICK_OFF;
+	this.updated;
 	this.x;
 	this.y;
 	this.width = BRICK_WIDTH;
@@ -1036,7 +1057,8 @@ function BNB_InitBricks (level_number)
 			{
 				Bricks[i].state = BNB_BRICK_OFF;
 			}
-				
+			
+			Bricks[i].updated = true;
 			Bricks[i].x = ox + (c * BNB_BRICK_WIDTH);
 			Bricks[i].y = oy + (r * BNB_BRICK_HEIGHT);
 			Bricks[i].number_of_hits_required = lev[i];
@@ -1081,6 +1103,7 @@ function BNB_InitBalls()
 			Balls[i] = new BallStruct();
 	}
 
+	Balls[i].updated = true;		// always true for balls ??
 	Balls[i].state = BALL_ON;
 	Balls[i].x = 0;
 

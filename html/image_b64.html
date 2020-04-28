@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!--
+
+	Title	:	Convert Image to base64.
+	
+	Info	:	Version 0.0	27th April 2020
+
+	Author	:	Nick Fleming.
+
+	Updated	:	27th April 2020
+
+	 Notes:
+	--------
+
+	Creates a base 64 encoded version of the image file to use as an
+embedded image (to get around CORS restrictions when working with 
+local image data).
+
+
+-->
+
+<html>
+<head>
+	
+<link rel="stylesheet" href="./../styles.css">
+
+<style>
+.mycanvas
+{
+	width:256;
+	height:256;
+	background-color: #ffeedd;
+}
+</style>
+
+<script>
+
+var reader = new FileReader();
+var img;
+
+function ImgOnLoad()
+{
+	var item;
+	var canvas;
+	var ctx;
+
+	canvas = document.getElementById ("cvs");
+	ctx = canvas.getContext("2d");
+	ctx.clearRect (0,0, canvas.width, canvas.height);
+//	console.log (ctx);
+//	ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+	ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, canvas.width, canvas.height);
+	
+	item = document.getElementById ("info");
+	item.innerHTML = "Base 64 Image : width="+img.width + " height:" + img.height;
+
+}
+
+reader.onload = function(d)
+{
+	var str;
+	var len;
+	var item;
+
+	var srcData = d.target.result; // <--- data: base64
+	
+	srcData = srcData.trim();
+
+	len = 128;				// length of string to output
+
+	str = "var image =";
+	
+	while (srcData.length >= len)
+	{
+		str = str + '&nbsp&nbsp&nbsp&nbsp"' + srcData.slice (0,len) + '"'
+
+		srcData = srcData.slice (len);
+	
+		if (srcData.length > 0)
+		{
+			str = str + "+ <br>";
+		}
+	}
+	
+	if (srcData.length > 0)
+	{
+//		console.log ("srcData length : " + srcData.length);
+		str = str + '&nbsp&nbsp&nbsp&nbsp"' + srcData + '"' + " ;<br>";
+	}
+
+//	console.log (srcData);
+//	str = str + ";";
+	
+	img = new Image();
+	img.src = d.target.result;
+	img.onload  = ImgOnLoad;
+	
+	item = document.getElementById ("b64");
+	item.innerHTML = str;
+	
+}
+
+function readFile(f)
+{
+  var file = f.files[0];
+//  var reader = new FileReader();
+
+  reader.readAsDataURL(file);
+}
+
+</script>
+</head>
+
+<body>
+<div class="navbar">
+		<div class="navitem"><a class="navlink" href="https://bigfatpanda70.github.io"><img src="./../images/panda_small.png" alt="small logo image"></a></div>
+</div>
+
+<h1> Base 64 Image encoder.</h1>
+<p>I wrote this little tool to help get around a problem with loading
+webgl texture data for locally stored images.</p>
+<p>I kept running into CORS errors
+ when trying to use a local copy of my texture data. The solution 
+was to create a base64 version  for all the textures and use that instead of
+ trying to load them in from a file. </p>
+<p>I've uploaded it to the web in the hope someone out there might find it
+useful. It differs slightly from other base 64 encoders as it breaks 
+the output into smaller strings, so that it can be cut and pasted into 
+text editors that don't perhaps allow very long lines of text.</p>
+<p>Technical note: The output data is generated directly from the image, and not
+from the canvas copy, so it is not modified in any way.</p>
+<br>
+<p>Image will be displayed here:</p>
+<canvas class="mycanvas" id="cvs" width="256" height="256">
+</canvas>
+<input type="file" onchange="readFile(this)"></input>
+
+<p id="info">Base64 Image:</p>
+<p id="b64">Base 64 image (for javascript use) will appear here.</p>
+</body>
+
+</html>
