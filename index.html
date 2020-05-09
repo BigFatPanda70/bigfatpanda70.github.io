@@ -3,7 +3,7 @@
 <html>
 <head>
 <meta name="google-site-verification" content="64yvLnoiyLMUpmBlNZ0o6SUOF84GCxrd2qdb2jqiZGA" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <!-- Global site tag (gtag.js) - Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=UA-160067927-1"></script>
@@ -14,125 +14,113 @@
 
   gtag('config', 'UA-160067927-1');
 </script>
-    <script data-ad-client="ca-pub-5028916604386126" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<script data-ad-client="ca-pub-5028916604386126" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+
+
+<!--
+
+	Title	:	HTML Index Page version 2.0
+	
+	Info	:	Version 2.0	28th April 2020
+	
+	Author	:	Nick Fleming
+	
+	Updated	:	7th May 2020
+	
+	 Notes:
+	----------
+		Didn't like the look of the first attempt. It was functional
+	but screamed "1990's" free website design.
+	
+	So .. trying again.. sigh..
+	
+
+	first things first.. need the footer to always be at the bottom
+	of the page.
+
+	also.. need the cookie popup to appear as usual.
+
+	 7th May 2020
+	--------------
+	Trying to find a font size/width that looks good and readable.
+	
+	so.. need a grid design of sorts, so that we have a left column
+	that gets hidden on smaller screens,
+	a middle area that is sort of fixed in width (80em maybe)? and
+	a right hand side that has some images / links perhaps.
+
+	what a pain !!
+	
+
+-->
 
 <link rel="stylesheet" href="styles.css">
+
+<style>
+
+
+
+</style>
 
 <script src="html/js/cookie.js"></script>
 <script src="html/js/agree.js"></script>
 
-<script>
-
-function test()
-{
-	var info = document.getElementById ("info");
-	var item;
-	
-	info.innerHTML = "w:" + window.innerWidth;
-}
-
-</script>
-
 </head>
 <body>
+	
 <div id="wrap">
-		<div class="navbar">
-			<div class="navitem"><a class="navlink" href="https://bigfatpanda70.github.io"><img src="images/panda_small.png" alt="small logo image"></a></div>
-		</div>
-	<div id="main">
+	<!-- all content goes between the wrap div, to ensure that the footer is always at the bottom of the page -->
 
-		<div class="row">
-		<div class="left">
-			<div class="vmenu">
-				<div><h3>Links:</h3></div>
-			</div>
-			<div class="vmenu">
-				<a href="./html/batnball.html">Bat n Ball</a>
-			</div>
-			<div class="vmenu">
-				<a href="./html/image_b64.html">Base64 Encoder</a>
-			</div>
-<!--				<a href="tech.html">Tech stuff</a> -->
-			<!--
-			<div class="leftbox">Test 1 2 3 </div>
-			<div class="leftbox">Test 4 5 6 </div>
-			-->
-		</div>
-
-		<div class="main">
-			<!-- <h1> Hello World !</h1> -->
-			<h2> News: </h2>
-			<div><img src="images/screenshot1.png"></div><br>
-			<a href="./html/batnball.html"><h2>Click here to play</h2></a><br>
-			<u>28th April 2020</u>
-			<p>Where has the month gone ?</p>
-			<p>I've been working on adding hardware support for the bat'n' ball game so, where available, it will use 'webgl' which should hopefully make the game play faster on some hardware setups.</p>
-			<p>I've also uploaded a base64 image encoder which may be useful to someone for creating embedded image data (see links section).</p>
-			<u>4th April 2020:</u>
-			<p>My "Bat n ball" game  is still very much a work in progress, but as of today it's playable and <br>
-			since we're all stuck in lockdown I've uploaded it to help try and relieve the boredom (for 5 minutes at least).</p>
-			<p>It runs in a browser, so there is nothing to download and install. I've tested it on android, IOS, Linux and Windows so I'm fairly confident it will work. </p>
-			<p>Enjoy.</p>
-			<p>-Nick.</p>
-		
-			<p><u>Controls:</u></p><br>
-			<p><u>Keyboard:</u></p>
-			<p>Move left  : key A,J, or left arrow key..</p>	
-			<p>Move right : key D,L, or right arrow key..</p>
-			<p>If you are lucky enough to have a keyboard press 'P' to pause for a loo break.</p>
-			<br>
-			<p><u>Touch screens:</u></p>
-			<p>Move left  : press the left side of the screen </p>
-			<p>Move right : press the right side of the screen </p>
-			<br>
-			<p><u>Joystick support:</u></p>
-			<p>Is available for the Firefox web browser.</p>
-			<br>
-			<a href="./html/batnball.html"> Click here to play</a><br>
-
-		</div>  <!-- class main -->
-
-		<div class="right">
-			<div class="rightbox"><p><h3>Unchecked facts: (for quiz questions!)</h3></p></div>
-			<!-- <div class="rightbox">Adverts to go here</div> -->
-			<div class="rightbox"><p>Penguins have knees</p></div>
-			<div class="rightbox"><p>The hottest planet in the solar system is Venus<br>(not Mercury)</p></div>
-			<div class="rightbox"><p>Giant Panda's have the least smelly poop.</p></div>
-			<div class="rightbox"><p>Spiders can go without food for almost TWO YEARS</p></div>
-			<div class="rightbox"><p>All goldfish are born black in colour.</p></div>
-			<div class="rightbox"><p>A snail can sleep for three years.</p></div>
-			<div class="rightbox"><p>Botanically speaking, tomatoes and cucumbers are fruit.</p></div>
-			<div class="rightbox">After losing a bet, a man changed his name to 'Full Metal Havok More Sexy N Intelligent Than Spock And All The Superheroes Combined With Frostnova'.</div>
-			<div class="rightbox"><p>Tigers have striped skin</p></div>
-			<div class="rightbox"><p>Charlie Browns dad was a barber.</p></div>
-			<div class="rightbox"><p>Milk chocolate was invented in Switzerland.</p></div>
-			<div class="rightbox"><p>The element Tin has the shortest name.</p></div>
-			<div class="rightbox"><p>The dirt in your garden is possibly over two million years old.</p></div>
-			<div class="rightbox"><p>Children grow faster in spring than winter.</p></div>
-			<div class="rightbox"><p>Cows moo with regional accents.</p></div>
-			<div class="rightbox"><p>The opposite sides of a standard six sided dice add up to seven</p></div>
-			<div class="rightbox"><p>The Hawaiian pizza was invented by a Canadian.</p></div>
-			<div class="rightbox"><p>'Eigengrau' is the uniform dark gray colour that many people report seeing in the absence of light.</p></div>
-			<div class="rightbox"><p>It is a myth that dragonflies only live for a day.</p></div>
-			<div class="rightbox"><p>The average adult spends more time on the loo than exercising (oh dear..).</p></div>
-			<div class="rightbox"><p>Most dragonflies have six legs, but they cannot walk.</p></div>
-			<div class="rightbox"><p>Buttermilk does not contain any butter.</p></div>
-		</div>
-
-
+	<div class="navbar">
+		<div class="navitem"><a class="navlink" href="https://bigfatpanda70.github.io"><img src="images/panda_small.png" alt="small logo image"></a></div>
 	</div>
-	<div id="info"></div>
 
-	</div> <!-- main -->
+	<div class="outer_container">
+			<div class="text_block">
+				<h1> Website V2.0 </h1>
+			</div>
+
+			<div class="text_block">
+				<h2>Hello World</h2>
+				<p><div class="centered">This website is just a miscellany of stuff I have written during the great COVID-19 coronovirus lockdown of 2020.</div></p>
+				<p><div class="centered">I hope you all stay safe and well through this difficult time.</div></p>
+			</div>
+
+			<div class="text_block">
+				<h2>Bat'n'Ball</h2>
+				<p>This is a simple breakout style game at its heart but I wanted to do something slightly different so, for a challenge, I wrote it using a small 3D engine, which I will be using for other projects in the near future.</p>
+				<p> I've had it tested it across a range of gadgets, so hopefully it will work on whatever hardware you have to hand.</p>
+				<a href="./html/batnball_intro.html"><img src="images/screenshot1.png"></a>
+				<div class="centered">Click on the image to play</div>
+			</div>
+
+			<div class="text_block">
+				<h2>Base64 Encoder</h2>
+				<p>Web browsers have a <b>lot</b> of security features built in, which made it impossible to load images/textures without turning off security features. To get around the cross origin resource sharing
+				restrictions (CORS) when testing locally, I found base64 encoding images to be a workable solution</p>
+				<p>I've uploaded it here in case anyone else finds it useful.	<a href="./html/image_b64.html">Base64 Encoder Click here</a> </p>
+			</div>
+			
+			<div class="text_block">
+				<h2>Wordsearch Generator</h2>
+				<p>This little project generates unique wordsearches that can be printed out (I've not got round to doing an online version yet).</p>
+				<p>If you are stuck for ideas or just don't like typing I've provided quite a few word lists to get you started as well.</p>
+			</div>
+
+			<div class="text_block">
+				<h2>Quite Interesting Facts.</h2>
+				<p>While researching questions for the family video-chat quiz night, I've found a fair few bizarre facts that you might like to use in your own quiz games. </p>
+				<p><div class="centered"><a href="./html/facts.html">Click here for some funny facts.</a></div></p>
+			</div>
+			
+
+	</div> 
 </div>	<!-- wrap -->
 
-
-
-
-
+<br>
 <div id="footer">
 	<div id="footercell">
-		<p>Website by Nick Fleming : Last updated 2020/04/28 <a href="html/cookie.html">Cookies</a>&nbsp<a href="html/privacy.html">Privacy</a></p>
+		<p>Website by Nick Fleming : Last updated 2020/05/07 <a href="html/cookie.html">Cookies</a>&nbsp<a href="html/privacy.html">Privacy</a></p>
 	</div>
 </div>
 
@@ -152,10 +140,5 @@ If you agree to the cookie and privacy policy, please close this message and con
 <br>
 </div>
 
-<script>
-	//CheckCookieConsent();
-	test();
-</script>
 </body>
 </html>
-

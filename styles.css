@@ -75,6 +75,7 @@ html, body
 #wrap
 {
 	min-height:100%;
+	padding-bottom: 3em;  /* must be same height as the footer */
 }
 #main
 {
@@ -134,7 +135,6 @@ html, body
 {
 	background-color:grey;
 }
-
 
 /* responsive design stuff from w3schools */
 /* design for mobile first */
@@ -220,3 +220,41 @@ body
 	background-color:grey;
 }
 
+
+.outer_container 
+{
+	text-align:center;
+	background-color:grey;
+}
+
+.text_block
+{
+	background: cyan;
+	width: 100%;
+
+	border-color:#aa8866;
+	border-style:solid;
+}
+
+
+@media only screen and (min-width: 800px)
+{
+	.text_block
+	{
+		margin: auto;				/* centers text block */
+		font-size : 1.5em;
+		text-rendering: optimizeLegibility;
+		width:72em;
+		background-color:white;
+		padding-bottom:0.5em;
+
+	border-color:#aa8866;
+	border-style:solid;
+
+	}
+	
+	p
+	{
+			text-align:left;
+	}
+}
