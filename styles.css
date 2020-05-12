@@ -223,6 +223,7 @@ body
 
 .outer_container 
 {
+	width:100%;
 	text-align:center;
 	background-color:grey;
 }
@@ -244,7 +245,7 @@ body
 		margin: auto;				/* centers text block */
 		font-size : 1.5em;
 		text-rendering: optimizeLegibility;
-		width:72em;
+/*		width:72em; */
 		background-color:white;
 		padding-bottom:0.5em;
 
