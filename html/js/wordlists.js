@@ -2125,6 +2125,104 @@ var WW2 =
 	"Poland"
 ];
 
+var FlowersAndWeeds =
+[
+	"bindweed",
+	"quackgrass",
+	"thistle",
+	"crabgrass",
+	"meadow grass",
+	"bitter cress",
+	"campanula",
+	"cats ear",
+	"chickweed",
+	"cleavers",
+	"Creeping buttercup",
+	"Dandelion",
+	"Daisy",
+	"Docks",
+	"Ground Elder",
+	"Horsetail",
+	"Nettles",
+	"Ribwort",
+	"Roses",
+	"Tulips",
+	"Lily",
+	"Orchid",
+	"Carnation",
+	"Freesia",
+	"Hyacinth",
+	"Chysanthemum",
+	"Gladiolus",
+	"Anemone",
+	"Daffodil",
+	"Poppy",
+	"Sunflower",
+	"bluebells",
+	"foxglove",
+	"heather",
+	"Jasmine",
+	"Lavender",
+	"Marigold",
+	"Peony",
+	"Poinsettia",
+	"Snapdragon",
+	"Violet"
+];
+
+var GreekGodsGoddesses =
+[
+	"Zeus",
+	"Hera",
+	"Poseidon",
+	"Demeter",
+	"Ares",
+	"Athena",
+	"Apollo",
+	"Artemis",
+	"Hephaestus",
+	"Aphrodite",
+	"Hermes",
+	"Dionysus",
+	"Hades",
+	"Hypnos",
+	"Nike",
+	"Janus",
+	"Nemesis",
+	"Iris",
+	"Hecate",
+	"Tyche"
+];
+
+var Pirates =
+[
+	"swords",
+	"cannons",
+	"ships",
+	"buccaneers",
+	"mutiny",
+	"Plunder",
+	"treasure map",
+	"buried treasures",
+	"long john silver",
+	"blackbeard",
+	"bluebeard",
+	"captain hook",
+	"peg leg",
+	"parrot",
+	"chest",
+	"doubloons",
+	"first mate",
+	"gunpowder barrel",
+	"Jolly roger",
+	"Musket",
+	"Pistols",
+	"skull and crossbones",
+	"walk the plank",
+	"barrel of rum",
+	"Tricorne hat"
+];
+
 var AvailableLists = 
 [
 	"fruit and veg",				fruit_and_veg,
@@ -2167,6 +2265,9 @@ var AvailableLists =
 	"Football crazy",				Football,
 	"Lockdown blues",				LockdownBlues,
 	"Cakes and Bakes",				cakes_and_bakes,
-	"World War Two",				WW2
+	"World War Two",				WW2,
+	"Flowers and weeds",			FlowersAndWeeds,
+	"Greek Gods & Goddesses",		GreekGodsGoddesses,
+	"Pirates",						Pirates
 ];
 
