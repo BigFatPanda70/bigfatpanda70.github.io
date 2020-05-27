@@ -83,23 +83,31 @@ html, body
 	padding-bottom: 3em;  /* must be same height as the footer */
 }
 
-#footer
+.footer
 {
 	width:100%;
 	position:relative;
 	margin-top: -3em;
 	height: 3em;
-	clear: both;
-	text-align:center;
+	clear: both;	
 	background-color:#eeddaa;
+	text-align: center;
 }
 
-#footer_cell	/* not working */
+
+.footer_cell	/* not working */
 {
-	display: table-cell;
+	display:inline-block;
 	height: 100%;
 	width:100%;
+	background-color:#ffffff;
+	text-align: center;
 	vertical-align: middle;
+}
+
+.footer_cell p
+{
+	text-align:center;
 }
 
 	/* consent cookie popup div */
@@ -237,6 +245,11 @@ body
 	border-style:solid;
 }
 
+.text_block p
+{
+		text-align:left;
+}
+
 
 @media only screen and (min-width: 800px)
 {
@@ -254,7 +267,7 @@ body
 
 	}
 	
-	p
+	.text_block p
 	{
 			text-align:left;
 	}

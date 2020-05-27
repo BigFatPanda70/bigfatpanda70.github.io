@@ -2223,6 +2223,30 @@ var Pirates =
 	"Tricorne hat"
 ];
 
+var premier_league_2019_20 =
+[
+	"Arsenal",
+	"Aston Villa",
+	"Bournemouth",
+	"Brighton and Hove Albion",
+	"Burnley",
+	"Chelsea",
+	"Crystal Palace",
+	"Everton",
+	"Leicester City",
+	"Liverpool",
+	"Manchester City",
+	"Manchester United",
+	"Newcastle United",
+	"Norwich City",
+	"Sheffield United",
+	"Southampton",
+	"Tottenham Hotspur",
+	"Watford",
+	"West Ham United",
+	"Wolverhampton Wanderers"
+];
+
 var AvailableLists = 
 [
 	"fruit and veg",				fruit_and_veg,
@@ -2268,6 +2292,7 @@ var AvailableLists =
 	"World War Two",				WW2,
 	"Flowers and weeds",			FlowersAndWeeds,
 	"Greek Gods & Goddesses",		GreekGodsGoddesses,
-	"Pirates",						Pirates
+	"Pirates",						Pirates,
+	"Premier League 2019/20",		premier_league_2019_20
 ];
 
