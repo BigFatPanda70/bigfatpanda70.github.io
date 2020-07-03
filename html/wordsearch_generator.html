@@ -59,6 +59,9 @@ lists of words or provides a space where you can input your own.
 }
 
 </style>
+
+<link rel="stylesheet" href="./../styles.css">
+
 <script src="./js/wordlists.js"></script>
 <script src="./js/wordsearch.js"></script>
 <script>
@@ -252,6 +255,15 @@ function DoInits()
 </head>
 
 <body onload="DoInits()">
+	
+<div id="wrap">
+	<!-- all content goes between the wrap div, to ensure that the footer is always at the bottom of the page -->
+
+	<div class="navbar">
+		<div class="navitem"><a class="navlink" href="https://bigfatpanda70.github.io"><img src="./../images/panda_small.png" alt="small logo image"></a></div>
+	</div>
+
+	
 	<div class="centered">
 		<H1>Printable Wordsearch generator</H1>
 	</div>
@@ -320,6 +332,15 @@ function DoInits()
 	<input type="edit" id="c1"></input>
 	</div>
 -->
+
+</div>	<!-- wrap -->
+
+<div class="footer">
+	<div class="footer_cell">
+		<p>Website by Nick Fleming : Last updated 2020/05/27 <a href="html/cookie.html">Cookies</a>&nbsp<a href="html/privacy.html">Privacy</a></p>
+	</div>
+</div>
+
 
 </body>
 
