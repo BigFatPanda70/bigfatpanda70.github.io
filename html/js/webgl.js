@@ -2105,6 +2105,7 @@ function WGL3D_InitSpriteLayer (layer_idx, max_sprites)
 	}
 }
 
+var ggff = 0;
 function WGL3D_SetSprite (layer_idx, sprite_idx, tu, tv, tw,th, sx, sy, sz, sw, sh)
 {
 	// sets the sprite data within the ram buffer for a sprite.
@@ -2128,7 +2129,7 @@ function WGL3D_SetSprite (layer_idx, sprite_idx, tu, tv, tw,th, sx, sy, sz, sw, 
 
 	if ((layer_idx < 0) || (layer_idx >= SpriteLayerArray.length))
 	{
-		console.log ("WGL3D SetSprite : layer_idx out of range ya muppet");
+		console.log ("WGL3D SetSprite : layer_idx out of range ya narna");
 		return;
 	}
 
@@ -2137,7 +2138,13 @@ function WGL3D_SetSprite (layer_idx, sprite_idx, tu, tv, tw,th, sx, sy, sz, sw, 
 
 	if ((sprite_idx < 0) || (sprite_idx >= sl.max_sprites))		//WGL3D_MaxSprites))
 	{
-		console.log ("WGL3D SetSprite : sprite_idx out of range ya muppet");
+		if (ggff == 0)
+		{
+			console.log ("WGL3D SetSprite : sprite_idx out of range ya muppet " );
+			console.log ("layer " + layer_idx + " sprite:" + sprite_idx + " max sprites:" + sl.max_sprites);
+			console.log (sl);
+			ggff = 1;
+		}
 		return;
 	}
 

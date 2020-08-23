@@ -117,6 +117,8 @@ var BNB_BOTTOM_Y = -6.5;
 
 var MAX_BALL_SPEED = 6.0;	// 0.3;
 
+var BNB_MAX_PARTICLES = 50;
+
 var PLAYER_SPEED = 0.2;
 
 var NO_COLLISION = -1;
@@ -483,7 +485,7 @@ function BNB_CreateExplosion (x,y)
 	var i;
 	var s;
 
-	for (i = 0; i < 50; i++)
+	for (i = 0; i < BNB_MAX_PARTICLES; i++)
 	{
 		if (i == Particles.length)
 		{
