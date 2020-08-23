@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- 
+
+	Title	:	Snake 3D
+	
+	Info	:	Version 0.0		8th August 2020
+	
+	Author	:	Nick Fleming
+	
+	Updated	:	8th August 2020
+
+	 Notes:
+	=========
+
+	Just a quick 3D version of the old classic game 'snake'.
+	
+	
+	 Wishlist:
+	-----------
+	1 or two players.
+	game modes:
+		classic
+		against the clock.
+		missions 
+			- new mission each day.
+			(collect items in order)
+			(go through hoops)
+			(shoot mushrooms)
+			
+		
+	computer based opponents (other snakes ??)
+	weapons (lazers !!)
+	potions  (mushrooms?)
+		speed up
+		slow down
+		reverse controls
+		invincible (time limit)
+		shrink
+		grow
+	bombs/ mines 
+	loot boxes (random items)
+	3d terrain (i.e not flat!!)
+	wormholes (go through, appear elsewhere on board)
+	spiders (avoid)
+	hiscores
+	money
+	
+	water hazards
+	flora + fauna (simple 3D models dotted about.
+	small trees (act as walls)
+	walls (can't move through)
+	apples
+	
+	change snake colour (customise your avatar) default = green, plain.
+	
+-->
+
+
+<html>
+<head>
+</head>
+<body>
+</body>
+</html>

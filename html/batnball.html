@@ -4,13 +4,13 @@
 
 <!--
 
-Title	:	Self contained game .
+Title	:	Bat n Ball.
 
-Info	:	Version 0.0	10th March 2020
+Info	:	Version 0.1	8th August 2020
 
 Author	:	Nick Fleming
 
-Updated	:	26th April 2020
+Updated	:	12th August 2020
 
  11th March :
 ----------------
@@ -158,6 +158,10 @@ something that works.
 	Dealing with CORS issues has been a pain for local texture
 	uploading.. storing as base 64 strings and uploading from that
 	appears to work ok.
+
+	 12th August 2020
+	-------------------
+		
 -->
 
 <html>
@@ -697,9 +701,9 @@ NormalVector.prototype.normalise = function()
 	}
 }
 
-
 function Model3D (vertex_array, face_array)
 {
+		// createmodel
 		// creates a 3D model from vertex and face data.
 
 	var i;
@@ -1826,7 +1830,7 @@ function DrawSprite (tx, ty, tw,th, x,y,w,h)
 	tw /= ImgText.width;
 	th /= ImgText.height;
 
-	w = (w*2) / Canvas.width;
+	w = (w*2) / Canvas.width;			// not sure about the *2 bit.
 	h = (h*2) / Canvas.height;
 
 	sx = (x/Canvas.width*2) - 1;
@@ -2173,7 +2177,6 @@ function DrawObjects()
 		
 		return;
 	}
-
 		// womble
 
 	WGL3D_StartDraw();
@@ -2531,13 +2534,7 @@ function InitCanvas()
 			WGL3D_InitSpriteLayer (0, MAX_SPRITES_LAYER_ZERO);	// logo
 			WGL3D_InitSpriteLayer (1, MAX_SPRITES_LAYER_ONE);	// everything else.
 
-			
-//			WGL3D_InitSpriteBuffer (2);		// 16 for test purposes.
-
-//			console.log (ImgText);
-//			WGL3D_LoadTexture(ImgText);
-
-			return;	// 
+			return;
 		}
 	}
 	

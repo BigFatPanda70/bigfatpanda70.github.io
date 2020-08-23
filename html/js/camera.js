@@ -21,7 +21,7 @@ function Cam3D (pos_x, pos_y, pos_z, up_x, up_y, up_z, look_at_x, look_at_y, loo
 
 	this.up = new Vector (up_x, up_y, up_z);
 	this.up.normalise();
-	
+
 	this.look_at = new Vector (look_at_x, look_at_y, look_at_z);	
 
 		// cam matrix is a Float32Array for future webgl GPU use.
@@ -64,28 +64,28 @@ Cam3D.prototype.gluLookAt = function (eyex, eyey, eyez,
 	forward.normalise();
 	// -----------------------------
 	
-	if (once == 0)
-	{
+//	if (once == 0)
+//	{
 //		console.log ("forward");
 //		console.log (forward);
-	}
+//	}
 
 	// side = forward x up
 	side = CrossProduct (forward, up);
 	side.normalise();
 
-	if (once == 0)
-	{
+//	if (once == 0)
+//	{
 //		console.log (side);
-	}
+//	}
 
    //* Recompute up as: up = side x forward
    up = CrossProduct (side, forward);
 
-	if (once == 0)
-	{
+//	if (once == 0)
+//	{
 //		console.log (up);
-	}
+//	}
 
 	m = MatrixIdentity();
  
@@ -104,8 +104,8 @@ Cam3D.prototype.gluLookAt = function (eyex, eyey, eyez,
 	m[10] = -forward.z;	//[2];
 	m[14] = 0.0;
 	
-	if (once == 0)
-	{
+//	if (once == 0)
+//	{
 //		console.log ("m after :" );
 //		console.log (side);
 //		console.log (up);
@@ -113,18 +113,18 @@ Cam3D.prototype.gluLookAt = function (eyex, eyey, eyez,
 //		console.log (m);
 		
 //		console.log ("eyex:" + eyex + " eyey:" + eyey +" eyez:" + eyez);
-	}
+//	}
 
 	this.cam_matrix = MatrixIdentity();
 	this.cam_matrix = MatrixTranslate (this.cam_matrix, -eyex, -eyey, -eyez);
 
 	this.cam_matrix = MatrixMultiply (m, this.cam_matrix);		// NOTE : THE MULTIPLY ORDER MATTERS A GREAT DEAL.
 	
-	if (once == 0)
-	{
+//	if (once == 0)
+//	{
 //		console.log ("cam_matrix");
 //		console.log (this.cam_matrix);
-	}
+//	}
 }
 
 Cam3D.prototype.setCamera = function (x,y,z, lx,ly,lz)

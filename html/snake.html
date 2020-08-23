@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!--
+	Title	:	Snake Game
+	
+	Info	:	Version 0.0	9th August 2020
+	
+	Author	:	Nick Fleming
+	
+	Updated	:	21st August 2020
+
+	 Notes:
+	---------
+		3D version of the old favorite 'snake' game.
+
+	 Wishlist:
+	-----------
+		Multiplayer, possibly with joystick support.
+		
+	Hiscore table.
+		
+	3d floor (height field ?) - not flat, randomly generated perhaps ?
+	
+	non rectangular playing area (circular / letter shapes???)
+	
+	land mines
+	poisonous plants.
+	flora and fauna
+	
+	loot boxes (mushrooms? sweets ?)
+		longer
+		shorter
+		faster
+		slower
+		shield (limited time)
+		
+	weapons 
+		lazers !!
+
+	computer controlled players
+
+
+	daily challenges :
+		collect rings
+		find hidden items
+		fastest lap
+		against the clock
+		
+
+
+	 10th August 2020
+	-------------------
+		this game will also be a test of the new 2D canvas routines 
+	that I've added to the webgl code.
+
+	 20th August 2020
+	-------------------
+		2D canvas routines appear to be working ok
+
+	 21st August 2020
+	-------------------
+		Trying to get 3D triangle drawing working now as well.
+-->
+
+<html>
+
+<head>
+
+<style>
+	.gamecanvas
+	{
+		/* cursor:none; */
+		margin:0;
+		padding:0;
+		overflow: hidden;
+		display:block;
+		background-color:#eecc00;
+		background-image: linear-gradient(#000000, #888888, #222222);
+		/* width:100%;	*/				/* width = container width */
+		/* height:100%;	*/			/* height = container height */
+}
+
+</style>
+
+<script src="js/frame_counter.js"></script>
+<script src="js/matrix.js"></script>
+<script src="js/vector.js"></script>
+<script src="js/camera.js"></script>
+<script src="js/joystick.js"></script>
+<script src="js/inkeys.js"></script>
+<script src="js/icosphere.js"></script>
+<script src="js/collisions.js"></script>
+<script src="js/batnball.js"></script>
+<script src="js/touchscreen.js"></script>
+<script src="js/hiscores.js"></script>
+<script src="js/webgl.js"></script>
+<script src="js/images.js"></script>
+
+<script>
+	
+	// square ground plane for testing. Note that the plane is
+	// made from two separate triangles.
+
+var points_xyz =
+[
+	-0.5,	0,  0.5,
+	 0.5,	0,  0.5,
+	 0.5,	0, -0.5,
+
+	 0.5,	0, -0.5,
+	-0.5,	0, -0.5,
+	-0.5,	0, 0.5
+];
+
+var faces_abc =
+[
+	0,1,2,
+	3,4,5
+];
+
+var inks_rgb =
+[
+	1.0, 0.0, 0.0,
+	0.0, 1.0, 1.0,
+	1.0, 0.0, 1.0,
+
+	1.0, 1.0, 0.0,
+	0.0, 1.0, 1.0,
+	1.0, 0.0, 1.0,
+];
+
+//var Model_GroundPlane;
+
+var WebGL_ModelID;
+
+var angle = 0;
+
+var Land_verts_xyz = [];
+var Land_faces_abc = [];
+var Land_inks_rgb = [];
+
+var LandWidth = 20;			// should be an even number
+var LandLength = 20;
+var LandCellWidth = 2;
+var LandCellLength = 2;
+var LandCellMinHeight = 0;
+var LandCellMaxHeight = 0.75;
+
+function GenerateLandscape()
+{
+	// generates a grid of vertices, centered around the origin.
+	// and then creates a set of surfaces from them.
+
+	var x;
+	var y;
+	var z;
+	var vx;
+	var vy;
+	var vz;
+	var w;
+	var h;
+	var v;
+	var f;
+	var i;
+	var v0;
+	var v1;
+	var v2;
+	var v3;
+	
+	// note vz = height.
+
+		// generate random height landscape points.
+	v = 0;
+	for (z = 0; z < LandLength; z++)
+	{
+		for (x = 0; x < LandWidth; x++)
+		{
+			vx = 0 - (LandCellWidth * (LandWidth/2));
+			vz = 0 - (LandCellLength * (LandLength/2));
+			vx = vx + (x * LandCellWidth);
+			vz = vz + (z * LandCellLength);
+			
+
+			vy = LandCellMinHeight + (Math.random () * (LandCellMaxHeight - LandCellMinHeight));
+
+//			vy = 0;
+
+			Land_verts_xyz[v++] = vx;
+			Land_verts_xyz[v++] = vy;
+			Land_verts_xyz[v++] = vz;
+		}
+	}
+
+		// now generate faces.
+	f = 0;
+	for (y = 0; y < (LandLength-1); y++)
+	{
+		for (x = 0; x < (LandWidth-1); x++)
+		{
+			v0 = (y * LandWidth) + x;
+			v1 = v0 + 1;
+			v2 = v0 + LandWidth;
+			v3 = v2 + 1;
+			
+			Land_faces_abc [f++] = v2;
+			Land_faces_abc [f++] = v1;
+			Land_faces_abc [f++] = v0;
+			
+			Land_faces_abc [f++] = v2;
+			Land_faces_abc [f++] = v3;
+			Land_faces_abc [f++] = v1;
+		}
+	}
+	
+		// now some random colours for testing.
+
+	i = 0;
+	for (y = 0; y < LandLength; y++)
+	{
+		for (x = 0; x < LandWidth; x++)
+		{
+			Land_inks_rgb[i++] = 0.1;	// + (Math.random() * 0.8);	// random colours for testing.
+			Land_inks_rgb[i++] = 0.3 + (Math.random() * 0.5);	// random colours for testing.
+			Land_inks_rgb[i++] = 0.1 ;	//+ (Math.random() * 0.8);	// random colours for testing.
+		}
+	}
+	
+	
+}
+
+
+function fullSizeCanvas()
+{
+	// https://stackoverflow.com/questions/26745292/canvas-toggle-filling-whole-page-removing-scrollbar
+
+	var w;
+	var h;
+
+	w = window.innerWidth;
+	h = window.innerHeight;
+
+	item = document.getElementById ("gc");
+	item.style.width = w + "px";
+	item.style.height = h + "px";
+
+	document.body.scrollTop = 0; // <-- pull the page back up to the top
+
+	document.body.style.overflow = 'hidden';	// no scroll bars please.
+
+}
+
+function DrawTestModel (model_id)
+{
+	var tx;
+	var ty;
+	var tz;
+	
+	var sx;
+	var sy;
+	var sz;
+
+	var rx;
+	var ry;
+	var rz;
+
+	var matrix;
+
+	PositionCamera(0,5,-20, 0,0,0);
+
+	matrix = MatrixIdentity();
+	
+	sx = 1;
+	sy = 1;
+	sz = 1;
+	
+	rx = 0;
+	ry = angle;
+	rz = 0;
+	
+	angle += 0.25;
+	if (angle > 360) angle -= 360;
+
+	tx = 0;
+	ty = 0;
+	tz = 0;
+	
+		// do normal rotations
+	matrix  = MatrixScale (matrix , sx,sy,sz);
+	matrix  = MatrixRotate (matrix , rx,ry,rz);
+	matrix  = MatrixTranslate (matrix , tx,ty,tz);
+
+		// camera transform
+	matrix  = MatrixMultiply (Camera.cam_matrix, matrix);
+
+	WGL3D_StartDraw();
+		WGL3D_DrawObject(model_id, matrix);
+	WGL3D_EndDraw();
+
+}
+
+
+function PositionCamera(x,y,z, lx,ly,lz)
+{
+/*	var r;
+
+	var x;
+	var y;
+	var z;
+
+	var cos_a;
+	var sin_a;
+	var a;
+
+	r = 5.75;	//cam_dist;
+
+	if (CameraAngle < 120)
+	{
+		CameraAngle += 2;
+	}
+
+	a = (CameraAngle * Math.PI)/180;
+	cos_a = r * Math.cos (a);
+	sin_a = r * Math.sin (a);
+
+	x = 0;
+	y = r * cos_a;
+	z = r * sin_a;
+*/
+
+	Camera.setCamera (x,y,z, lx, ly, lz);
+}
+
+
+function CheckLoaded()
+{
+//	console.log ("check loaded");
+	ImagesLoaded = false;
+
+//	console.log (ImgText);
+	if (ImgText.complete == false)
+	{
+		return;
+	}
+
+//	console.log (ImgLogo);
+	if (ImgLogo.complete == false)
+	{
+		return;
+	}
+
+	ImgTextId = WGL3D_LoadTexture(ImgText);
+	ImgLogoId =	WGL3D_LoadTexture(ImgLogo);
+	
+	console.log ("all images loaded ok " + ImgTextId + " " + ImgLogoId);
+	
+//	console.log ("width :" + ImgText.width);
+//	console.log ("height:" + ImgText.height);
+
+//	console.log ("ImgTextId :" + ImgTextId);
+//	console.log ("ImgLogoId :" + ImgLogoId);
+	ImagesLoaded = true;
+}
+
+function DrawSprite (layer, id, tx,ty, tw,th, sx,sy,sz,sw,sh)
+{
+	// this routine handles the conversion to u,v coordinates and
+	// scaling.
+	
+	// tx,ty = pixel coordinates within the texture
+	// tw,th = size in pixels of texture area to use
+	// sx,sy = canvas pixel coordinates
+	// w,h   = size in pixels of area to display.
+
+/*
+	var u;
+	var v;
+	var w;
+	var h;
+	
+	var texture_width;
+	var texture_height;
+	
+	var canvas_width;
+	var canvas_height;
+	
+	canvas_width = 512;
+	canvas_height = 512;
+	
+	texture_width = 256;
+	texture_height = 256;
+
+	u = tx / texture_width;
+	v = ty / texture_height;
+	
+	tw /= texture_width;
+	th /= texture_height;
+
+	w = (sw*2) / canvas_width;
+	h = (sh*2) / canvas_height;
+
+	sx = (sx / canvas_width*2) - 1;
+	sy = 1 - (sy / canvas_height*2);
+
+	WGL3D_SetSprite (
+		layer,			// layer_idx, 
+		id,				// sprite_idx,
+		u,v,			// tu, tv,
+		tw,th,			// tw,th,
+		sx, sy, 		// sx,sy
+		0.0,			// sz
+		w, h);			// sw, sh
+*/
+
+	WGL3D_Sprite (layer, id, 0, tx, ty, tw, th, sx, sy, sw, sh);
+
+}
+
+function SpriteTest()
+{
+	var sprite_layer;
+	var sprite_idx;
+	var tu;
+	var tv;
+	var tw;
+	var th;
+	var sx;
+	var sy;
+	var sz;
+	var sh;
+
+	sprite_layer = 0;
+	sprite_idx = 0;
+
+
+	WGL3D_ClearSpriteLayer (sprite_layer);
+	
+	tx = 0;
+	ty = 0;
+	tw = 48;
+	th = 48;
+	
+	sx = 10;
+	sy = 10;
+	sz = 1;
+	sw = 16;
+	sh = 16;
+
+	DrawSprite (sprite_layer, sprite_idx, tx,ty, tw,th, sx,sy,sz,sw,sh);
+	WGL3D_DrawSpriteLayer (sprite_layer, 0, 1, 0);
+}
+
+var busy = false;
+function UpdateGame()
+{
+	var dt;
+	var i;
+	if (busy == true)
+	{
+		return;
+	}
+	busy = true;
+	requestAnimationFrame (UpdateGame);
+	
+	if (ImagesLoaded == false)
+	{
+		CheckLoaded();
+		busy = false;
+		return;
+	}
+
+		// do stuff.
+	WGL3D_ClearCanvas();
+
+
+	SpriteTest();
+
+	DrawTestModel (WebGL_ModelID);
+
+		// done, clear busy flag.
+	busy = false;
+}
+
+	// ----------------- inits -------------------
+
+
+function InitCamera()
+{
+	Camera = new Cam3D(
+			0,5,30,
+			0,1,0,
+			0,0,0);
+}
+
+function InitModels()
+{
+//	Model_GroundPlane = new WGL3D_STRUCT_MODEL3D (points_xyz, faces_abc, inks_rgb, null);
+
+//var Land_verts_xyx = [];
+//var Land_faces_abc = [];
+//var Land_inks_rgb = [];
+
+//	WebGL_ModelID = WGL3D_UploadModelData (points_xyz, faces_abc, inks_rgb, null, null);	//verts, face_indices, inks, normals, texture_uvs)
+
+	GenerateLandscape();
+//	console.log (Land_verts_xyz);
+//	console.log (Land_faces_abc);
+	WebGL_ModelID = WGL3D_UploadModelData (Land_verts_xyz, Land_faces_abc, Land_inks_rgb, null, null);	//verts, face_indices, inks, normals, texture_uvs)
+}
+
+function InitSprites()
+{
+	WGL3D_InitSpriteLayer (0, 16);		// 2 sprite layers for testing.
+	WGL3D_InitSpriteLayer (1, 16);
+}
+
+function DoInits()
+{
+	// this is the first routine called once the web page has loaded.
+	fullSizeCanvas();
+	
+	WGL3D_Init ("gc");	// canvas_width, canvas_height)
+
+	ImagesLoaded = false;
+
+	InitModels();
+	InitCamera();
+	InitSprites();
+	
+	DrawTestModel (WebGL_ModelID);
+
+	UpdateGame();
+}
+
+function LoadImages()
+{
+	console.log ("Init Image loading...");
+
+	ImgText = new Image();
+	ImgText.src = ImgSrc;
+
+	ImgLogo = new Image();
+	ImgLogo.src = ImgSrcLogo;
+}
+LoadImages();	// try pre-loading.
+
+</script>
+
+</head>
+
+<body onload="DoInits()">
+	<canvas class="gamecanvas" id="gc" width="512;" height="512;" onclick="MouseClick();"></canvas>
+</body>
+</html>

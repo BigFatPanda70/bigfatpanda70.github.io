@@ -2,15 +2,16 @@
 
 	Title	:	WebGL wrapper routines.
 
-	Info	:	Version 0.0	6th April 2020
+	Info	:	Version 0.1	9th August 2020
 
 	Author	:	Nick Fleming
 
-	Updated	:	27th April 2020
+	Updated	:	21st August 2020
 
 
 	 Notes:
 	--------
+			** 
 		Lots of devices I can get my mitts on support webgl. It seems
 	wasteful to me to not take the opportunity to utilise the hardware
 	available on just about every platform.
@@ -101,17 +102,814 @@
 	if this will be better or worse for performance.. 
 
 
+	 9th August 2020
+	-------------------
+		looking at supporting 2D canvas for systems that have 3D
+	acceleration disabled for some reason (driver issues perhaps??)
+
+	 10th August 2020
+	-------------------
+		So.. doing 2D support.. this version also has NO support
+	for a shadow buffer (research ongoing elsewhere!!).
+
+	 13th August 2020
+	-------------------
+	When uploading vertices for use by the cpu (2d canvas) or gpu (webgl)
+	they are handled slightly differently internally.
+	For webgl, the vertices are copied verbatim (x,y,z) -> (x,y,z)
+	but for the cpu an extra variable is added to help speed up
+	the overall calculations (x,y,z) -> (x,y,z,w) so all the coordinates
+	can be transformed in one go, without repeats for each face.
+
+	 20th August 2020
+	------------------
+		Need to make a note of texture sizes for both 2D and 3D 
+	operations.
+
+	Converting 2D and 3D routines to use the same texture structure
+
+
+	 21st August 2020
+	------------------
+		testing texture structure.
+
+
+
+	  TO USE
+	 --------
+	==========
+
+	call WGL3D_Init (canvas_id) with the id of the canvas to use for drawing.
+
+	for each 3D model you want drawing, call 
+		WGL3D_UploadModelData (verts, face_indices, inks, normals, texture_uvs)
+		
+		verts 		 - 	should be an array with x,y,z data
+						for each vertex.
+		face_indices -	should be an array of vertex indices,
+						3 for each triangle face.
+		inks		 -	3 r,g,b values for each vertex. This is so we
+						can have per vertex shading.
+		normals		 -	not currently used
+		texture_uvs	 -  not currently used.
+
+
+	  TO USE (2D Sprite Layer)
+	 --------------------------
+	============================
+
+	call WGL3D_InitSpriteLayer (layer_idx, max_sprites) for each sprite
+	layer you want to create. 
+
+	call WGL3D_LoadTexture(image_object) to load textures to be used
+	for sprite drawing - note : ensure images are loaded first,
+	otherwise it might generate an error.
+
+
+	for each sprite in a layer, call WGL3D_SetSprite
+		(layer_idx, sprite_idx, tu, tv, tw,th, sx, sy, sz, sw, sh)
+	
+		tu,tv = texture coorinates
+		tw,th = width & height in pixels within texture
+		sx,sy = screen (x,y) coordinates
+		sz	  = z value for ordering sprites within each layer.
+		sw,sy = screen width and height.
+
+	
+	call WGL3D_DrawSpriteLayer to draw a particular range of sprites
+		within each layer.
+
+	call WGL3D_ClearSpriteLayer (layer_idx) to clear a sprite layer.
+	 (sprites still exist, they are just moved off screen).
+
 */
+
+var WGL3D_HardwareEnabled = true;		// false = fallback to 2D rendering
+var WGL3D_ShadowsEnabled = false;		// *under construction*
 
 var WGL3D_MAX_MESHES = 16;		// used to limit the amount sent to the gpu
 
 var WGL3D_MAX_SPRITES = 64;			// number of 2D sprites PER LAYER
 var WGL3D_MAX_SPRITE_LAYERS = 2;	// one texture per layer.
 
+var WGL3D_BUFFER_TYPE_GPU = 0;
+var WGL3D_BUFFER_TYPE_CPU = 1;
+
+var WGL3D_NEAR_Z = 1;
+var WGL3D_FAR_Z = 1000;
+
+function WGL3D_STRUCT_TEXTUREINFO (image_object)
+{
+	this.img = null;
+	if (WGL3D_HardwareEnabled == false)
+	{
+		this.img = new Image();
+		this.img.src = image_object.src;
+	}
+
+	this.loaded = image_object.complete;
+
+	this.gpu_texture_id = -1;			// gpu specific texture id.
+	this.width = image_object.width;
+	this.height= image_object.height;
+}
+
+//var WGL3D_TextureInfo = [];				// replaces TextureId with WGL3D_STRUCT_TEXTUREINFO
+
+//var WGL3D_2D_TextureBuffer = [];
+
+	//========================================================
+				// ================================
+				// ----- 2D Support routines ------
+				// ================================
+	//========================================================
+
+var WGL3D_PerspectiveMatrix;
+
+function WGL3D_CopyPerspectiveMatrix (m)
+{
+	var i;
+		
+	for (i = 0; i < m.length; i++)
+	{
+		WGL3D_PerspectiveMatrix[i] = m[i];
+	}
+}
+
+var WGL3D_backfaceCullEnabled = true;		// default for 2D is on.
+
+function WGL3D_BackfaceCullCheck (x0,y0,x1,y1,x2,y2)
+{
+	// this can determine whether a triangle is front or back facing.
+	// pinched from https://cboard.cprogramming.com/game-programming/1057-backface-culling-lesson10-nehegl-tutorials.html
+
+	var z=((x1-x0)*(y2-y0)) - ((y1-y0)*(x2-x0));
+	return z;
+}
+
+/*function WGL3D_2D_LoadTexture (image_object)
+{
+	// need to make a copy of the image data (if possible).
+	// returns a reference to the texture data stored.
+	
+	// for now, just going to store a reference to the object.
+
+	var i;
+	var texture_idx;
+
+	texture_idx = WGL3D_2D_TextureBuffer.length;
+	
+	WGL3D_2D_TextureBuffer[texture_idx] = new Image();
+	WGL3D_2D_TextureBuffer[texture_idx].src = image_object.src;
+
+
+	i = WGL3D_TextureId.length;
+	WGL3D_TextureId[i] = texture_idx;
+	
+	return i;
+}
+*/
+
+	// --------------------------------------------
+	//		Drawing order / Drawlist stuff
+	// --------------------------------------------
+
+var WGL3D_DRAWLIST_INVALID_IDX = -1;
+var WGL3D_DRAWLIST_MAXBUCKETS = 512;
+
+	// buffers for 2d vertices. data goes here when vertices are 'uploaded'.
+
+var buffer_2d_verts = [];
+var buffer_2d_faces = [];
+var buffer_2d_inks = [];
+
+var buffer_2d_xverts = [];	// buffers for transformed vertices.
+
+	// draw list buffers. (used if webgl or z buffer not available)
+
+var WGL3D_DrawList = [];
+var WGL3D_DrawList_BucketArray = [];
+var WGL3D_DrawList_FreeItem;				// used to recycle drawlist items.
+
+	// 2D rendering structures.
+//function WGL3D_DrawListItem()
+function WGL3D_STRUCT_DRAWLISTITEM()
+{
+//	this.object_index;		// is this required ??
+	this.previous_idx;
+	this.next_idx;
+	this.zindex;
+
+		// draw list 2D triangle
+	this.rgbhex;
+	this.x0;
+	this.y0;
+	this.x1;
+	this.y1;
+	this.x2;
+	this.y2;
+}
+
+//function NormalVector (x,y,z)
+function WGL3D_STRUCT_NORMAL()
+{
+	this.x = x;
+	this.y = y;
+	this.z = z;
+}
+
+WGL3D_STRUCT_NORMAL.prototype.normalise = function()
+{
+	var d;
+
+	d = Math.sqrt((this.x*this.x) + (this.y*this.y)+(this.z*this.z));
+	if (d != 0)
+	{
+		this.x /= d;
+		this.y /= d;
+		this.z /= d;
+	}
+}
+
+//function WGL3D_Model3D (vertex_array, face_array)
+
+function WGL3D_clearDrawList()
+{
+	var i;
+	var i;
+
+	for (i = 0; i < WGL3D_DRAWLIST_MAXBUCKETS; i++)
+	{
+		WGL3D_DrawList_BucketArray[i] = WGL3D_DRAWLIST_INVALID_IDX;
+	}
+	WGL3D_DrawList_FreeItem = 0;	// reuse draw list, don't  waste memory.
+}
+
+function DrawList_AddItem (object_index, object_z, x0,y0,x1,y1,x2,y2, rgbhex)
+{
+		// adds a triangle object to the draw list.
+
+	var b;		// bucket hash value (0 to MAXBUCKETS)
+	var i;
+	var idx;		// index of new drawlist item
+
+	// object_z should be directed into the screen (so bigger z = further away.)
+
+//	if ((object_z < near_z) || (object_z >= far_z))
+//	{
+//		return;
+//	}
+
+//	b= ((object_z - near_z) * DRAWLIST_MAXBUCKETS) / (far_z - near_z);
+	b= ((object_z - WGL3D_NEAR_Z) * WGL3D_DRAWLIST_MAXBUCKETS) / (WGL3D_FAR_Z - WGL3D_NEAR_Z);
+	b = Math.floor(b);
+
+	if ((b < 0) || (b >= WGL3D_DRAWLIST_MAXBUCKETS))
+	{
+			// reject any objects that can't be viewed.
+		return;
+	}
+
+		// create drawlist item.
+
+	idx = WGL3D_DrawList_FreeItem++;
+	if (idx == WGL3D_DrawList.length)
+	{
+		WGL3D_DrawList[idx] = new WGL3D_STRUCT_DRAWLISTITEM();
+	}
+//	WGL3D_DrawList[idx].object_index = object_index;
+	WGL3D_DrawList[idx].zindex = object_z;
+	WGL3D_DrawList[idx].previous_idx = WGL3D_DRAWLIST_INVALID_IDX;
+	WGL3D_DrawList[idx].next_idx = WGL3D_DRAWLIST_INVALID_IDX;
+
+	WGL3D_DrawList[idx].x0 = x0;
+	WGL3D_DrawList[idx].y0 = y0;
+	WGL3D_DrawList[idx].x1 = x1;
+	WGL3D_DrawList[idx].y1 = y1;
+	WGL3D_DrawList[idx].x2 = x2;
+	WGL3D_DrawList[idx].y2 = y2;
+	WGL3D_DrawList[idx].rgbhex = rgbhex;
+
+	if (WGL3D_DrawList_BucketArray[b] == WGL3D_DRAWLIST_INVALID_IDX)
+	{
+			// empty bucket.. add new item to bucket
+		WGL3D_DrawList_BucketArray[b] = idx;
+		return;
+	}
+
+	// bucket is used, so need to insert sort into this z list.
+	// z values are sorted largest first to smallest (i.e. in required drawing order)
+
+	i = WGL3D_DrawList_BucketArray[b];		// get draw list index of first item in z list
+
+	if ((i < 0) || (i >= WGL3D_DrawList.length))
+	{
+		console.log ("first i out of range");
+		return;
+	}
+
+	// this is the bottle neck for large numbers of items with a similar z value.
+
+	while (object_z < WGL3D_DrawList[i].zindex)
+	{
+		if (WGL3D_DrawList[i].next_idx == WGL3D_DRAWLIST_INVALID_IDX)
+		{
+			// reached the end of the list, so just add item.
+			WGL3D_DrawList[i].next_idx = idx;
+			WGL3D_DrawList[idx].previous_idx = i;
+			WGL3D_DrawList[idx].next_idx = WGL3D_DRAWLIST_INVALID_IDX;
+			return;
+		}
+		i = WGL3D_DrawList[i].next_idx;
+		if ((i < 0) || (i >= WGL3D_DrawList.length))
+		{
+//			console.log ("i out of range");		// error checking.
+		}
+	}
+
+	// z >= current item, so insert before it.
+	WGL3D_DrawList[idx].previous_idx = WGL3D_DrawList[i].previous_idx;
+	WGL3D_DrawList[idx].next_idx = i;
+
+	WGL3D_DrawList[i].previous_idx = idx;
+
+	if (WGL3D_DrawList[idx].previous_idx == WGL3D_DRAWLIST_INVALID_IDX)
+	{
+		// new item is at start of list, so update bucket list.
+		WGL3D_DrawList_BucketArray[b] = idx;
+	}
+	else
+	{
+		// update previous z item
+		WGL3D_DrawList[WGL3D_DrawList[idx].previous_idx].next_idx = idx;
+	}
+}
+
+function WGL3D_Draw_DrawList(ctx)
+{
+	// this routine just displays flat shaded triangles.
+	// there are no lighting calculations, shadows, z buffer checks etc.
+		// NOTE : THIS MAY LOOK A LITTLE WEIRD..
+		
+		// .. after profiling, found there was a lot of calls
+		// to recalcualte style..a LOT of calls. .. so ..
+		// this code now only changes fill & stroke styles when
+		// the stroke style changes.. initial tests indicate that
+		// this has some good frame rate gains.
+	var b;
+	var i;
+	var d;
+	
+	var rgbhex;
+
+	rgbhex = "";
+	ctx.beginPath();
+
+	for (b = WGL3D_DrawList_BucketArray.length-1; b >= 0; b--)
+	{
+		if (WGL3D_DrawList_BucketArray[b] != WGL3D_DRAWLIST_INVALID_IDX)
+		{
+			i = WGL3D_DrawList_BucketArray[b];
+			while (i != WGL3D_DRAWLIST_INVALID_IDX)
+			{
+				d = WGL3D_DrawList[i];
+				if (d.rgbhex != rgbhex)
+				{
+					ctx.fill();		// flush buffer
+					ctx.stroke();
+
+					ctx.beginPath();
+					ctx.fillStyle = d.rgbhex;		// reduce style changes.
+					ctx.strokeStyle = d.rgbhex;
+				}
+				ctx.moveTo (d.x0, d.y0);
+				ctx.lineTo (d.x1, d.y1);
+				ctx.lineTo (d.x2+0.5, d.y2);
+				ctx.lineTo (d.x0, d.y0);
+
+				if (d.rgbhex != rgbhex)
+				{
+					rgbhex = d.rgbhex;
+				}
+				i = d.next_idx;
+			}
+			ctx.fill();		// flush buffers
+			ctx.stroke();
+		}
+	}
+}
+
+//var jkp = 0;
+function WGL3D_2D_DrawObject (mesh_id, model_matrix)
+{
+		// ** UNDER CONSTRUCTION **
+	//womble
+		
+	var i;
+		
+	var object_index;
+	var z;
+	var x0;
+	var y0;
+	var z0;
+	var x1;
+	var y1;
+	var z1;
+	var x2;
+	var y2;
+	var z2;
+	var rgbhex;
+
+//	rgbhex="#f00";
+	
+	var verts;
+	var xverts;
+	var z;
+	var f;
+	var v0;
+	var v1;
+	var v2;
+
+	var ptr;
+
+	var ox;
+	var oy;
+	var halfwidth;
+	var halfheight;
+	
+	var r;
+	var g;
+	var b;
+
+	halfwidth = webglCanvas.width >> 1;
+	halfheight = webglCanvas.height >> 1;
+	ox = halfwidth;
+	oy = halfheight;
+
+	verts = buffer_2d_verts[mesh_id];
+
+//	if (jkp == 0)
+//	{
+//		console.log ("untransformed verts..");
+//		console.log (verts);
+//	}
+
+	buffer_2d_xverts = [];			// clear xverts buffer (is this required ??)
+
+	xverts = buffer_2d_xverts;
+
+		// do model matrix multiply.
+	MatrixVectorArrayMultiply (model_matrix, verts, xverts);
+
+//	if (jkp == 0)
+//	{
+//		console.log ("model matrix x verts..");
+//		console.log (xverts);
+//	}
+
+		// now do perspective (projection) matrix multiply.
+//	MatrixVectorArrayMultiply (ProjectionMatrix, verts, xverts);
+//	MatrixVectorArrayMultiply (g_PerspectiveMatrix, verts, xverts);
+	MatrixVectorArrayMultiply (g_PerspectiveMatrix, xverts, xverts);
+
+//	if (jkp == 0)
+//	{
+//		console.log ("perspective x xverts");
+//		console.log (xverts);
+//	}
+
+		// do divide by w
+	for (k = 0; k < xverts.length; k += 4)
+	{
+		w = xverts[k+3];
+		if (w != 0)
+		{
+			xverts[k+0] /= w;
+			xverts[k+1] /= w;
+		}
+	}
+
+//	if (jkp == 0)
+//	{
+//		console.log ("w divide");
+//		console.log (xverts);
+//	}
+
+		// convert to screen coordinates
+
+	for (k = 0; k < xverts.length; k += 4)
+	{
+		xverts[k]   = ox + (halfwidth * xverts[k]);
+		xverts[k+1] = oy - (halfheight* xverts[k+1]);
+	}
+
+//	if (jkp == 0)
+//	{
+//		console.log ("screen coords");
+//		console.log (xverts);
+//	}
+
+//	if (jkp == 0)
+//	{
+//		console.log (buffer_2d_faces);
+//	}
+
+		// output triangle data to draw list.
+	ptr = buffer_2d_faces [mesh_id];
+	for (f = 0; f < ptr.length; f += 3)
+	{
+		v0 = ptr[f+0] * 4;
+		v1 = ptr[f+1] * 4;
+		v2 = ptr[f+2] * 4;
+		
+//		if (jkp == 0)
+//		{
+//			console.log ("f:" + f + " v0:" + v0 + " v1:" + v1 + " v2:" + v2);
+//		}
+		x0 = xverts[v0+0];
+		y0 = xverts[v0+1];
+		z0 = xverts[v0+2];
+
+		x1 = xverts[v1+0];
+		y1 = xverts[v1+1];
+		z1 = xverts[v1+2];
+
+		x2 = xverts[v2+0];
+		y2 = xverts[v2+1];
+		z2 = xverts[v2+2];
+
+		z = (z0 + z1 + z2)/3;
+
+		backface_cull = false;
+		if (WGL3D_backfaceCullEnabled == true)
+		{
+			backface_cull = true;
+			if (WGL3D_BackfaceCullCheck (x0,y0,x1,y1,x2,y2) < 0)
+			{
+				backface_cull = false;
+			}
+		}
+
+		if (backface_cull == false)
+		{
+			v0 = ptr[f+0] * 3;
+			r = Math.floor (255 * buffer_2d_inks[mesh_id][v0+0]);
+			g = Math.floor (255 * buffer_2d_inks[mesh_id][v0+1]);
+			b = Math.floor (255 * buffer_2d_inks[mesh_id][v0+2]);
+			rgbhex = "rgb(" +  r + ","+ g + "," + b + ")";
+
+//		if (jkp == 0)
+//		{
+//			console.log ("f:" + f + " r:" + r + " g:" + g + " b:" + b);
+//		}
+			DrawList_AddItem (object_index, z, x0,y0,x1,y1,x2,y2, rgbhex);
+		}
+	}
+
+//	jkp = 1;
+//	var buffer_2d_verts = [];
+//var buffer_2d_faces = [];
+//var buffer_2d_inks = [];
+
+//var buffer_2d_xverts = [];	// buffers for transformed vertices.
+	
+//	DrawList_AddItem (object_index, object_z, x0,y0,x1,y1,x2,y2, rgbhex);
+
+}
+
+
+function WGL3D_Init2D (canvas_id)
+{
+	webglCanvas = document.getElementById(canvas_id);
+	if (!webglCanvas)
+	{
+		console.log ("Init2D:unable to locate canvas " + canvas_id);
+		return false;
+	}
+
+	WGL3D_HardwareEnabled = false;
+	gl = webglCanvas.getContext("2d");
+
+	WGL3D_clearDrawList();		// initialise 2D draw list.
+
+	WGL3D_PerspectiveMatrix = MatrixIdentity();
+
+	WGL3D_2D_TextureBuffer = [];
+
+	console.log ("Hardware WebGl not available : using canvas 2D for rendering");
+	return true;
+}
+
+function WGL3D_2D_Upload (verts, face_indices, inks, normals, texture_uvs)
+{
+	// need to 'upload' data to some internal buffer, and return 
+	// an index to it.
+	
+	// verts should be and array of coordinates (x,y,z) for each vertex
+	// required.. e.g:
+	// v[0] = x0, v[1] = y0, v[2] = z0
+	// v[3] = x1, v[4] = y1, v[5] = z1
+	// .. etc,etc.
+	
+	// internally, these go to a (x,y,z,w) vector format for easy
+	// matrix multiplication.
+
+	var idx;
+	var lp;
+	var id;
+	var i;
+	var ptr;
+	var f;
+	var w;
+
+	w = 1;		// w value for (x,y,z,w)
+
+		// get free vertex buffer index
+	i = WGL3D_ID_VertexBuffers.length;
+	
+	if (i == WGL3D_MAX_MESHES)
+	{
+		console.log ("2D_Upload : max meshes reached");
+		return -1;
+	}
+
+	WGL3D_ID_BufferType[i] = WGL3D_BUFFER_TYPE_CPU;
+
+	id = buffer_2d_verts.length;
+	WGL3D_ID_VertexBuffers[i] = id;
+
+	buffer_2d_verts[id] = [];
+	ptr = buffer_2d_verts[id];
+	idx = 0;
+	for (lp = 0; lp < verts.length; lp += 3)
+	{
+		ptr[idx+0] = verts[lp+0];
+		ptr[idx+1] = verts[lp+1];
+		ptr[idx+2] = verts[lp+2];
+		ptr[idx+3] = w;				// default w value.
+		idx += 4;
+	}
+
+	id = buffer_2d_faces.length;
+	WGL3D_ID_IndexBuffers[i] = id;
+
+	buffer_2d_faces[id] = [];
+	ptr = buffer_2d_faces[id];
+	for (lp = 0; lp < face_indices.length; lp += 3)
+	{
+		ptr[lp+0] = face_indices[lp+0];
+		ptr[lp+1] = face_indices[lp+1];
+		ptr[lp+2] = face_indices[lp+2];
+	}
+	
+//	console.log ("aaaaaa");
+//	console.log (ptr);
+
+		// not sure if this should be rgb or rgba ??
+
+	id = buffer_2d_inks.length;
+	WGL3D_ID_InkBuffers[i] = id;
+	buffer_2d_inks[id] = [];
+	ptr = buffer_2d_inks[id];
+	for (lp = 0; lp < inks.length; lp += 3)
+	{
+		ptr[lp+0] = inks[lp+0];
+		ptr[lp+1] = inks[lp+1];
+		ptr[lp+2] = inks[lp+2];
+	}
+	
+	return i;
+}
+
+var ttyy = 0;
+function WGL3D_2D_DrawSpriteLayer (layer_idx, first_sprite_idx, number_of_sprites, texture_id)
+{
+	//** under construction **
+	
+		// slightly complicated by the fact the coordinates are 
+		// in webgl ranges.
+
+		// need to convert coords to 2d canvas pixel values.
+		// so need knowledge of texture and canvas sizes.
+
+	var lp;
+	var sl;
+	var s;
+	var f;
+	var ix;
+	var iy;
+	var iw;
+	var ih;
+	var sx;
+	var sy;
+	var sw;
+	var sh;
+	var i;
+	var tw;
+	var th;
+	
+	var cw;
+	var ch;
+	
+	var tex;
+	
+
+
+//function WGL3D_STRUCT_TEXTUREINFO (image_object)
+//{
+//	this.img = null;
+//	if (WGL3D_HardwareEnabled == false)
+//	{
+//		this.img = new Image();
+//		this.img.src = image_object.src;
+//	}
+
+//	this.loaded = image_object.loaded;
+
+//	this.gpu_texture_id = -1;				// for gpu texture id's.
+//	this.width = image_object.width;
+//	this.height= image_object.height;
+//}
+
+	tw = WGL3D_TextureInfo[texture_id].width;
+	th = WGL3D_TextureInfo[texture_id].height;
+	
+//	console.log ("tw :" + tw + " th:" + th);
+
+//	tex =WGL3D_TextureId [texture_id];
+//	if (WGL3D_2D_TextureBuffer [tex].loaded == false)
+//	{
+//		return;
+//	}
+//	tw = WGL3D_2D_TextureBuffer [tex].width;
+//	th = WGL3D_2D_TextureBuffer [tex].height;
+
+	cw = webglCanvas.width;
+	ch = webglCanvas.height;
+
+	sl = SpriteLayerArray [layer_idx];
+
+	s = sl.vertex_array;
+	f = sl.uv_array;
+	for (lp = 0; lp < sl.max_sprites; lp++)
+	{
+			// extract data from arrays.
+
+		i = lp * 12;
+		sx = s[i];
+		sy = s[i+1];
+		sw = s[i+3] - sx;
+		sh = s[i+7] - sy;
+		
+		i = lp * 8;
+		ix = f[i];
+		iy = f[i+1];
+		iw = f[i+2] - ix;
+		ih = f[i+5] - iy;
+
+		sx = (sx+1) * (cw * 0.5);
+		sy = (sy-1) * (ch * -0.5);
+
+		sw = sw * cw*0.5;
+		sh = sh * ch*-0.5;
+
+		ix = ix * tw;
+		iy = iy * th;
+		iw *= tw;
+		ih *= th;
+
+//		gl.drawImage (WGL3D_2D_TextureBuffer[tex], ix, iy, iw, ih, sx, sy, sw, sh);
+		gl.drawImage (WGL3D_TextureInfo[texture_id].img, ix, iy, iw, ih, sx, sy, sw, sh);
+	}
+//	ttyy = 1;
+}
+
+//function WGL3D_SpriteLayerStruct ()
+//{
+//	this.max_sprites;
+//	this.texture_id;
+//	this.vertex_buffer_id;
+//	this.vertex_array;
+//	this.uv_buffer_id;
+//	this.uv_array;
+//	this.face_buffer_id;
+//}	
+	
+//}
+
+
+
+		// ===========================
+		//  **** END OF 2D STUFF ****
+		// ===========================
+
+
+
+
+
 	//--------------------------------------------------
 	// vertex and frag shader for plain white 2D triangles
 	//--------------------------------------------------
-
 
 var vs_white_triangles =
 	"attribute vec3 vertexPosition;"+
@@ -248,15 +1046,18 @@ var ShaderProg_Sprites;
 
 var g_PerspectiveMatrix;			// calculated once during initialisation.
 
+
+var WGL3D_ID_BufferType = [];		// buffer type.. gpu or cpu
 var WGL3D_ID_VertexBuffers = [];	// id's for gpu buffer objects.
 var WGL3D_ID_IndexBuffers = [];
 var WGL3D_ID_InkBuffers = [];
 
 var WGL3D_NumFaces = [];
 
+var WGL3D_TextureInfo = [];				// replaces TextureId with WGL3D_STRUCT_TEXTUREINFO
 
-var WGL3D_TextureId = [];
-var WGL3D_TextureImg = [];			// temp image stores.
+//var WGL3D_TextureId = [];
+//var WGL3D_TextureImg = [];			// temp image stores.
 
 
 	// --- sprite vars ---
@@ -281,6 +1082,17 @@ function WGL3D_Error(msg)
 	var str;
 
 	str = "";
+	
+	if (WGL3D_HardwareEnabled == false)
+	{
+		if (msg != undefined)
+		{
+			console.log (msg);
+		}
+		return;
+	}
+
+
 	e = gl.getError();		// performance issue ???
 	switch (e)
 	{
@@ -336,6 +1148,14 @@ function _wgl3d_CompileShaderProgramFromStrings (v_shader_src, f_shader_src)
 	var vs;
 	var fs;
 	var program_id;
+	
+	if (WGL3D_HardwareEnabled == false)
+	{
+		console.log ("2D mode : no shader compilation");
+		return;
+	}
+
+	
 
 //	console.log ("vshader");
 	vs = gl.createShader(gl.VERTEX_SHADER);
@@ -387,14 +1207,19 @@ function WGL3D_Init (canvas_id)	// canvas_width, canvas_height)
 		// ties it to the webgl stuff - you can't treat it as a regular 2d cavas.
 		
 		// returns false if unable to initialise webgl
+		// note : 2D rendering fallback will be activated in this case.
 
 	var canvas_string;
 	var v;
 	var f;
 	var vs;
 	var fs;
-	
+
 	console.log ("WEBGL_Init()");
+	
+	
+	
+	
 
 	webglCanvas = document.getElementById(canvas_id);
 	if (!webglCanvas)
@@ -402,20 +1227,42 @@ function WGL3D_Init (canvas_id)	// canvas_width, canvas_height)
 		console.log ("unable to locate canvas " + canvas_id);
 		return false;
 	}
-	
+
 	console.log ("Doing WEBGL inits..");
+
+		// Create the projection matrix - only needs to be done once, so I've put it here !
+	
+	console.log ("webgl " + webglCanvas.width + " " + webglCanvas.height);
+	g_PerspectiveMatrix = Matrix_CreatePerspectiveProjectionMatrix (
+		webglCanvas.width, 			// width in pixels
+		webglCanvas.height, 		// height in pixels
+			30.0,					// field of view (degrees)
+			WGL3D_NEAR_Z,						// near z
+			WGL3D_FAR_Z);					// far z
+
+//	console.log ("g_PerspectiveMatrix");
+//	console.log (g_PerspectiveMatrix);
+	
+		// for 2D test purposes, forcing 2D rendering
+	WGL3D_HardwareEnabled = false;
+	WGL3D_Init2D (canvas_id);
+	return true;
 
 	gl = webglCanvas.getContext("experimental-webgl");		// Opera still wants this ??.
 	if (!gl)
 	{
 		gl = webglCanvas.getContext("webgl");						// Firefox accepts this.
 	}
-	
+
 	if (!gl)
 	{
-		console.log ("***ERROR ** webgl not available");
+		// fall back to 2D canvas rendering
+		WGL3D_HardwareEnabled = false;
+		WGL3D_Init2D (canvas_id);
 		return false;
 	}
+	
+	WGL3D_HardwareEnabled = true;	// warp factor 9 Mr Sulu !
 
 	console.log ("webgl available, got context");
 
@@ -445,19 +1292,6 @@ function WGL3D_Init (canvas_id)	// canvas_width, canvas_height)
 //	g_SpriteVertexBuffer = gl.createBuffer();	// id for sprite vertices.
 //	g_SpriteUVBuffer = gl.createBuffer();		// id for texture uv buffer
 //	g_SpriteIndexBuffer = gl.createBuffer();	// id for sprite vertex indices buffer.
-
-		// Create the projection matrix - only needs to be done once, so I've put it here !
-
-	console.log ("webgl " + webglCanvas.width + " " + webglCanvas.height);
-	g_PerspectiveMatrix = Matrix_CreatePerspectiveProjectionMatrix (
-		webglCanvas.width, 			// width in pixels
-		webglCanvas.height, 		// height in pixels
-			30.0,					// field of view (degrees)
-			1,						// near z
-			1000);					// far z
-
-	console.log ("g_PerspectiveMatrix");
-	console.log (g_PerspectiveMatrix);
 
 		// shaders do not get executed the same as javascript
 		// - they need to be compiled before you can use them !
@@ -518,6 +1352,15 @@ function WGL3D_UploadModelData (verts, face_indices, inks, normals, texture_uvs)
 		return false;
 	}
 	
+	if (WGL3D_HardwareEnabled == false)
+	{
+		i = WGL3D_2D_Upload (verts, face_indices, inks, normals, texture_uvs);
+		return i;
+	}
+
+
+	WGL3D_ID_BufferType[i] = WGL3D_BUFFER_TYPE_GPU;
+
 //	console.log ("i = " + i);
 
 		// upload  vertex data into a buffer on the GPU
@@ -759,8 +1602,16 @@ function WGL3D_TriangleTest()
 
 function WGL3D_ClearCanvas()
 {
-	gl.clear (gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-	WGL3D_Error();
+	if (WGL3D_HardwareEnabled == true)
+	{
+		gl.clear (gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+		WGL3D_Error();
+	}
+	else
+	{
+		gl.clearRect(0,0,webglCanvas.width, webglCanvas.height);
+
+	}
 }
 
 	// =========================================================
@@ -769,34 +1620,58 @@ function WGL3D_ClearCanvas()
 	
 function WGL3D_StartDraw()
 {
-	sp = ShaderProg_3DFlat;
-	gl.useProgram (sp);
-	WGL3D_Error();
-
-	// upload perspective matrix
-
-	id = gl.getUniformLocation(sp, "perspectiveMatrix");
-	WGL3D_Error();
-	if (id == -1)
+	if (WGL3D_HardwareEnabled == true)
 	{
-		console.log ("shader1:perspective matrix not found");
-		return;
+		sp = ShaderProg_3DFlat;
+		gl.useProgram (sp);
+		WGL3D_Error();
+
+			// upload perspective matrix
+
+		id = gl.getUniformLocation(sp, "perspectiveMatrix");
+		WGL3D_Error();
+		if (id == -1)
+		{
+			console.log ("shader1:perspective matrix not found");
+			return;
+		}
+		gl.uniformMatrix4fv (id, false, g_PerspectiveMatrix);
+		WGL3D_Error();
 	}
-	gl.uniformMatrix4fv (id, false, g_PerspectiveMatrix);
-	WGL3D_Error();
+	else
+	{
+		// ** TO DO ** 2D START DRAW
+		WGL3D_clearDrawList();
+	}
 }
 
 function WGL3D_EndDraw()
 {
+		// for 2D rendering, this does the actual draw list drawing.
+		// done this way as need to have a full draw list before
+		// rendering anything.
+
+	if (WGL3D_HardwareEnabled == false)
+	{
+		WGL3D_Draw_DrawList(gl);
+	}
 }
 
 function WGL3D_DrawObject(mesh_id, model_matrix)
 {
 	// uses webgl routines to display a mesh using the supplied model matrix.
 	var i;
+	
+	
+	if (WGL3D_HardwareEnabled == false)
+	{
+		// TO DO : 2D DrawObject
+		WGL3D_2D_DrawObject (mesh_id, model_matrix);
+		return;
+	}
 
 	i = mesh_id;
-	
+
 		// upload model matrix
 	id = gl.getUniformLocation(sp, "modelViewMatrix");
 	WGL3D_Error();
@@ -807,7 +1682,6 @@ function WGL3D_DrawObject(mesh_id, model_matrix)
 	}
 	gl.uniformMatrix4fv(id, false, model_matrix);
 	WGL3D_Error();
-
 
 	gl.bindBuffer(gl.ARRAY_BUFFER,  WGL3D_ID_VertexBuffers[i]);
 	WGL3D_Error();
@@ -998,23 +1872,51 @@ function WGL3D_LoadTexture(image_object)
 	var i;
 	var texture_id;
 	
-	console.log (image_object);
+//	console.log (image_object);
 	if (image_object.complete == false)
 	{
 		console.log ("image not fully loaded :" + image_object.src);
 	}
 
-	texture_id = gl.createTexture();
+	i = WGL3D_TextureInfo.length;
+	WGL3D_TextureInfo[i] = new WGL3D_STRUCT_TEXTUREINFO(image_object);
 
-	i = WGL3D_TextureId.length;
-	WGL3D_TextureId[i] = texture_id;
-	
-	_wgl3d_handleLoadedTexture(texture_id, image_object);	//image, texture)
-	
+	if (WGL3D_HardwareEnabled == true)
+	{
+		texture_id = gl.createTexture();
+		_wgl3d_handleLoadedTexture(texture_id, image_object);
+		WGL3D_TextureInfo[i].gpu_texture_id = texture_id;
+	}
 
-//	WGL3D_TextureImg[i] = image_object;
-//	WGL3D_TextureImg[i].src=texture_image_data_source;
-//	WGL3D_TextureImg[i].onload = function(){_wgl3d_handleLoadedTexture(i);};
+//WGL3D_TextureInfo[texture_idx].gpu_texture_id)
+//	WGL3D_TextureInfo[i] = WGL3D_STRUCT_TEXTUREINFO (image_object);
+//	if (WGL3D_HardwareEnabled == false)
+//	{
+		//this.img = new Image();
+//		this.img.src = image_object.src;
+//	}
+//	this.width = image_object.width;
+//	this.height= image_object.height;
+//}
+
+	
+//	if (WGL3D_HardwareEnabled == false)
+//	{
+			// texture id is created from texture array buffer.
+//		texture_id = WGL3D_2D_TextureBuffer.length;
+	
+//		WGL3D_2D_TextureBuffer[texture_id] = new Image();
+//		WGL3D_2D_TextureBuffer[texture_id].src = image_object.src;
+//	}
+//	else
+//	{
+			// texture is created on the gpu.
+//		texture_id = gl.createTexture();
+//		_wgl3d_handleLoadedTexture(texture_id, image_object);
+//	}
+	
+//	i = WGL3D_TextureId.length;
+//	WGL3D_TextureId[i] = texture_id;
 	
 	return i;
 }
@@ -1055,23 +1957,28 @@ function WGL3D_InitSpriteLayer (layer_idx, max_sprites)
 		return;
 	}
 
-//	womble
 	if ((max_sprites < 1) || (max_sprites >= WGL3D_MAX_SPRITES))
 	{
 		console.log ("WGL3D_InitSpritelayer : max sprites out of range");
 		return;
 	}
-
+	
 	i = layer_idx;
 	SpriteLayerArray [i] = new WGL3D_SpriteLayerStruct();
 	sl = SpriteLayerArray [i];
 	
 	sl.max_sprites = max_sprites;
 	
+//	if (WGL3D_HardwareEnabled == false)
+//	{
+//		WGL3D_2D_InitSpriteLayer (layer_idx, max_sprites);
+//	}
+
+	
 		// ---
 		// create Uint16 array for sprite 'face' info.
 		// this buffer doesn't ever change, so just create & send to
-		// the GPU.
+		// the GPU (if available).
 
 	tmp = [];
 
@@ -1089,21 +1996,27 @@ function WGL3D_InitSpriteLayer (layer_idx, max_sprites)
 		tmp[i++] = (n*4) + 3;
 	}
 
-		//ELEMENT_ARRAY_BUFFER
-
-	id = gl.createBuffer();
-		WGL3D_Error("WGL3D_InitSpriteLayer: index array gl.createBuffer()");
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, id);
-	 	WGL3D_Error("WGL3D_InitSpriteLayer: index array gl.bindBuffer()");
-	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(tmp), gl.STATIC_DRAW);		// static draw, as it's not going to change.
-		WGL3D_Error("WGL3D_InitSpriteLayer: index array gl.bufferData()");
+	if (WGL3D_HardwareEnabled == false)
+	{
+		sl.face_buffer_id = null;
+	}
+	else
+	{
+				//ELEMENT_ARRAY_BUFFER
+		id = gl.createBuffer();
+			WGL3D_Error("WGL3D_InitSpriteLayer: index array gl.createBuffer()");
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, id);
+			WGL3D_Error("WGL3D_InitSpriteLayer: index array gl.bindBuffer()");
+		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(tmp), gl.STATIC_DRAW);		// static draw, as it's not going to change.
+			WGL3D_Error("WGL3D_InitSpriteLayer: index array gl.bufferData()");
 	
-	sl.face_buffer_id = id;		// WGL3D_SpriteFaces
+		sl.face_buffer_id = id;		// WGL3D_SpriteFaces
+	}
 
 
 		// ---
 		// create float32 array for sprite texture coords.
-		// this is held in ram, not on the gpu.
+		// NOTE:this is held in ram, not on the gpu.
 
 	tmp = [];
 	i = 0;
@@ -1128,18 +2041,25 @@ function WGL3D_InitSpriteLayer (layer_idx, max_sprites)
 
 		// now upload it to the gpu
 
-	id = gl.createBuffer();
-		WGL3D_Error("WGL3D_InitSpriteLayer: uv buffer create");
-	gl.bindBuffer(gl.ARRAY_BUFFER, id);
-		WGL3D_Error("WGL3D_InitSpriteLayer: uv buffer bind");
-	gl.bufferData(gl.ARRAY_BUFFER, sl.uv_array, gl.DYNAMIC_DRAW);		// dynamic hint.. we will be buggering about with this buffer a lot !!
-		WGL3D_Error("WGL3D_InitSpriteLayer: uv buffer data");
+	if (WGL3D_HardwareEnabled == false)
+	{
+		sl.uv_buffer_id = null;
+	}
+	else
+	{
+		id = gl.createBuffer();
+			WGL3D_Error("WGL3D_InitSpriteLayer: uv buffer create");
+		gl.bindBuffer(gl.ARRAY_BUFFER, id);
+			WGL3D_Error("WGL3D_InitSpriteLayer: uv buffer bind");
+		gl.bufferData(gl.ARRAY_BUFFER, sl.uv_array, gl.DYNAMIC_DRAW);		// dynamic hint.. we will be buggering about with this buffer a lot !!
+			WGL3D_Error("WGL3D_InitSpriteLayer: uv buffer data");
 	
-	sl.uv_buffer_id = id;
+		sl.uv_buffer_id = id;
+	}
 
 		// ---
 		// create float32 array for sprite vertices.
-		// this is held in ram, not on the gpu.
+		// NOTE: this is held in ram, not on the gpu.
 
 	tmp = [];
 	i = 0;
@@ -1166,21 +2086,28 @@ function WGL3D_InitSpriteLayer (layer_idx, max_sprites)
 	sl.vertex_array = new Float32Array (tmp);
 
 		// upload to gpu.
-	
-	id = gl.createBuffer();
-	WGL3D_Error();
-	gl.bindBuffer(gl.ARRAY_BUFFER, id);
-	WGL3D_Error();
-//	gl.bufferData(gl.ARRAY_BUFFER, WGL3D_SpriteVertexArray, gl.DYNAMIC_DRAW);		// dynamic hint.. we will be changing this buffer a lot !!
-	gl.bufferData(gl.ARRAY_BUFFER, sl.vertex_array, gl.DYNAMIC_DRAW);		// dynamic hint.. we will be changing this buffer a lot !!
-	WGL3D_Error();
 
-	sl.vertex_buffer_id = id;
+	if (WGL3D_HardwareEnabled == false)
+	{
+		sl.vertex_buffer_id = null;
+	}
+	else
+	{
+		id = gl.createBuffer();
+		WGL3D_Error();
+		gl.bindBuffer(gl.ARRAY_BUFFER, id);
+		WGL3D_Error();
+		//	gl.bufferData(gl.ARRAY_BUFFER, WGL3D_SpriteVertexArray, gl.DYNAMIC_DRAW);		// dynamic hint.. we will be changing this buffer a lot !!
+		gl.bufferData(gl.ARRAY_BUFFER, sl.vertex_array, gl.DYNAMIC_DRAW);		// dynamic hint.. we will be changing this buffer a lot !!
+		WGL3D_Error();
+
+		sl.vertex_buffer_id = id;
+	}
 }
 
 function WGL3D_SetSprite (layer_idx, sprite_idx, tu, tv, tw,th, sx, sy, sz, sw, sh)
 {
-	// sets the sprite data.
+	// sets the sprite data within the ram buffer for a sprite.
 
 	// tu, tv, tw and th should be in the range 0 to 1.
 	// sx,sy should also be in the range 0..1	
@@ -1214,10 +2141,6 @@ function WGL3D_SetSprite (layer_idx, sprite_idx, tu, tv, tw,th, sx, sy, sz, sw, 
 		return;
 	}
 
-
-//	cw = webglCanvas.width;
-//	ch = webglCanvas.height;
-
 		// range of x coordinates for webgl go from -1 to +1
 
 	x0 = sx;	//sx/cw;
@@ -1226,8 +2149,7 @@ function WGL3D_SetSprite (layer_idx, sprite_idx, tu, tv, tw,th, sx, sy, sz, sw, 
 	y1 = sy - sh;
 
 	i = sprite_idx * 12;
-//	s = WGL3D_SpriteVertexBuffer;
-//	s = WGL3D_SpriteVertexArray;
+
 	s = sl.vertex_array;
 	s[i++] = x0;
 	s[i++] = y0;
@@ -1245,7 +2167,6 @@ function WGL3D_SetSprite (layer_idx, sprite_idx, tu, tv, tw,th, sx, sy, sz, sw, 
 	s[i++] = y1;
 	s[i++] = sz;
 
-//	f = WGL3D_SpriteUVArray;
 	f = sl.uv_array;
 	i = sprite_idx * 8;
 	f[i++] = tu;
@@ -1259,6 +2180,80 @@ function WGL3D_SetSprite (layer_idx, sprite_idx, tu, tv, tw,th, sx, sy, sz, sw, 
 
 	f[i++] = tu;
 	f[i++] = tv + th;
+}
+
+function WGL3D_Sprite (layer_number, sprite_index, texture_id, tx, ty, tw, th, sx, sy, sw, sh)
+{
+	// convenience routine that takes pixel based values and converts
+	// them to webgl ranges before calling SetSprite
+	
+/*
+function WGL3D_STRUCT_TEXTUREINFO (image_object)
+{
+	this.img = null;
+	if (WGL3D_HardwareEnabled == false)
+	{
+		this.img = new Image();
+		this.img.src = image_object.src;
+	}
+
+	this.loaded = image_object.complete;
+
+	this.gpu_texture_id = -1;			// gpu specific texture id.
+	this.width = image_object.width;
+	this.height= image_object.height;
+}
+
+//var WGL3D_TextureInfo = [];				// replaces TextureId with WGL3D_STRUCT_TEXTUREINFO
+*/
+
+
+	var u;
+	var v;
+	var w;
+	var h;
+
+	var texture_width;
+	var texture_height;
+
+	var canvas_width;
+	var canvas_height;
+	
+	if ((texture_id < 0) || (texture_id >= WGL3D_TextureInfo.length))
+	{
+//		console.log ("tex buff len:" + WGL3D_2D_TextureBuffer.length);
+		console.log ("WGL3D_Sprite ( : invalid texture id:" + texture_id);
+		return;
+	}
+
+	canvas_width = webglCanvas.width;
+	canvas_height = webglCanvas.height;
+
+	texture_width = WGL3D_TextureInfo[texture_id].width;
+	texture_height= WGL3D_TextureInfo[texture_id].height;
+//	texture_width = WGL3D_2D_TextureBuffer[texture_id].width;
+//	texture_height = WGL3D_2D_TextureBuffer[texture_id].height;
+
+	u = tx / texture_width;
+	v = ty / texture_height;
+
+	tw /= texture_width;
+	th /= texture_height;
+
+	w = (sw*2) / canvas_width;
+	h = (sh*2) / canvas_height;
+
+	sx = (sx / canvas_width*2) - 1;
+	sy = 1 - (sy / canvas_height*2);
+
+	WGL3D_SetSprite (
+		layer_number,			// layer_idx, 
+		sprite_index,				// sprite_idx,
+		u,v,			// tu, tv,
+		tw,th,			// tw,th,
+		sx, sy, 		// sx,sy
+		0.0,			// sz
+		w, h);			// sw, sh
 }
 
 
@@ -1317,6 +2312,12 @@ function WGL3D_DrawSpriteLayer (layer_idx, first_sprite_idx, number_of_sprites, 
 //		console.log ("max sprites:" + SpriteLayerArray[layer_idx].max_sprites);
 		return;
 	}
+	
+	if (WGL3D_HardwareEnabled == false)
+	{
+		WGL3D_2D_DrawSpriteLayer (layer_idx, first_sprite_idx, number_of_sprites, texture_idx);
+		return;
+	}
 
 	sl = SpriteLayerArray [layer_idx];
 
@@ -1353,7 +2354,9 @@ function WGL3D_DrawSpriteLayer (layer_idx, first_sprite_idx, number_of_sprites, 
 	gl.activeTexture(gl.TEXTURE0);              // use the first texture (numbers go from 0 - > 31
 	WGL3D_Error("WGL3D_DrawAllSprites:1005");
 //	console.log (WGL3D_TextureId[texture_idx]);
-	gl.bindTexture(gl.TEXTURE_2D, WGL3D_TextureId[texture_idx]);	//g_Texture);
+//	gl.bindTexture(gl.TEXTURE_2D, WGL3D_TextureId[texture_idx]);	//g_Texture);
+	gl.bindTexture(gl.TEXTURE_2D, WGL3D_TextureInfo[texture_idx].gpu_texture_id);	//g_Texture);
+
 	WGL3D_Error("WGL3D_DrawAllSprites:1006");
 
 		// enable vertex buffer
@@ -1410,17 +2413,19 @@ function WGL3D_ClearSpriteLayer (layer_idx)
 	var sl;
 	var s;
 	var lp;
-	
+
 	i = 0;
 	sl = SpriteLayerArray [layer_idx];
 	s = sl.vertex_array;
 	for (lp = 0; lp < sl.max_sprites; lp++)
 	{
+		s[i+3] = 200;	// need this one for 2d sprite clearing.
+
 		s[i] = 10000;
-		s[i+2] = 100;
-		s[i+5] = 100;
-		s[i+8] = 100;
-		s[i+11] = 100;
+		s[i+2] = 200;
+		s[i+5] = 200;
+		s[i+8] = 200;
+		s[i+11] = 200;
 		i += 12;
 	}
 }
@@ -1826,3 +2831,191 @@ function WGL3D_SetSprite (sprite_idx, texture_index, tu, tv, tw,th, sx, sy, sz, 
 }
 
 */
+
+
+
+
+function WGL3D_STRUCT_MODEL3D (vertex_array, face_array, ink_array, uv_array)
+{
+		// ** REDUNDANT ROUTINE ?????
+
+		// creates a 3D model from vertex and face data.
+		// the data in the structure depends on whether webgl is
+		// enabled or not. 
+		
+		// assumes as a minimum, vertex_array, face_array and ink_array
+		// all contain data. uv_array can be null
+		
+	var i;
+	var lp;
+
+	this.initial_verts =[];
+	this.vertices =[];						// current (transformed) vertices
+	this.faces =[];
+	this.inks = [];
+	this.uv = [];
+	this.initial_normal = [];
+	this.normal = [];
+
+	this.matrix = MatrixIdentity();
+
+	this.ia = 0.4;			// intensity of ambient light level
+
+	this.red = 1.0;			// default object colour.
+	this.green = 0.0;
+	this.blue = 0.0;
+
+	i = 0;
+	for (lp = 0; lp < vertex_array.length; lp += 3)
+	{
+		this.initial_verts[i++] = vertex_array[lp];		// x
+		this.initial_verts[i++] = vertex_array[lp+1];	// y
+		this.initial_verts[i++] = vertex_array[lp+2];	// z
+//		this.initial_verts[i++] = 1;							// w should be 1
+	}
+
+	for (lp = 0; lp < face_array.length; lp++)
+	{
+		this.faces[lp] = face_array[lp];
+	}
+
+	for (lp = 0; lp < face_array.length; lp++)
+	{
+		this.inks[lp] = ink_array[lp];
+	}
+
+	if (uv_array != null)
+	{
+		for (lp = 0; lp < uv_array.length; lp++)
+		{
+			this.uv[lp] = uv_array[lp];
+		}
+	}
+	else
+	{
+		this.uv = null;		// no texture info, so no uv structure.
+	}
+
+/*
+	var i;
+	var lp;
+	var v0;
+	var v1;
+	var v2;
+	var v;
+	var f;
+
+	var vx;
+
+	this.initial_verts =[];
+	this.vertices =[];						// current (transformed) vertices
+	this.faces =[];
+	this.initial_normal = [];
+	this.normal = [];
+	
+	this.matrix = MatrixIdentity();
+	
+	this.webgl_id = null;
+	
+	if (WGL3D_HardwareEnabled == true)
+	{
+		// need to create new vertex and face arrays
+		// based on the original arrays so that each face has a 
+		// unique set of vertices.. otherwise can't do flat shading.
+
+		v = 0;
+		f = 0;
+		vx = 0;
+		for (lp = 0; lp < face_array.length; lp += 3)
+		{
+			v0 = face_array[lp+0] * 3;
+			v1 = face_array[lp+1] * 3;
+			v2 = face_array[lp+2] * 3;
+			
+//			console.log ("v0:" + v0 + " v1:" + v1 + " v2:" + v2);
+			
+			this.initial_verts [v++] = vertex_array[v0+0];		// copy x,y,z data over
+			this.initial_verts [v++] = vertex_array[v0+1];
+			this.initial_verts [v++] = vertex_array[v0+2];
+//			this.initial_verts [v++] = 1;							// w should be 1
+//			v0 = v-3;
+
+			this.initial_verts [v++] = vertex_array[v1+0];
+			this.initial_verts [v++] = vertex_array[v1+1];
+			this.initial_verts [v++] = vertex_array[v1+2];
+//			this.initial_verts [v++] = 1;							// w should be 1
+//			v1 = v-3;
+
+			this.initial_verts [v++] = vertex_array[v2+0];
+			this.initial_verts [v++] = vertex_array[v2+1];
+			this.initial_verts [v++] = vertex_array[v2+2];
+//			this.initial_verts [v++] = 1;							// w should be 1
+//			v2 = v-3;
+
+	//		v0 = lp; v1 = lp+1; v2 = lp+2;
+//			console.log ("v'0:" + v0 + " v'1:" + v1 + " v'2:" + v2);
+
+			this.faces[f+0] = f;	//v0;
+			this.faces[f+1] = f+1;	//v1;
+			this.faces[f+2] = f+2;	//v2;
+			f += 3;
+		}
+
+		for (f = 0; f < (this.initial_verts.length/3); f += 3)
+		{
+			this.faces[f+0] = f;
+			this.faces[f+1] = f+1;
+			this.faces[f+2] = f+2;
+		}
+
+		this.inks = [];
+		for (lp = 0; lp < this.faces.length*3; lp++)
+		{
+			this.inks[lp] = 0.3 + (Math.random() * 0.8);	// random colours for testing.
+		}
+		
+//		console.log ("verts:");
+//		console.log (this.initial_verts);
+//		console.log ("faces:");
+//		console.log (this.faces);
+			// load all the data to the graphics card.
+		this.webgl_id = WGL3D_UploadModelData (this.initial_verts, this.faces, this.inks, null, null);
+
+		return;	// end of webgl inits.
+	}
+
+	this.ia = 0.4;			// intensity of ambient light level
+
+	this.red = 1.0;			// default object colour.
+	this.green = 0.0;
+	this.blue = 0.0;
+
+	this.r = [];		// per face colours
+	this.g = [];
+	this.b = [];
+
+	i = 0;
+	for (lp = 0; lp < vertex_array.length; lp += 3)
+	{
+		this.initial_verts[i++] = vertex_array[lp];		// x
+		this.initial_verts[i++] = vertex_array[lp+1];	// y
+		this.initial_verts[i++] = vertex_array[lp+2];	// z
+		this.initial_verts[i++] = 1;							// w should be 1
+	}
+
+	for (lp = 0; lp < face_array.length; lp++)
+	{
+		this.faces[lp] = face_array[lp];
+	}
+
+	i = 0;
+	for (lp = 0; lp < face_array.length; lp += 3)
+	{
+		this.r[i] = this.ia;
+		this.g[i] = this.ia;
+		this.b[i] = this.ia;
+		i++;
+	}
+*/
+}
+
