@@ -1244,9 +1244,9 @@ function WGL3D_Init (canvas_id)	// canvas_width, canvas_height)
 //	console.log (g_PerspectiveMatrix);
 	
 		// for 2D test purposes, forcing 2D rendering
-	WGL3D_HardwareEnabled = false;
-	WGL3D_Init2D (canvas_id);
-	return true;
+//	WGL3D_HardwareEnabled = false;
+//	WGL3D_Init2D (canvas_id);
+//	return true;
 
 	gl = webglCanvas.getContext("experimental-webgl");		// Opera still wants this ??.
 	if (!gl)
