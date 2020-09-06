@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+<html>
+<head>
+<title>Mr Do</title>
+
+<style>
+	body
+	{
+		background-color:black;
+		color:white;
+	}
+
+	.centered
+	{
+		text-align:center;
+	}
+	
+	a
+	{
+		color:cyan;
+	}
+	
+</style>
+</head>
+<body>
+	<div class="centered">
+		<img src=".\img\mrdo_marquee-512.png">
+	</div>
+	<h1><i>Mr Do!</i></h1>
+	<div class="centered"><a href=".\mrdo.htm">Click here to play</a></div>
+	<p>Note: This software is a personal project to recreate a game I 
+	loved to play in the arcades as a kid. It is an attempt to create 
+	a playable reproduction of the hardware and software. 
+	It uses the original ROMS from the arcade machine, so
+	it is not for sale or general distribution The roms have
+	<b><u>not</u></b> been released into the public domain and I don't
+	have any rights regarding them. (I've asked.. but as yet had no
+	 reply.).
+
+	<p>The emulator is not 100% perfect, I still have some issues with 
+	colour palettes and some hardware screen scrolling issues but it is
+	mostly playable.</p>
+	
+	<h3>Controls:</h3>
+	<p><u>Keyboard:</u><br>
+	arrow keys to move<br>
+	5 to insert coins<br>
+	1 to start player one game<br>
+	2 to start player two game<br>
+	s to throw ball</p>
+
+	<p><u>Joystick Support:</u><br>
+	Most standard joysticks should work (including PS4 controllers).
+	</p>
+
+	<p><u>Touchscreens</u><br>
+	Right hand side of the screen : throw ball.<br>
+	Left hand side: swipe and hold to move up,down,left and right.<br>
+	Use the hamburger menu icon (grey, 3 lines top right) to add coins
+	and start the game.
+	</p>
+
+<!--	<h3><u>Development notes (for Nerds!):</u></h3>
+	<p>Mr Do was first released by Universal way back in 1982, and has
+	been a favorite of mine ever since I first encountered it in the
+	arcades.</p>
+	<p>Over the years I've played various versions of it, including 
+	a version in the MAME arcade emulator which faithfully runs the 
+	original arcade version using the original software.</p>
+	
+	<p>Unfortunately, over the years, MAME has become a somewhat large
+	project which requires quite a lot of resources to run these days 
+	and I wanted to be able to play Mr Do on a small mobile device.</p>
+	
+	<p>The emulator source code is relatively easy to find online, so
+	around three years ago (2017) I looked at whether I could adapt the
+	code to create a small emulator of my own.	Other people have 
+	written emulators, so how hard could it be ? </p>
+	
+	<p>Well it turns out that it is very hard actually and quite a long
+	process. I've had to port (and upgrade) my z80 emulator which was 
+	originally written in java (for a sinclair spectrum emulator)
+	and convert it to javascript. The languages are similar but just
+	 different enough to cause a lot of hard to find bugs. The z80
+	 instruction set is huge (1000+  instructions), and there are a
+	 <b>lot</b> of undocumented instructions that need to be emulated 
+	 and tested</p>
+
+	<p>The Mr Do hardware itself is also not very well documented
+	anywhere, so I've had to do a lot of reading of various emulator
+	sources in order to figure things out. Some of the source
+	code is itself quite cryptic, which hasn't helped. When I get 
+	chance, I will try and create some proper hardware docs. 
+	The emulator still isn't perfect, as I've got some colour issues
+	and a few problems with the screen scrolling hardware.</p>
+	<h3>Screen emulation</h3>
+	<p>The game screen is composed of two overlayed canvas screens
+	that are scaled to fit the entire browser window. I've used an
+	in memory buffers for the screens, and left the actual
+	display to the hardware as much as possible.  </p>
+-->
+
+</body>
+</html>
