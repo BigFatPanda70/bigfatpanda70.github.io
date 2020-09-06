@@ -2,11 +2,11 @@
 
 	Title	:	WebGL wrapper routines.
 
-	Info	:	Version 0.1	9th August 2020
+	Info	:	Version 0.2	24th August 2020
 
 	Author	:	Nick Fleming
 
-	Updated	:	21st August 2020
+	Updated	:	24th August 2020
 
 
 	 Notes:
@@ -134,6 +134,12 @@
 		testing texture structure.
 
 
+	 24th August 2020
+	-------------------
+		Noticed on a previous version of webgl.js (see mod1)
+	there was a line drawing routine. I've copied over the code for
+	working on at a future date, but for now 3D lines are under 
+	construction and not supported.
 
 	  TO USE
 	 --------
@@ -1015,6 +1021,37 @@ var fs_2d_sprite_shader =
 	"	}"
 	;
 
+	// ------------------------------------
+	//	2D/3D Line drawing shader
+	// ------------------------------------
+
+var vs_3d_line =
+	"attribute vec3 vertexPosition;"+
+//	"uniform mat4 mViewMatrix;"+
+//	"uniform mat4 cameraMatrix;"+
+//	"uniform mat4 perspectiveMatrix;"+
+
+	"	uniform mat4 modelViewMatrix;"+
+	"	uniform mat4 perspectiveMatrix;"+
+	
+	"uniform vec4 line_ink;"+					// uniform = constant for each primative.
+	"varying lowp vec4 vColor;" + 			// this used by frag shader, modified by vertex shader but is fixed in frag shader.
+	"void main(void)"+
+	"{"+
+//	"	gl_Position = perspectiveMatrix * cameraMatrix * mViewMatrix * vec4(vertexPosition, 1.0);"+
+	"		gl_Position = perspectiveMatrix * modelViewMatrix * vec4(vertexPosition, 1.0);"+
+	"  vColor = line_ink;"+
+	"}"
+	;
+
+var fs_3d_line =
+	"precision mediump float;"+
+	"varying lowp vec4 vColor;" + 
+	"void main(void)"+
+	"{"	+
+	"	gl_FragColor = vColor;"+
+	"}"
+	;
 
 	// -----------------------------
 	//     ---- global vars ---- 
@@ -2437,410 +2474,99 @@ function WGL3D_ClearSpriteLayer (layer_idx)
 	}
 }
 
-/*	
-function WGL3D_InitSpriteBuffer (max_sprites)
+	// -------------------------------------------------------
+	//	3D Line Drawing code - under construction.
+	// -------------------------------------------------------
+
+function WGL3D_Upload3DLines (line_data)
 {
-			// **** UNDER CONSTRUCTION ****
-
-	// note.. although all sprites are 2D.. storing z coordinate
-	// for easy hardware based z sorting of sprites.
-
-	// sprite coordinate data:
-
-		// 0---1
-		// | / |
-		// 3---2
-
-	// what this routine does is create and reserve space for sprites
-	// on the GPU. It only needs to be called *ONCE* at the start
-	// of a program.
-	
-	// it creates 2 buffers, one for vertex data, the other for 
-	// texture..
+	// ** UNDER CONSTRUCTION **
+		// line data is 2 pairs of 3D coordinates
+		// x0,y0,z0 and x1,y1,z1.. etc...
 
 	var id;
-	var i;
-	var n;
-	var tmp;
-	
-	WGL3D_MaxSprites = max_sprites;
-	
-		// create float32 array for sprite 'face' info.
-		// this buffer doesn't ever change.
 
-	tmp = [];
+	if (wgl3d_NumMeshes == MAX_MESHES)	return -1;
 
-	i = 0;
-	for (n = 0; n < max_sprites; n++)
-	{
-			// 2 triangular faces per sprite.
+	i = wgl3d_NumMeshes;
+	wgl3d_NumMeshes++;
 
-		tmp[i++] = (n*4) + 0;
-		tmp[i++] = (n*4) + 1;
-		tmp[i++] = (n*4) + 3;
-
-		tmp[i++] = (n*4) + 1;
-		tmp[i++] = (n*4) + 2;
-		tmp[i++] = (n*4) + 3;
-	}
-
-	//ELEMENT_ARRAY_BUFFER
+		// create new data buffer.
 	id = gl.createBuffer();
-	WGL3D_Error("WGL3D_InitSpriteBuffer: index array gl.createBuffer()");
-//	gl.bindBuffer(gl.ARRAY_BUFFER, id);
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, id); 	WGL3D_Error("WGL3D_InitSpriteBuffer: index array gl.bindBuffer()");
-//	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Float32Array(tmp), gl.STATIC_DRAW);		// static draw, as it's not going to change.
-	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(tmp), gl.STATIC_DRAW);		// static draw, as it's not going to change.
-	WGL3D_Error("WGL3D_InitSpriteBuffer: index array gl.bufferData()");
 	
-	WGL3D_SpriteFaces = id;
+	console.log ("3D LINES BUFFER ID :" + id);
 
-		// create float32 array for sprite texture coords.
+		//Bind appropriate array buffer to it
+	gl.bindBuffer (gl.ARRAY_BUFFER, id);
+		// Pass the vertex data to the buffer
+	gl.bufferData (gl.ARRAY_BUFFER, new Float32Array(line_data), gl.STATIC_DRAW);
+		// Unbind the buffer (not necessary, but lets be nice to other bits of code).
+	gl.bindBuffer (gl.ARRAY_BUFFER, null);
 
-	tmp = [];
-	i = 0;
-	for (n = 0; n < max_sprites; n++)
-	{
-			// 2 uv coords per vertex, 4 vertices per sprite
+	wgl3d_VertexBufferID[i] = id;
+	wgl3d_IndexBufferID[i] = 0;
+	wgl3d_InkBufferID[i] = 0;
+	wgl3d_NumFaces[i] = line_data.length;	// stored for use in rendering.
 
-		tmp[i++] = 0.0;
-		tmp[i++] = 0.0;
-
-		tmp[i++] = 1.0;
-		tmp[i++] = 0.0;
-
-		tmp[i++] = 1.0;
-		tmp[i++] = 1.0;
-
-		tmp[i++] = 0.0;
-		tmp[i++] = 1.0;
-	}
-
-	WGL3D_SpriteUVArray = new Float32Array (tmp);
-
-		// now upload it to the gpu
-
-	id = gl.createBuffer();
-	WGL3D_Error("uv buffer create");
-	gl.bindBuffer(gl.ARRAY_BUFFER, id);
-	WGL3D_Error("uv buffer bind");
-	gl.bufferData(gl.ARRAY_BUFFER, WGL3D_SpriteUVArray, gl.DYNAMIC_DRAW);		// dynamic hint.. we will be buggering about with this buffer a lot !!
-	WGL3D_Error("uv buffer data");
-	
-	WGL3D_SpriteUVBuffer = id;
-
-		// create float32 array for sprite vertices.
-
-	tmp = [];
-	i = 0;
-	for (n = 0; n < max_sprites; n++)
-	{
-			// 4 vertices per sprite.
-		tmp[i++] = -0.5;
-		tmp[i++] = 0.5;
-		tmp[i++] = 0;
-
-		tmp[i++] = 0.5;
-		tmp[i++] = 0.5;
-		tmp[i++] = 0;
-
-		tmp[i++] = 0.5;
-		tmp[i++] = -0.5;
-		tmp[i++] = 0;
-
-		tmp[i++] = -0.5;
-		tmp[i++] = -0.5;
-		tmp[i++] = 0;
-	}
-
-	WGL3D_SpriteVertexArray = new Float32Array (tmp);
-
-		// upload to gpu.
-	
-	id = gl.createBuffer();
-	WGL3D_Error();
-	gl.bindBuffer(gl.ARRAY_BUFFER, id);
-	WGL3D_Error();
-	gl.bufferData(gl.ARRAY_BUFFER, WGL3D_SpriteVertexArray, gl.DYNAMIC_DRAW);		// dynamic hint.. we will be changing this buffer a lot !!
-	WGL3D_Error();
-
-	WGL3D_SpriteVertexBuffer = id;
-
+	return i;	
 }
-*/
-	// .. _DrawSprite .. which adds sprite data to
-	// the internal sprite data lists.
 
-	// _DrawAllSprites
-	// which handles the job of drawing all sprites to the display.
-
-/*
-function WGL3D_DrawAllSprites(first_sprite_id, last_sprite_id, texture_idx)
+function WGL3D_Draw3DLines (lines_id, line_width, r,g,b,a)
 {
-		// draws all sprites defined.
-		// added first & last so sprites can be assigned a texture index.
-		// *** UNDER CONSTRUCTION ***
-
-	var id;
+	// *** UNDER CONSTRUCTION ** draws lines
+	// lines are all stored separately, uploaded to the gpu and 
+	// then drawn together as one large array.
+	
 	var sp;
-	
-
-		// upload sprite buffer data to gpu
-	
-	id = WGL3D_SpriteVertexBuffer;
-	gl.bindBuffer(gl.ARRAY_BUFFER, id);
-	WGL3D_Error( "1000");
-	gl.bufferData(gl.ARRAY_BUFFER, WGL3D_SpriteVertexArray, gl.DYNAMIC_DRAW);		// dynamic hint.. we will be buggering about with this buffer a lot !!
-	WGL3D_Error("1001");
-
-		// now upload texture uv data to the gpu
-
-	id = WGL3D_SpriteUVBuffer;
-	gl.bindBuffer(gl.ARRAY_BUFFER, id);
-	WGL3D_Error("1002");
-	gl.bufferData(gl.ARRAY_BUFFER, WGL3D_SpriteUVArray, gl.DYNAMIC_DRAW);		// dynamic hint.. we will be buggering about with this buffer a lot !!
-	WGL3D_Error("1003");
-
-		// ---- now draw all sprites in one go.
-
-	sp = ShaderProg_Sprites;
-	gl.useProgram (sp);
-	WGL3D_Error("1004");
-	
-				// activate correct texture to use.
-	gl.activeTexture(gl.TEXTURE0);              // use the first texture (numbers go from 0 - > 31
-	WGL3D_Error("1005");
-//	console.log (WGL3D_TextureId[texture_idx]);
-	gl.bindTexture(gl.TEXTURE_2D, WGL3D_TextureId[texture_idx]);	//g_Texture);
-	WGL3D_Error("1006");
-
-
-		// enable vertex buffer
-	id = WGL3D_SpriteVertexBuffer;
-	gl.bindBuffer(gl.ARRAY_BUFFER, id);					WGL3D_Error("2000");
-	id = gl.getAttribLocation(sp, "vertexPosition");	WGL3D_Error("2001");
-	if (id == -1)	alert ("vertexPosition attrib not found");
-	gl.vertexAttribPointer(id, 3, gl.FLOAT, false, 0, 0);		WGL3D_Error("2002"); 		// 3 = number of floats per vertex.
-	gl.enableVertexAttribArray(id);	WGL3D_Error("2003");
-	gl.bindBuffer(gl.ARRAY_BUFFER, null);	WGL3D_Error("2004");
-
-		//enable uv buffer
-
-	id = WGL3D_SpriteUVBuffer;
-	gl.bindBuffer(gl.ARRAY_BUFFER, id);		WGL3D_Error("2005");
-	id = gl.getAttribLocation(sp, "textureCoord");		WGL3D_Error("2006");
-	if (id == -1)	alert ("textureCoord attrib not found");
-	gl.vertexAttribPointer(id, 2, gl.FLOAT, false, 0, 0);		WGL3D_Error("2007");		// 2 = number of floats per uv coord.
-	gl.enableVertexAttribArray(id); 	WGL3D_Error("2008");
-	gl.bindBuffer(gl.ARRAY_BUFFER, null);	WGL3D_Error("2009");
-
-
-		// use index array to draw all sprite triangles.
-
-	gl.bindBuffer (gl.ELEMENT_ARRAY_BUFFER, WGL3D_SpriteFaces); 	WGL3D_Error("bind faces");
-	gl.drawElements(gl.TRIANGLES, WGL3D_MaxSprites*6, gl.UNSIGNED_SHORT, 0);			// for now, just draw TWO triangles. 
-	WGL3D_Error("1007");
-	gl.bindBuffer (gl.ELEMENT_ARRAY_BUFFER, null);	WGL3D_Error();
-
-
-	
-//	gl.drawElements(gl.TRIANGLES, WGL3D_MaxSprites * 6, gl.UNSIGNED_SHORT, 0);			// for now, just draw TWO triangles. 
-//	gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);			// for now, just draw TWO triangles. 
-//	WGL3D_Error("1007");
-
-//	gl.drawElements(gl.TRIANGLES, WGL3D_NumFaces[i], gl.UNSIGNED_SHORT, 0);
-//	gl.drawElements(gl.TRIANGLES, , gl.UNSIGNED_SHORT, 0);
-//	WGL3D_Error();
-//	gl.bindBuffer (gl.ELEMENT_ARRAY_BUFFER, null);	WGL3D_Error();
-
-}
-*/
-
-/*
-function WGL3D_DrawSprite (px,py, texture_id)
-{
-	// **** UNDER CONSTRUCTION ****
-	// x,y,w,h = position & size in pixels.
-	// texture_id = index into texture data to use.
-	var x0;
-	var y0;
-	var x1;
-	var y1;
-	
-	var tx0;
-	var ty0;
-	var tx1;
-	var ty1;
-	
-	var a_idx;
-	
-	var t_idx;
-	var v_idx;
-	var i_idx;
-	var i4;
-	
-	var spr_width;
-	var spr_height;
-	
-	a_idx = texture_id;
-	tx0 = zzz_atlas[a_idx][0];
-	ty0 = zzz_atlas[a_idx][1];
-	spr_width = zzz_atlas[a_idx][2];
-	spr_height= zzz_atlas[a_idx][3];
-	tx1 = tx0 + spr_width-1;
-	ty1 = ty0 + spr_height-1;
-	tx0 /= 256.0;					// convert to texture uv coordinates.
-	ty0 /= 256.0;
-	tx1 /= 256.0;
-	ty1 /= 256.0;
-
-//	alert ("px:"+px + " py:" + py + " tx:"+ texture_id + " w:"+spr_width + " h:"+spr_height);
-	
-	t_idx = 0;
-	texCoords[t_idx++] = tx0; texCoords[t_idx++] = ty0;
-	texCoords[t_idx++] = tx1; texCoords[t_idx++] = ty0;
-	texCoords[t_idx++] = tx0; texCoords[t_idx++] = ty1;
-	texCoords[t_idx++] = tx1; texCoords[t_idx++] = ty1;
-
-	x0 = -1.0 + (px * (2.0/WGL3D_CANVAS_WIDTH));
-	y0 =  1.0 - (py * (2.0 / WGL3D_CANVAS_HEIGHT));
-
-	x1 = x0 + (spr_width * (2.0 / WGL3D_CANVAS_WIDTH));
-	y1 = y0 - (spr_height * (2.0 / WGL3D_CANVAS_HEIGHT));
-
-	v_idx = 0;
-	SpriteVertices[v_idx++] = x0;	SpriteVertices[v_idx++] = y0;
-	SpriteVertices[v_idx++] = x1;	SpriteVertices[v_idx++] = y0;
-	SpriteVertices[v_idx++] = x0;	SpriteVertices[v_idx++] = y1;
-	SpriteVertices[v_idx++] = x1;	SpriteVertices[v_idx++] = y1;
-
-	i_idx = 0;
-	i4 = 0;		// = i * 4
-	spr_indices [i_idx++] = i4;	spr_indices [i_idx++] = i4+1;	spr_indices [i_idx++] = i4+2;	// 1st triangle index
-	spr_indices [i_idx++] = i4+1;	spr_indices [i_idx++] = i4+3;	spr_indices [i_idx++] = i4+2;
-
-		// --- draw all sprites bit ---
-	gl.useProgram (ShaderProg_Sprites);
-
-		// activate correct texture to use.
-	gl.activeTexture(gl.TEXTURE0);              // use the first texture (numbers go from 0 - > 31
-	gl.bindTexture(gl.TEXTURE_2D, g_Texture);
-
-		// load up the buffers (this will be eventually moved to drawallsprites)
-	gl.bindBuffer(gl.ARRAY_BUFFER, g_SpriteUVBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texCoords), gl.STATIC_DRAW);
-//	gl.bindBuffer(gl.ARRAY_BUFFER, null);
-
-	gl.bindBuffer(gl.ARRAY_BUFFER, g_SpriteVertexBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(SpriteVertices), gl.STATIC_DRAW);
-//	gl.bindBuffer(gl.ARRAY_BUFFER, null);
-
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, g_SpriteIndexBuffer);
-	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(spr_indices), gl.STATIC_DRAW);
-//	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
-
-		// bind the attributes...
-	gl.bindBuffer(gl.ARRAY_BUFFER, g_SpriteVertexBuffer);
-	var coord = gl.getAttribLocation(ShaderProg_Sprites, "spritecoord");
-	if (coord == -1)	alert ("spritecoord attrib not found");
-	gl.vertexAttribPointer(coord, 2, gl.FLOAT, false, 0, 0);
-	gl.enableVertexAttribArray(coord);
-	
-	gl.bindBuffer(gl.ARRAY_BUFFER, g_SpriteUVBuffer);
-	var uv = gl.getAttribLocation(ShaderProg_Sprites, "aTextureCoord");
-	if (uv == -1)	alert ("aTextureCoord attrib not found");
-	gl.vertexAttribPointer (uv, 2, gl.FLOAT, false, 0, 0);	// tell gl about where to get the data and how to read it.
-	gl.enableVertexAttribArray (uv);
-
-//	var loc = gl.getUniformLocation (ShaderProg_Sprites, "uSampler");		// only need this once too ???.. ensure glUseProgram called first.
-//	if (loc < 0)	printf ("uSampler not found\n");
-//	gl.uniform1i(loc, 0);  // tell the shader to use texture 0 too.
-
-		// draw stuff
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, g_SpriteIndexBuffer);
-	gl.drawElements (gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);	//g_SpriteIndexBuffer);
-
-	gl.bindBuffer(gl.ARRAY_BUFFER, null);
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
-	* 
-	* https://imgur.com/gallery/JWWujgH
-*/
-//}
-
-/*
-function WGL3D_SetSprite (sprite_idx, texture_index, tu, tv, tw,th, sx, sy, sz, sw, sh)
-{
-	// sets the sprite data.
-	// tu, tv, tw and th should be in the range 0 to 1.
-	// sx,sy should be canvas screen coordinates.
-	// this routine will do the conversion to webgl.
-	// sw, sh should be pixel sizes
-	// sz is the depth value.
-
-	var s;
 	var i;
-	var f;
-	var x0;
-	var	y0;
-	var x1;
-	var y1;
-	
-	var cw;
-	var ch;
 
-	if ((sprite_idx < 0) || (sprite_idx >= WGL3D_MaxSprites))
+	var coord;
+	var loc_line_ink;
+	
+	if (lines_id == null)		//	if (line_id === undefined)		// type coercion makes this work !
 	{
-		console.log ("WGL3D SetSprite : idx out of range ya muppet");
+		console.log ("lines_id is null/undefined");
 		return;
 	}
 	
-	cw = webglCanvas.width;
-	ch = webglCanvas.height;
+	sp = ShaderProg_3DLine; 
+	gl.useProgram(sp);
 
-		// range of x coordinates for webgl go from -1 to +1
-	x0 = sx;	//sx/cw;
-	y0 = sy;
-	x1 = sx + sw;
-	y1 = sy - sh;
+		// create model matrix for object.
+	g_ModelMatrix = MatrixIdentity();
+//	g_ModelMatrix = MatrixScale(g_ModelMatrix, sx, sy, sz);			// scaling lines makes no sense.??
+//	g_ModelMatrix = MatrixRotate (g_ModelMatrix, rx, ry,rz);
+//	g_ModelMatrix = MatrixTranslate (g_ModelMatrix, x,y,z);
 
-	i = sprite_idx * 12;
-//	s = WGL3D_SpriteVertexBuffer;
-	s = WGL3D_SpriteVertexArray;
-	s[i++] = x0;
-	s[i++] = y0;
-	s[i++] = sz;
-
-	s[i++] = x1;
-	s[i++] = y0;
-	s[i++] = sz;
+	coord = gl.getUniformLocation(sp, "mViewMatrix");
+	if (coord == -1)	alert ("draw3dlines: modelViewMatrix uniform not found");
+	gl.uniformMatrix4fv(coord, false, g_ModelMatrix);
 	
-	s[i++] = x1;
-	s[i++] = y1;
-	s[i++] = sz;
-
-	s[i++] = x0;
-	s[i++] = y1;
-	s[i++] = sz;
-
-	f = WGL3D_SpriteUVArray;
-	i = sprite_idx * 8;
-	f[i++] = tu;
-	f[i++] = tv;
+	coord = gl.getUniformLocation(sp, "cameraMatrix");
+	if (coord == -1)	alert ("draw3dlines:cameraMatrix uniform not found");
+	gl.uniformMatrix4fv(coord, false, g_Cam.cam_matrix);
 	
-	f[i++] = tu + tw;
-	f[i++] = tv;
+	coord = gl.getUniformLocation(sp, "perspectiveMatrix");
+	if (coord == -1)    alert ("draw3dlines:perspective matrix not found");
+	gl.uniformMatrix4fv(coord, false, g_PerspectiveMatrix);
 	
-	f[i++] = tu + tw;
-	f[i++] = tv + th;
+	loc_line_ink = gl.getUniformLocation(sp, "line_ink");
+	if (loc_line_ink == -1)	alert ("draw3dlines : line_ink not found");
+	gl.uniform4f(loc_line_ink, r/256,g/256,b/256,a/256);	//line_ink_rgba);
 
-	f[i++] = tu;
-	f[i++] = tv + th;
+	gl.lineWidth(line_width);
+
+	i = lines_id;
+	
+	gl.bindBuffer(gl.ARRAY_BUFFER, wgl3d_VertexBufferID[i]);
+	coord = gl.getAttribLocation(sp, "vertexPosition");
+	if (coord == -1)	alert ("vertexPosition attrib not found");
+	gl.vertexAttribPointer(coord, 3, gl.FLOAT, false, 0, 0);
+	gl.enableVertexAttribArray(coord);
+
+         // Draw the points
+	gl.drawArrays(gl.LINES, 0, wgl3d_NumFaces[i]/3);
 }
-
-*/
-
-
-
 
 function WGL3D_STRUCT_MODEL3D (vertex_array, face_array, ink_array, uv_array)
 {

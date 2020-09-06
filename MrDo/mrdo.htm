@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!--
+
+Notes: screen size = 192 x 240 (vertical) 
+
+
+	 6th October 2017
+	-------------------
+		Adding 'gamepad' image.. 
+
+	 3rd September 2020
+	--------------------
+	adding joystick support (dunno why it's not already in ??)
+	
+	 4th September 2020
+	--------------------
+	 Might add screen scaling so that the game will resize with the
+	 browser.
+	 
+	 scaled to width of screen, not height.. as this appears to work.
+	 need to get on screen controller working ...maybe ??
+
+		.. for touch screens.. need insert coin, 1up, fire and
+	direction controls.
+	
+	changed display output to pixelated.. and it is WAY FASTER !!
+
+	 5th September 2020
+	--------------------
+		Adding popup menu for touch screens. 
+
+	 6th September 2020
+	--------------------
+		Used flex box for popup layout.. still have the same html
+	problems as everyone else when it comes to line breaks and layout!
+	
+		Redoing touch screen code. Controls.
+		Right hand side of screen = fire ball.
+		
+		left hand side = virtual joystick
+			do I .. have specific area's for buttons
+			or .. swipe in direction to move ??
+
+			- gone with swipe.. seems to work ok.
+
+-->
+
+<html>
+<head>
+<title>Mr Do Emulator</title>
+<meta name="generator" content="Bluefish 2.2.5" >
+<meta name="author" content="nick" >
+<meta name="date" content="2017-10-06T13:42:52+0100" >
+<meta name="copyright" content="">
+<meta name="keywords" content="">
+<meta name="description" content="">
+<meta name="ROBOTS" content="NOINDEX, NOFOLLOW">
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta http-equiv="content-type" content="application/xhtml+xml; charset=UTF-8">
+<meta http-equiv="content-style-type" content="text/css">
+<meta http-equiv="expires" content="0">
+
+<style type="text/css">
+
+.marquee
+{
+	width: 230px;
+	margin: 0 auto;
+}
+.videoscreendiv
+{
+	left:0;
+	top:0;
+	position:relative;			/* children are placed relative to this*/
+	width:50%;
+	height: 256px;				/* doesn't work without a height ?? */
+	background-color: brown;
+}
+
+.canvaslayer0
+{
+	image-rendering: optimizeSpeed;             /* Older versions of FF          */
+	image-rendering: -moz-crisp-edges;          /* FF 6.0+                       */
+	image-rendering: -webkit-optimize-contrast; /* Safari                        */
+	image-rendering: -o-crisp-edges;            /* OS X & Windows Opera (12.02+) */
+	image-rendering: pixelated;                 /* Awesome future-browsers       */
+	-ms-interpolation-mode: nearest-neighbor;
+  
+	width: 100%;
+	height:100%;
+	position:absolute;
+	top: 0;
+	left: 0;
+	background-color: #333333; 
+}
+
+.canvaslayer1
+{
+	image-rendering: optimizeSpeed;             /* Older versions of FF          */
+	image-rendering: -moz-crisp-edges;          /* FF 6.0+                       */
+	image-rendering: -webkit-optimize-contrast; /* Safari                        */
+	image-rendering: -o-crisp-edges;            /* OS X & Windows Opera (12.02+) */
+	image-rendering: pixelated;                 /* Awesome future-browsers       */
+	-ms-interpolation-mode: nearest-neighbor;
+
+	background:transparent;
+	width: 100%;	/* 384px; */
+	height:100%;
+	position:absolute;
+	top: 0;
+	left: 0;
+}
+
+.framecounter
+{
+	position:fixed;
+	left:0;
+	top:0;
+	z-index:4;
+	background-color: #444444;
+	color: yellow;
+	width: 2em;
+	text-align: center;
+}
+
+.popupicon
+{
+	width:100%;
+	position:fixed;
+	left:0px;
+	top:0px;
+	z-index:8;
+	text-align:right;
+}
+
+.consolelog
+{
+	background-color: #444444;
+	color: yellow;
+}
+
+.gamepadclass
+{
+	width: 100%;
+	height:20%;
+	background-color: #474747;
+	color: yellow;
+}
+
+.gamepadclass img
+{
+	width:100%;
+	height:100%;
+}
+
+.debug_div
+{
+	display: table;
+}
+.z80dis
+{
+	width: 256px;
+	height: 256px;
+	background-color: #777777;
+	color: white;
+	display: table-cell;
+}
+
+.modalframe
+{
+	display:none;
+
+	border:solid;
+	border-color:#ffffff;
+
+	width:50%;
+	height:50%;
+
+	max-width:100%;
+	max-height:100%;
+
+	overflow-y:auto;
+
+	text-align:center;
+	
+	position:fixed;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%,-50%);
+
+	z-index:10;
+}
+
+.popupcentered
+{
+	display:flex;
+	flex-wrap:wrap;
+	justify-content:center;
+	align-items:center;
+	background-color:#333333;
+	height:100%;
+	
+}
+
+.popupbutton
+{
+	display:inline-block;
+	height: 4em;
+	margin-left:2em;
+	margin-right:2em;
+}
+
+.clearflex
+{
+	flex-basis:100%;
+	height:0;
+}
+
+.womble
+{
+	position:fixed;
+	left:0;
+	top:0;
+	z-index:99;
+	width:256px;
+	height:64px;
+	background-color:#ffffff;
+}
+
+</style>
+
+<script src="debug.js" type="text/javascript"></script>
+
+<script src="Emuz80.js" type="text/javascript"></script>
+<script src="roms/mrdo_roms.js" type="text/javascript"></script>
+<script src="palette.js" type="text/javascript"></script>
+
+<script src="mrdo.js" type="text/javascript"></script>
+
+<script src="inkeys.js" type="text/javascript"></script>
+
+
+<script src="opcode_tables.js" type="text/javascript"></script>
+<script src="z80dis.js" type="text/javascript"></script>
+
+<script src="dnd.js" type="text/javascript"></script>
+
+<script src="joystick.js" type="text/javascript"></script>
+
+
+<script type="text/javascript">
+/*
+	var console = {};
+	var logger = null;
+
+	function ConsoleDebugInit()
+	{
+		// Getting div to insert logs
+		logger = document.getElementById("consolelog");
+
+		console.log("Hello World...");
+		console.log("WOW");
+	}         
+            
+	// Adding log method from our console object
+	console.log = function(text)
+	{
+		if (logger == null)	return;
+	
+		var element = document.createElement("div");
+		var txt = document.createTextNode(text);
+            
+		element.appendChild(txt);
+		logger.appendChild(element);
+	}
+*/            
+
+	// ------------------ touchscreen routines ------------
+
+var TouchX = 0;
+var TouchY = 0;
+var TouchDir = 0;
+
+function EventUp (mx, my)
+{
+	m = window.innerWidth / 2;
+	if (mx > m)
+	{
+		// fire button
+		KeyClear (KEY_S);
+		return;
+	}
+
+		// finger off screen, joystick returns to center.
+	KeyClear (KEY_LEFT);
+	KeyClear (KEY_RIGHT);
+	KeyClear (KEY_UP);
+	KeyClear (KEY_DOWN);
+}
+
+function EventDown (mx, my)
+{
+	var m;
+
+	m = window.innerWidth / 2;
+
+	if (mx > m)
+	{
+		// fire button
+		KeySet (KEY_S);
+		return;
+	}
+
+	TouchX = mx;
+	TouchY = my;
+}
+
+function EventMove(mx, my)
+{
+	var m;
+	
+	var dx;
+	var dy;
+	
+	m = window.innerWidth / 2;
+
+	if (mx > m)
+	{
+		return;	// not handling rhs moves.
+	}
+	
+	dx = mx - TouchX;
+	dy = my - TouchY;
+	
+	if (dx == dy)
+	{
+		return;
+	}
+	
+	if (Math.abs(dx) > Math.abs(dy))
+	{
+		// moving horizontally.
+		KeyClear (KEY_UP);
+		KeyClear (KEY_DOWN);
+		if (dx < 0)
+		{
+			KeySet (KEY_LEFT);
+			KeyClear (KEY_RIGHT);
+		}
+		else
+		{
+			KeySet (KEY_RIGHT);
+			KeyClear (KEY_LEFT);
+		}
+	}
+	else
+	{
+		// moving vertically
+		KeyClear (KEY_LEFT);
+		KeyClear (KEY_RIGHT);
+		if (dy < 0)
+		{
+			KeySet (KEY_UP);
+			KeyClear (KEY_DOWN);
+		}
+		else
+		{
+			KeySet (KEY_DOWN);
+			KeyClear (KEY_UP);
+		}
+	}
+
+		// update touch position
+	TouchX = mx;
+	TouchY = my;
+}
+
+	// -------------- end of touchscreen routines ------
+
+function FullSizeCanvas(id)
+{
+	// https://stackoverflow.com/questions/26745292/canvas-toggle-filling-whole-page-removing-scrollbar
+
+	var w;
+	var h;
+
+	w = window.innerWidth;
+	h = window.innerHeight;
+
+	item = document.getElementById (id);
+	item.style.width = w + "px";
+	item.style.height = h + "px";
+
+	document.body.scrollTop = 0; // <-- pull the page back up to the top
+	document.body.style.overflow = 'hidden';
+}
+
+function ScaleCanvases()
+{
+	FullSizeCanvas("gamecanvas");
+	FullSizeCanvas("spritecanvas");
+}
+
+function AddLife()
+{
+	KeySet (KEY_5);
+}
+
+function StartGame()
+{
+	KeySet (KEY_1);
+	TogglePopup();
+}
+
+function TogglePopup()
+{
+	var item;
+	
+	item = document.getElementById ("popupmenu");
+	
+	if (item.style.display === "none")
+	{
+		item.style.display = "block";
+	}
+	else
+	{
+		item.style.display = "none";
+	}
+}
+
+
+	// ---- touch screen stuff ----
+
+</script>
+
+</head>
+<body bgcolor="black" onload='InitGame("gamecanvas", "spritecanvas", "fps");'>
+
+	<canvas class="canvaslayer0" id="gamecanvas" width="192" height="256"></canvas>
+	<canvas class="canvaslayer1" id="spritecanvas" width="192" height="256"></canvas>
+
+<div class="popupicon" id="popupicon"><img src="popupicon.png" onclick="TogglePopup();"></div>
+
+<div class="framecounter" id="fps">X</div>
+
+<div class="modalframe" id="popupmenu" style="display:none">
+	<div class="popupcentered">
+		<button class="popupbutton" onclick="AddLife();" >Add Life</button>
+		<button class="popupbutton" onclick="StartGame();">Start Game</button>
+		<div class="clearflex"></div>
+		<input type="checkbox" id="pixelated">Pixelated</input>
+	</div>
+</div>
+
+<script type="text/javascript">
+
+	DND_Init (document.getElementById("spritecanvas"), EventUp, EventMove, EventDown);
+	EventUp (0, 0);
+	ScaleCanvases();
+
+</script>
+</body>
+</html>

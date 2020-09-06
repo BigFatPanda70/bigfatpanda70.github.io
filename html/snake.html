@@ -477,6 +477,8 @@ function UpdateGame()
 	SpriteTest();
 
 	DrawTestModel (WebGL_ModelID);
+	
+//	LineTest();
 
 		// done, clear busy flag.
 	busy = false;
@@ -515,6 +517,10 @@ function InitSprites()
 	WGL3D_InitSpriteLayer (1, 16);
 }
 
+function InitLineTest()
+{
+}
+
 function DoInits()
 {
 	// this is the first routine called once the web page has loaded.
@@ -527,6 +533,8 @@ function DoInits()
 	InitModels();
 	InitCamera();
 	InitSprites();
+	
+	InitLineTest();
 	
 	DrawTestModel (WebGL_ModelID);
 
