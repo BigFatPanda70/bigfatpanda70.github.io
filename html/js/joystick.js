@@ -2,11 +2,11 @@
 //
 //	Title	:	Joystick handling code.
 //
-//	Info	:	Version 2.0	20th March 2020
+//	Info	:	Version 2.1	20th March 2020
 //
 //	Author	:	Nick Fleming.
 //
-//	Updated	:	1st April 2020
+//	Updated	:	3rd September 2020
 //
 //
 // some code to handle joysticks.
@@ -228,6 +228,9 @@ axes[3]      Vertical axis for right stick (negative up/positive down)
 		Chrome browser doesn't like my joystick code.. so disabling it for now.
 	Works perfectly well in firefox using standard code.
 
+	 3rd September 2020
+	----------------------
+		Trying to add ps4 controller support.
 */
 
 	// joystick identifiers 
@@ -239,6 +242,8 @@ var JOYSTICK_ID_DRAGONRISE    = 2;		// trust
 var JOYSTICK_ID_ATARI         = 3;		// SHANWAN Android Gamepade (atari style :-))
 var JOYSTICK_ID_NINTY         = 4;		// ye ole snes style. - no manufacturer info
 var JOYSTICK_ID_MINIPAD       = 5;		// Padix Co. Ltd
+var JOYSTICK_ID_PS4			  = 6;		// works like normal joystick !!
+var JOYSTICK_ID_MYPOWER		  = 7;		// MYPOWER DS4 Wired Controller (ps4 compatible)
 
 	// joystick standard button layout
 var JOYSTICK_RBC_BOTTOM = 0;			// RBC = right button cluster
@@ -411,11 +416,13 @@ var joystick_map_2563 = 	// shanwan android gamepad (atari joystick)
 var joystick_maps =
 [
 	joystick_map_standard,
-	joystick_map_LF310,
+	joystick_map_LF310,		// logitech f310
 	joystick_map_0079,	 	// trust / dragonrise
 	joystick_map_2563, 		// shanwan android gamepad (atari joystick)
 	joystick_map_0810,		// ninty / snes style button controller.
-	joystick_map_0458	 	// minipad
+	joystick_map_0458,	 	// minipad
+	joystick_map_LF310,		// ps4 (same as logitech)
+	joystick_map_LF310,		// MYPOWER (same as logitech)
 ];
 
 	// ---- end of button layout info
@@ -425,6 +432,8 @@ var Joystick_NumSticks = 0;
 var Joystick_DeadZone = 0.1;
 
 var Joystick = null;
+
+var Joystick_MapIndex = null;
 
 var _joystickAvailable = false;
 
@@ -451,6 +460,9 @@ function Joystick_GetMapIndex(jstk)
 		case "2563": id = JOYSTICK_ID_ATARI; break;
 		case "0458": id = JOYSTICK_ID_MINIPAD; break;
 		case "0810": id = JOYSTICK_ID_NINTY; break;
+		case "054c": id = JOYSTICK_ID_PS4; break;
+		case "7545": id = JOYSTICK_ID_PS4; break;
+	
 		case "xinp":
 					id = JOYSTICK_ID_UNKNOWN;
 					if (jstk.mapping == "standard")
@@ -462,6 +474,7 @@ function Joystick_GetMapIndex(jstk)
 
 			id = JOYSTICK_ID_UNKNOWN; break;
 	}
+	Joystick_MapIndex = id;
 	return id;
 }
 
@@ -587,6 +600,8 @@ function Joystick_LBC (mapidx, jidx, standard_button_idx)
 		case JOYSTICK_ID_STANDARD:
 				return Joystick[jidx].buttons[standard_button_idx].pressed;
 
+		case JOYSTICK_ID_MYPOWER:			// same as logitech
+		case JOYSTICK_ID_PS4:			// same as logitech
 		case JOYSTICK_ID_LOGITECH_F310:			// logitech
 				switch (standard_button_idx)
 				{
@@ -677,6 +692,24 @@ function Joystick_LBC (mapidx, jidx, standard_button_idx)
 				}
 				return false;
 
+/*				switch (standard_button_idx)
+				{
+					case JOYSTICK_LBC_TOP:
+							if (Joystick[jidx].axes[7] < 0)	return true;
+							break;
+					case JOYSTICK_LBC_BOTTOM:
+							if (Joystick[jidx].axes[7] > 0)	return true;
+							break;
+					case JOYSTICK_LBC_LEFT:
+							if (Joystick[jidx].axes[6] < 0)	return true;
+							break;
+					case JOYSTICK_LBC_RIGHT:
+							if (Joystick[jidx].axes[6] > 0)	return true;
+							break;
+				}
+				return false;
+*/
+
 		default:	break;
 	}
 	return false;
@@ -697,7 +730,7 @@ function Joystick_GetButton (jidx, standard_button_idx)
 
 	if (JoystickConnected != true)
 	{
-		return;
+		return 0;
 	}
 
 //	function Joystick_GetIdNum (jstk)
@@ -706,7 +739,10 @@ function Joystick_GetButton (jidx, standard_button_idx)
 	if (mapidx == JOYSTICK_ID_UNKNOWN)
 	{
 			// no mapping available, so just cross fingers and hope.
-		return Joystick[jidx].buttons[standard_button_idx].pressed;
+			
+			mapidx = JOYSTICK_ID_STANDARD;	//standard_button_idx;
+			
+//		return Joystick[jidx].buttons[standard_button_idx].pressed;
 	}
 
 			// left button clusters are a pain to convert to standard format
@@ -734,11 +770,31 @@ function Joystick_GetButton (jidx, standard_button_idx)
 
 function Joystick_GetAxis (jidx, axis_idx)
 {
+		// axis_idx = standard idx values.
+		//axes[0]      Horizontal axis for left stick (negative left/positive right)
+		//axes[1]      Vertical axis for left stick (negative up/positive down)
+
+		//axes[2]      Horizontal axis for right stick (negative left/positive right)
+		//axes[3]      Vertical axis for right stick (negative up/positive down) 
+
 	if (Joystick_isChrome)	return 0;
 
 	if (Joystick == null)	return 0;
 	if (Joystick.length < 1)	return 0;
 	if ((jidx < 0) || (Joystick.length <= jidx))	return 0;
+	
+	if (Joystick_MapIndex == JOYSTICK_ID_DRAGONRISE)
+	{
+			// axis 2 seems to be shared between sticks ???
+		switch (axis_idx)
+		{
+			case 0:	break;			// no change
+			case 1:	axis_idx = 3;	break;
+			case 2: axis_idx = 1;	break;
+			case 3: axis_idx = 4;	break;
+			default: break;
+		}
+	}
 
 	if (Math.abs (Joystick[jidx].axes[axis_idx]) < Joystick_DeadZone)
 	{
