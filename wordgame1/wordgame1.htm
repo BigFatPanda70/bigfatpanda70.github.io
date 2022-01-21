@@ -154,9 +154,18 @@
 	
 var INPUT_ID = "myinput";
 
+
+
+var LETTER_INK_GREY = 0;
+var LETTER_INK_GREEN = 1;
+var LETTER_INK_ORANGE = 2;
+
+var INFINITY = true;			// game plays until you find the answer
+
 var SolutionWord = "";
 var GameBoardRow = 0;
 var WordToTry = "";
+var TryList = [];
 
 function ClearAnimation (row, col)
 {
@@ -190,7 +199,13 @@ function SelectWord()
 	word_list = FiveLetterWordsGroupList [idx];
 	
 	i = Math.floor (Math.random() * word_list.length);
+
 	SolutionWord = word_list [i];
+	
+
+	// *** TEST VALUE ***
+	SolutionWord = "otter";
+	
 	console.log ("word:" + SolutionWord);
 	
 }
@@ -261,6 +276,8 @@ function GameReset()
 	SelectWord();
 	SetFirstLetter (0,0, 0);
 	
+	TryList = [];
+
 	document.getElementById(INPUT_ID).focus();
 }
 
@@ -282,6 +299,71 @@ function DoWinAnimation()
 	}
 }
 
+function CalculateInk (word, solution_word, ch_index)
+{
+	var ch_sol;
+	var ch_try;
+	var idx;
+	var tmpword;
+	var tmpsol;
+	
+	ch_sol = solution_word.charAt (ch_index);
+	ch_try = word.charAt (ch_index).toLowerCase();
+	
+	if (ch_sol == ch_try)
+	{
+		return LETTER_INK_GREEN;
+	}
+
+	idx = SolutionWord.indexOf (ch_try);
+	if (idx == -1)
+	{
+		return LETTER_INK_GREY;
+	}
+	
+		// orange letter are more complicated.
+		// need to ignore any characters that are already in place when
+		// doing the orange test.
+
+	tmpword = "";
+	tmpsol = "";
+	for (i = 0; i < word.length; i++)
+	{
+		ch_sol = solution_word.charAt(i);
+		ch_try = word.charAt(i).toLowerCase();
+		if (ch_sol == ch_try)
+		{
+			ch_sol = "*";
+			ch_try = "*";
+		}
+		tmpsol = tmpsol + ch_sol;
+		tmpword = tmpword + ch_try;
+	}
+
+	ch_try = word.charAt (ch_index).toLowerCase();
+
+		// if, after discarding all matching letters there are
+		// no matching letters, return grey.
+
+	idx = tmpsol.indexOf (ch_try);
+	if (idx == -1)
+	{
+		return LETTER_INK_GREY;
+	}
+
+		// if there is an earlier occurance of ch_try in the word
+		//  we ignore this one (to prevent duplicates).
+	idx = tmpword.indexOf (ch_try);
+	if (idx < ch_index)
+	{
+		return LETTER_INK_GREY;
+	}
+
+	return LETTER_INK_ORANGE;
+
+}
+
+
 function DoResultAnimation()
 {
 	var ch_try;
@@ -292,23 +374,37 @@ function DoResultAnimation()
 	var anim_name;
 	var anim_time;
 	var anim_delay;
+	
+	var ink;
 
 	anim_delay = 0;
 	anim_time = 0.5;
 	for (i = 0; i < WordToTry.length; i++)
 	{
-		ch_try = WordToTry.charAt (i);
-		ch = SolutionWord.charAt (i);
-
-		anim_name = "animgrey";
-	
-		idx = SolutionWord.indexOf (ch_try.toLowerCase());
-		if (idx != -1)
+		ink = CalculateInk (WordToTry, SolutionWord, i);
+		switch (ink)
 		{
-			anim_name = "animorange";
+			case LETTER_INK_GREY:	anim_name = "animgrey"; break;
+			case LETTER_INK_GREEN:	anim_name = "animgreen"; break;
+			case LETTER_INK_ORANGE:	anim_name = "animorange"; break;
+			default:
+				console.log ("no idea");
+				anim_name = "";
+				break;
 		}
 
-		if (ch_try.toLowerCase() == ch)	{	anim_name = "animgreen";	}
+		ch_try = WordToTry.charAt (i);
+//		ch = SolutionWord.charAt (i);
+
+//		anim_name = "animgrey";
+	
+//		idx = SolutionWord.indexOf (ch_try.toLowerCase());
+//		if (idx != -1)
+//		{
+//			anim_name = "animorange";
+//		}
+
+//		if (ch_try.toLowerCase() == ch)	{	anim_name = "animgreen";	}
 
 		SetLetter (GameBoardRow, i, ch_try, anim_time, anim_delay , anim_name);
 		anim_delay += 0.1;
@@ -386,7 +482,7 @@ function IsWordInDictionary (word)
 	
 	idx = word.toLowerCase().charCodeAt(0) - "a".charCodeAt(0);
 	
-	console.log ("idx:" + idx);
+//	console.log ("idx:" + idx);
 	word_list = FiveLetterWordsGroupList [idx];
 	
 	for (i = 0; i < word_list.length; i++)
@@ -398,6 +494,71 @@ function IsWordInDictionary (word)
 	}
 	return false;
 }
+
+function MoveUp()
+{
+	var i;
+	var item_id;
+	var item;
+	var row;
+	var col;
+	var ink;
+	
+	if (INFINITY == false)
+	{
+		return;
+	}
+
+	if (GameBoardRow < 5)
+	{
+		return;
+	}
+	
+	if (TryList.length < 6)
+	{
+		return;
+	}
+
+	console.log ("before : " + TryList.length);
+	console.log (TryList);
+//	return;
+
+	for (row = 1; row < 6; row++)
+	{
+		TryList [row-1] = TryList [row];
+	}
+	console.log (TryList);
+	
+	for (row = 0; row < 5; row++)
+	{
+		for (col = 0; col < 5; col++)
+		{
+			item_id = "r" + row + "c" + col;
+			item = document.getElementById (item_id);
+//			console.log ("Row:" + row);
+			item.innerHTML = TryList[row].charAt(col);
+			item.style.animation= null;
+
+			ink = CalculateInk (TryList[row], SolutionWord, col);
+			switch (ink)
+			{
+				case LETTER_INK_GREY:	
+						item.style.color="white";
+						item.style.backgroundColor="grey";
+						break;
+				case LETTER_INK_GREEN:
+						item.style.color="black";
+						item.style.backgroundColor="#efd";
+						break;
+				case LETTER_INK_ORANGE:
+						item.style.color="black";
+						item.style.backgroundColor="#fda";
+						break;
+			}
+		}
+	}
+}
+
 
 function TryWord (word_to_try)
 {
@@ -420,6 +581,10 @@ function TryWord (word_to_try)
 		return;
 	}
 	
+	MoveUp();
+	
+	TryList [GameBoardRow] = word_to_try;
+	
 	WordToTry = word_to_try;
 
 	anim_delay = 0;
@@ -435,6 +600,7 @@ function TryWord (word_to_try)
 	AnimFrameCount = 0;
 	requestAnimationFrame (ResultAnimation);
 
+	
 	document.getElementById(INPUT_ID).focus();
 }
 
@@ -446,6 +612,7 @@ function start()
 	
 	GameReset();
 }
+
 
 function ouch()
 {
@@ -460,7 +627,11 @@ function ouch()
 	item = document.getElementById (INPUT_ID);
 
 	word_to_try = item.value;
-	
+
+
+	// *** TEST VALUE ***
+	word_to_try = "tints";
+
 	TryWord (word_to_try);
 	
 }
