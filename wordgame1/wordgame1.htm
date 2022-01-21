@@ -23,6 +23,8 @@
 	 21st January 2022
 	--------------------
 		Uploading to git website for testing.
+		
+	input needs to not be case sensitive.
 -->
 
 <html>
@@ -273,7 +275,7 @@ function DoWinAnimation()
 	delay = 0.0;
 	for (i = 0; i < SolutionWord.length; i++)
 	{
-		ch = SolutionWord.charAt(i);
+		ch = SolutionWord.charAt(i).toUpperCase();
 //		console.log ("ch:" + ch);
 		SetLetter (GameBoardRow, i, ch, t, delay , "bounce");
 		delay += 0.1;
@@ -300,13 +302,13 @@ function DoResultAnimation()
 
 		anim_name = "animgrey";
 	
-		idx = SolutionWord.indexOf (ch_try);
+		idx = SolutionWord.indexOf (ch_try.toLowerCase());
 		if (idx != -1)
 		{
 			anim_name = "animorange";
 		}
 
-		if (ch_try == ch)	{	anim_name = "animgreen";	}
+		if (ch_try.toLowerCase() == ch)	{	anim_name = "animgreen";	}
 
 		SetLetter (GameBoardRow, i, ch_try, anim_time, anim_delay , anim_name);
 		anim_delay += 0.1;
@@ -329,7 +331,7 @@ function ResultAnimation()
 		requestAnimationFrame (ResultAnimation);
 		return;
 	}
-	if ( WordToTry != SolutionWord)
+	if ( WordToTry.toLowerCase() != SolutionWord)
 	{
 		if (GameBoardRow == 5)
 		{
