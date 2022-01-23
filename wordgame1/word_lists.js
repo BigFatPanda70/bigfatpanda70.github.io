@@ -626,7 +626,7 @@ FiveLetterWords_L =
 "libel","libra","licks",
 "lidar","liege","liens","lifer",
 "lifts","liger","light","liked","liken","likes",
-"lilac","lilts","limbo",
+"lilac","lilts","limbo","lilly",
 "limbs","limes","limey","limit",
 "limps","lined","linen","liner",
 "lines","lingo","links",
