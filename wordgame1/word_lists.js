@@ -461,7 +461,7 @@ var FiveLetterWords_G =
 "gofer","going","golem","golly",
 "gongs",
 "gonzo","goods","gooey","goofy",
-"goons",
+"goons", "goose",
 "gored","gorge","goths",
 "gouge","gourd","gowns",
 "grabs","grace","grade","grads","graft",
@@ -1028,7 +1028,7 @@ FiveLetterWords_S =
 "stare","stark","stars","start","stash","state",
 "stave","stays","stead","steak","steal","steam","steed",
 "steel","steep","steer","stems",
-"stent","steps","stere","stern","stews",
+"stent","steps","stern","stews",
 "stick","stiff","stile","still","stilt",
 "sting","stink","stint","stirs",
 "stoat","stock","stoic",
@@ -1278,7 +1278,7 @@ var FiveLetterWordsGroupList =
 	FiveLetterWords_U,
 	FiveLetterWords_V,
 	FiveLetterWords_W,
-	FiveLetterWords_X,
+	FiveLetterWords_P,		// replaced X's cos they are crap !!//	FiveLetterWords_X,
 	FiveLetterWords_Y,
 	FiveLetterWords_Z
 ];

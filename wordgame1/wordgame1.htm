@@ -25,6 +25,9 @@
 		Uploading to git website for testing.
 		
 	input needs to not be case sensitive.
+
+
+	Hunt for the wilderpeople
 -->
 
 <html>
@@ -364,6 +367,88 @@ function CalculateInk (word, solution_word, ch_index)
 }
 
 
+function CalculateInk2 (word, solution_word, ch_index)
+{
+	// sol = otter
+	// tst = tints
+
+	// t = 2
+	// 
+	var ch_sol;
+	var ch_try;
+	var idx;
+	var tmpwrd;
+	var tmpsol;
+	var count_sol;
+	var count_wrd;
+
+	ch_sol = solution_word.charAt (ch_index);
+	ch_try = word.charAt (ch_index).toLowerCase();
+	
+	if (ch_sol == ch_try)
+	{
+		return LETTER_INK_GREEN;
+	}
+
+	idx = SolutionWord.indexOf (ch_try);
+	if (idx == -1)
+	{
+		return LETTER_INK_GREY;
+	}
+	
+		// orange letter are more complicated.
+		// need to ignore any characters that are already in place when
+		// doing the orange test.
+
+	tmpwrd = "";
+	tmpsol = "";
+	for (i = 0; i < word.length; i++)
+	{
+		ch_sol = solution_word.charAt(i);
+		ch_try = word.charAt(i).toLowerCase();
+		if (ch_sol == ch_try)
+		{
+			ch_sol = "*";
+			ch_try = "*";
+		}
+		tmpsol = tmpsol + ch_sol;
+		tmpwrd = tmpwrd + ch_try;
+	}
+
+	ch_try = word.charAt (ch_index).toLowerCase();
+
+		// if, after discarding all matching letters there are
+		// no matching letters, return grey.
+
+	idx = tmpsol.indexOf (ch_try);
+	if (idx == -1)
+	{
+		return LETTER_INK_GREY;
+	}
+
+	count_sol = 0;
+	for (i = 0; i < tmpsol.length; i++)
+	{
+		if (tmpsol.charAt (i) == ch_try)	{	count_sol++; }
+	}
+
+	count_wrd = 0;
+	for (i = 0; i <= ch_index; i++)
+	{
+		if (tmpwrd.charAt(i) == ch_try)	{ count_wrd++; }
+	}
+	
+	if (count_wrd <= count_sol)
+	{
+		return LETTER_INK_ORANGE;
+	}
+	
+	return LETTER_INK_GREY;
+}
+
+
+
+
 function DoResultAnimation()
 {
 	var ch_try;
@@ -381,7 +466,7 @@ function DoResultAnimation()
 	anim_time = 0.5;
 	for (i = 0; i < WordToTry.length; i++)
 	{
-		ink = CalculateInk (WordToTry, SolutionWord, i);
+		ink = CalculateInk2 (WordToTry, SolutionWord, i);
 		switch (ink)
 		{
 			case LETTER_INK_GREY:	anim_name = "animgrey"; break;
