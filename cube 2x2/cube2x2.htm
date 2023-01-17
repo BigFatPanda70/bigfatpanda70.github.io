@@ -5,11 +5,11 @@
 <!--
 	Title	:	3D 2x2 Cube simulator.
 	
-	Info	:	Version 1.1	26th December 2022
+	Info	:	Version 1.2	26th December 2022
 
 	Author	:	Nick Fleming.
 	
-	Updated	:	16th January 2023
+	Updated	:	17th January 2023
 
 	 Notes:
 	--------
@@ -114,11 +114,17 @@
 	pin down why.. but it works.
 	
 	Added funky background and increased rotation speed.
+	
+	 17th Jan 2023
+	----------------
+		Got a bug somewhere that sets the animation mode to rotate
+	but all the IncAngle variables are zero, so the mode never exits.
+	Added a workaround for now that hopefully fixes the issue.
 -->
 
 <html>
 <head>
-<title> 2x2 3D cube V1.1</title>
+<title> 2x2 3D cube V1.2</title>
 
 <style>
 	
@@ -1532,6 +1538,12 @@ function AnimLoop (t)
 	busy = true;
 
 	C3D_ClearCanvas();
+	
+	if ((CubeRotateList.length < 0) || ((IncAngleX | IncAngleY | IncAngleZ) == 0))
+	{
+			// need this to prevent lock up.
+		AnimationMode = ANIM_MODE_NONE;
+	}
 
 	if (AnimationMode == ANIM_MODE_ROTATE)
 	{
@@ -2531,6 +2543,15 @@ function DoMove (mx, my)
 			CubeRotateList[i++] = n;
 		}
 	}
+	
+	if (CubeRotateList.length < 1)
+	{
+//		console.log ("failed to select any cubes");
+		AnimationMode = ANIM_MODE_NONE;
+		AnimationAngle = 0;
+		MouseMode = MOUSE_MODE_NONE;
+	}
+		
 }
 
 
