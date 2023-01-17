@@ -1567,6 +1567,8 @@ function AnimLoop (t)
 				BakeCube (i);
 
 			}
+			
+			MouseMode = MOUSE_MODE_NONE;
 		}
 	}
 
@@ -1971,6 +1973,8 @@ function SetMouseMode (mx, my)
 	
 	var pick_ray;
 	var c;
+
+	MouseMode = MOUSE_MODE_NONE;
 
 	pick_ray = new PICK_RAY_STRUCT (0,0,0,0,0,0);
 
@@ -2499,6 +2503,8 @@ function DoMove (mx, my)
 	AnimationAngle = 0;
 
 	IncAngleX = 0; IncAngleY = 0; IncAngleZ = 0;
+	
+	MouseMode = MOUSE_MODE_NONE;
 
 	IncAngleX = rx * ROTATE_SPEED;
 	IncAngleY = ry * ROTATE_SPEED;
