@@ -75,6 +75,9 @@
 	one row at a time, to simulate the raster output. Trying it so I
 	can experiment with raster avoiding techniques.
 
+	 31st December 2023
+	----------------------
+		Removed some legacy png file loading stuff.
 */
 
 // https://hacks.mozilla.org/2011/12/faster-canvas-pixel-manipulation-with-typed-arrays/
@@ -102,20 +105,20 @@ var attrCanvasCtx;
 
 var ScreenRowIndexTable = [192];
 
-var InkPaletteImg = new Image();
-InkPaletteImg.src = "inkpalette.png";
+//var InkPaletteImg = new Image();
+//InkPaletteImg.src = "inkpalette.png";
 
-var AttrPaletteImg = new Image();
-AttrPaletteImg.src = "spectrum_palette2.png";
+//var AttrPaletteImg = new Image();
+//AttrPaletteImg.src = "spectrum_palette2.png";
 
-var KeyboardImg = new Image();
-KeyboardImg.src = "keyboard.png";
+//var KeyboardImg = new Image();
+//KeyboardImg.src = "keyboard.png";
 
-var JoystickImg = new Image();
-JoystickImg.src = "joypad.png";
+//var JoystickImg = new Image();
+//JoystickImg.src = "joypad.png";
 
-var PaletteImg = new Image();
-PaletteImg.src = "spectrum_palette2.png";
+//var PaletteImg = new Image();
+//PaletteImg.src = "spectrum_palette2.png";
 
 var KeyCodeArray = [];		// true = key down, false = key up
 
@@ -378,7 +381,7 @@ function AsmView()
 
 function CreatePaletteImage()
 {
-	var ctx;
+/*	var ctx;
 	var item;
 	var lp;
 	var lp2;
@@ -404,6 +407,7 @@ function CreatePaletteImage()
 			}
 		}
 	}
+*/
 }
 
 function LoadRom()
@@ -606,7 +610,7 @@ var dsrowstarty = 0;
 
 function DrawScreen()
 {
-		// routine not used ????
+/*		// routine not used ????
 		// DrawScreen2 now used
 //	var row;
 //	var col;
@@ -630,6 +634,7 @@ function DrawScreen()
 	}
 	dsrowstart ^= 3072;
 	dsrowstarty ^= 96;
+*/
 }
 
 var SpectrumInks =		// stored argb style
