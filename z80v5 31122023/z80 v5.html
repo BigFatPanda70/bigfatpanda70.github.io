@@ -80,7 +80,7 @@
 <script src="./js/Emuz80.js"></script>
 <script src="./js/spectrum.js"></script>
 <script src="./js/mmb64.js"></script>
-<script src="./js/sabre_b64.js"></script>
+<!-- <script src="./js/sabre_b64.js"></script> -->
 
 <script src="./js/rle.js"></script>
 
@@ -96,6 +96,7 @@
 <script src="./z80_asm/js/pass_two.js"></script>
 
 
+<script src="./z80src.js"></script>
 
 <script>
 
@@ -542,11 +543,16 @@ function BezierTest()
 	console.log (tsqrd);
 }
 
+function LoadTestSourceCode()
+{
+	document.getElementById ("source").value = Z80_Test_SourceCode;
+}
+
 
 function DoInits()
 {
 //	CreateReverseByteTable();
-	CreateReciprocalByteTable();
+//	CreateReciprocalByteTable();
 //	Cvs = document.getElementById("cvs");
 //	Ctx = Cvs.getContext("2d");
 	
@@ -567,6 +573,8 @@ function DoInits()
 //	LoadB64Array (sw_b64_file);
 
 	MyZ80.mem[43848] = 201;		// sabre wulf immunity poke :-D
+	
+	LoadTestSourceCode();
 
 //	console.log (0x38 * 0x8);
 
