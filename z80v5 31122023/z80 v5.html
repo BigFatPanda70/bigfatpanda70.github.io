@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!--
+	Title	:	Spectrum Emulator
+
+	Info	:	Version 0.0	23rd August 2023
+
+	Author	:	Nick Fleming
+
+	Updated	:	31st December 2023
+
+	 Notes:
+	--------
+
+	 31st December 2023
+	====================
+
+		Tidying up the code for possible public release later today.
+	Might be useful to someone.
+
+-->
+
+<html>
+<head>
+<title>Spectrum Emulator/Assembler</title>
+
+<style>
+	body
+	{
+/*		padding:0px;*/
+/*		margin:0px; */
+	}
+	
+	.framecounter
+	{
+		position:absolute;
+		left:0px;
+		top:0px;
+		z-index:100;
+	}
+	
+	.center_div
+	{
+		width:100%;
+		text-align:centre;
+	}
+
+	.zx_container
+	{
+		padding: 0;
+		margin: auto;
+		display: block;
+    
+		background-color:#fcf;
+		width:256px;
+		height:192px;
+	}
+
+	
+	.zx_canvas
+	{
+		background-color:#777;
+		width:100%;					/* forces fit to container size */
+		height:100%;
+		image-rendering: optimizeSpeed;             /* Older versions of FF          */
+		image-rendering: -moz-crisp-edges;          /* FF 6.0+                       */
+		image-rendering: -webkit-optimize-contrast; /* Safari                        */
+		image-rendering: -o-crisp-edges;            /* OS X & Windows Opera (12.02+) */
+		image-rendering: pixelated;                 /* Awesome future-browsers       */
+		-ms-interpolation-mode: nearest-neighbor;
+	}
+
+</style>
+
+<script src="./js/frame_counter.js"></script>
+<script src="./js/readfile.js"></script>
+<script src="./js/rom48b64.js"></script>
+<script src="./js/Emuz80.js"></script>
+<script src="./js/spectrum.js"></script>
+<script src="./js/mmb64.js"></script>
+<script src="./js/sabre_b64.js"></script>
+
+<script src="./js/rle.js"></script>
+
+
+<!-- assembler stuff -->
+<script src="./z80_asm/js/globals.js"></script>
+<script src="./z80_asm/js/scanner.js"></script>
+<script src="./z80_asm/js/calc.js"></script>
+<script src="./z80_asm/js/labels.js"></script>
+<script src="./z80_asm/js/const.js"></script>
+<script src="./z80_asm/js/z80_asm.js"></script>
+<script src="./z80_asm/js/pass_one.js"></script>
+<script src="./z80_asm/js/pass_two.js"></script>
+
+
+
+<script>
+
+var Ctx;
+var Cvs;
+
+var File;
+
+	// ----------------------------------------------------------
+				// ----- source code loading ----
+	// ----------------------------------------------------------
+
+function Loaded(txt)
+{
+	var s;
+	
+	s = document.getElementById ("source");
+	
+	s.value=txt
+	
+//	s.readOnly = false;
+}
+
+function LoadSourceCode()
+{
+
+	File.load(Loaded);
+	
+	Spectrum_SetPreventKeyDefault (false);
+}
+	// ----------------------------------------------------------
+
+function LoadSnaCallback(a)
+{
+	var bv;
+
+	Spectrum_Reset();
+
+	bv = new Uint8ClampedArray (a);		// note : MUST be clamped array.
+	LoadRawSna (bv);	
+}
+
+function LoadSna()
+{
+	Spectrum_Pause (true);
+	File.loadRaw(LoadSnaCallback);
+	Spectrum_Pause (false);
+	Spectrum_SetPreventKeyDefault (true);
+}
+	// ----------------------------------------------------------
+
+function LoadTapCallback(a)
+{
+	var bv;
+
+	Spectrum_Reset();
+
+	bv = new Uint8ClampedArray (a);		// note : MUST be clamped array.
+	Spectrum_LoadRawTap (bv);	
+}
+
+function LoadTap()
+{
+	Spectrum_Pause (true);
+	File.loadRaw(LoadTapCallback);
+	Spectrum_Pause (false);
+	Spectrum_SetPreventKeyDefault (true);
+}
+
+	// ----------------------------------------------------------
+
+function Togglezoom()
+{
+	var z;
+	
+	z = document.getElementById("zxcontainer");
+	
+	if (z.clientWidth < 500)
+	{
+		z.style.width = "512px";
+		z.style.height = "384px";
+	}
+	else
+	{
+		z.style.width = "256px";
+		z.style.height = "192px";
+	}
+
+//	console.log (z);
+}
+
+function ViewRegisters()
+{
+	ShowRegisters("info", 1);
+}
+
+function Div10Test()
+{
+		// "fast" but doesnt give a remainder.
+
+	var n;
+	var q;
+	var r;
+
+	n = 2035;
+	
+	q = (n>>1) + (n>>2);
+	q = q + (q>>4);
+	q = q + (q>>8);
+	
+//	console.log ("q:" + q);
+
+	q = q + (q>>16);
+
+//	console.log ("q:" + q);
+
+	q = q >> 3;
+
+//	console.log ("q:" + q);
+	
+	r = n - (((q << 2) + q)<<1);	// r = rounding
+	
+//	console.log ("r:" + r);
+
+	r = q + (r > 9);				// adust by error term
+	
+//	console.log (n + " / 10 = " + r);
+}
+
+function Assemble()
+{
+	var bytes_to_copy;
+	var p;
+//	Spectrum_Reset();
+
+	Spectrum_Pause(true);
+
+	s = document.getElementById ("source");
+	Z80_Asm (s.value);
+
+	bytes_to_copy = _pass_one_ProgramCounter - _ProgramOrg;
+	
+	console.log ("bytes to copy:" + bytes_to_copy);
+	
+	for (p = 0; p < bytes_to_copy; p++)
+	{
+//		console.log ("p:" + p + ":" + _CodeBuffer[_ProgramOrg + p]);
+		MyZ80.mem[_ProgramOrg + p] = _CodeBuffer[_ProgramOrg + p];
+	}
+
+	// DD7E00
+	for (p = 0; p < 10; p++)
+	{
+		console.log ((_ProgramOrg + p) + " " + _CodeBuffer[_ProgramOrg + p]);
+	}
+//	RLE_EncodingTest(RLE_DATA);
+
+
+}
+
+function EnableEditing()
+{
+	Spectrum_SetPreventKeyDefault (false);
+}
+
+function RunCode()
+{
+	Spectrum_SetPreventKeyDefault (true);
+	
+//	console.log ("code org:" + _ProgramOrg);
+	
+	Spectrum_SetPC (_ProgramOrg);
+	
+	Spectrum_Pause (false);
+}
+
+
+function SquareRootTest()
+{
+	// from : http://www.retroprogramming.com/2017/07/a-fast-z80-integer-square-root.html
+
+	var numb;
+	var root;
+	var bit;
+	var n;
+	var t;
+
+	numb = 100;		// 0x353620EF	->>> 74b6
+
+	console.log ("numb:" + numb);
+    root = 0;
+    bit  = 0x40000000;		// bit has to be at the top end of the number of bits to process (in this case, 32)
+    n = 0;
+    while ( bit != 0 )
+    {
+		n++;
+		t = root + bit;
+        if ( numb >= t)	//root + bit )
+        {
+            numb = numb - t;	//root - bit;
+            root = root / 2 + bit;
+        }
+        else
+        {
+            root = root / 2;
+		}
+        bit = Math.floor (bit / 4);
+    }
+  
+    console.log (n + " root of " + numb + "=" + root);
+   // console.log ("expected result:" + 29878);
+}
+
+function CreateReverseByteTable()
+{
+	var k;
+	var n;
+	var b0;
+	var b1;
+	var b2;
+	var b3;
+	var b4;
+	var b5;
+	var b6;
+	var b7;
+	
+	var s;
+	
+	s = "\tdefb ";
+
+	for (k = 0; k < 256; k++)
+	{
+		n = 0;
+		
+		b0 = (k<<7)&0x80;
+		b1 = (k<<5)&0x40;
+		b2 = (k<<3)&0x20;
+		b3 = (k<<1)&0x10;
+		b4 = (k>>1)&0x08;
+		b5 = (k>>3)&0x04;
+		b6 = (k>>5)&0x02;
+		b7 = (k>>7)&0x01;
+		
+		n = b0 | b1 | b2 | b3 | b4 | b5 | b6 | b7;
+		
+		s = s + n;
+		if (((k+1) & 15)==0)
+		{
+			s = s + "\n";
+			if (k != 255)
+			{
+				s = s + "\tdefb ";
+			}
+		}
+		else
+		{
+			s = s + ",";
+		}
+	}
+	document.getElementById ("source").value = s;
+}	
+
+
+function CreateReciprocalByteTable()
+{
+	var k;
+	var n;
+
+	var s;
+
+	s = "\tdefb ";
+
+	for (k = 0; k < 256; k++)
+	{
+		//n = 255 & (256 / k);
+		n = 255 & ((1/k)*256);
+	
+		s = s + n;
+		if (((k+1) & 15)==0)
+		{
+			s = s + "\n";
+			if (k != 255)
+			{
+				s = s + "\tdefb ";
+			}
+		}
+		else
+		{
+			s = s + ",";
+		}
+	}
+	document.getElementById ("source").value = s;
+}
+
+var RLE_DATA = 
+	"................................"+
+	".......~.....~~..~~.....~......."+
+	"................................"+
+	"..~~~~~~~~~~~~~~~~~~~~~~~~~~~~.."+
+	"................................"+
+	"................................"+
+	"..#..#..####..#.....#......##..."+
+	"..#..#..#.....#.....#.....#..#.."+
+	"..####..###...#.....#.....#..#.."+
+	"..#..#..#.....#.....#.....#..#.."+
+	"..#..#..####..####..####...##..."+
+	"................................"+
+	"................................"+
+	".#....#..##...###...#.....###..."+
+	".#....#.#..#..#..#..#.....#..#.."+
+	".#.##.#.#..#..###...#.....#..#.."+
+	".##..##.#..#..#.#...#.....#..#.."+
+	".#....#..##...#..#..####..###..."+
+	"................................"+
+	"................................"+
+	".$.$$.$$$.$$$$....$$$$.$$$.$$.$."+
+	"................................"+
+	"..........X.X.XXXX.X.X.........."+
+	"...............................#";
+
+
+function RLE_EncodingTest(enc_string)
+{
+		// encoding is as follows
+		// bit 7 = control bit
+		// bits 0-6 = length of run (n)
+		// if bit 7 = 1, next byte is byte to repeat n times
+		// otherwise n bytes of uncompressed data follow.
+		// zero is output at the end of the data to indicate end of data.
+
+	var ptr;
+	var ch1;
+	var ch2;
+	var k;
+	var run_length;
+	
+	var max_run_length;
+
+	ptr = 40960;
+	
+	if (enc_string.length == 1)
+	{
+		// output 0x81, data byte, then output zero and we're done.
+		MyZ80.mem[ptr++] = 0x81;
+		MyZ80.mem[ptr++] = enc_string.charCodeAt(0);
+		MyZ80.mem[ptr++] = 0
+		return;
+	}
+
+	max_run_length = 127;
+	k = 0;
+	while (k < enc_string.length)
+	{
+		run_length = 0;
+		ch1 = enc_string.charCodeAt(k);
+		ch2 = enc_string.charCodeAt(k+1);
+		console.log ("ch1:" + ch1 + " ch2:" + ch2);
+		if (ch1 == ch2)
+		{
+			while ((run_length < max_run_length) && (ch1 == enc_string.charCodeAt(k)) && (k < enc_string.length))
+			{
+				run_length++;
+				k++;
+			}
+			console.log ("repeat run k:" + k + " rl:" + run_length);
+	
+			// output 128 | run_length, followed by ch1 byte
+			MyZ80.mem[ptr++] = 128 | run_length;
+			MyZ80.mem[ptr++] = ch1;
+//			console.log ("rl:" + run_length);
+
+			// k points to next character to decode after run.
+		}
+		else
+		{
+			// run of data
+			while ((run_length < max_run_length) && (ch1 != ch2)  && (k < enc_string.length))
+			{
+				run_length++;
+				k++;
+				ch1 = enc_string.charCodeAt(k);
+				ch2 = enc_string.charCodeAt(k+1);
+			}
+			console.log ("data run k:" + k + " rl:" + run_length);
+			
+			k -= run_length;
+			MyZ80.mem[ptr++] = 0 | run_length;
+			while (run_length > 0)
+			{
+				MyZ80.mem[ptr++] = enc_string.charCodeAt(k);
+				k++;
+				run_length--;
+			}
+		}
+	}
+	
+	console.log ("compressed_size:" + (ptr - 40960));
+}
+
+function ToHex()
+{
+	var num;
+	var hex;
+	
+	num = parseInt (document.getElementById("num1").value);
+	hex = num.toString(16);
+
+//	console.log ("num:" + num);
+	
+	document.getElementById("hex1").value = hex;
+}
+
+function ToDec()
+{
+	var num;
+	var hex;
+	
+	num = parseInt (document.getElementById("hex2").value, 16);
+	
+	document.getElementById("num2").value = num;
+}
+
+function BezierTest()
+{
+	var t;
+	var k;
+	
+	var omt;
+	
+	omt = [];
+	tsqrd = [];
+
+	for (k = 0; k < 16; k++)
+	{
+		t = k/16;
+		omt[k] = Math.floor ((255 * (1-t) * (1-t))+0.5);
+//		console.log ("k:" + k + " t^2:" + (255*(1-t)*(1-t)));
+
+//		console.log ("k:" + k + " t^2:" + (255*t*t));
+		tsqrd [k] = Math.floor ((255 * t * t)+0.5);
+	}
+	
+	console.log (omt);
+	console.log (tsqrd);
+}
+
+
+function DoInits()
+{
+//	CreateReverseByteTable();
+	CreateReciprocalByteTable();
+//	Cvs = document.getElementById("cvs");
+//	Ctx = Cvs.getContext("2d");
+	
+//	SquareRootTest();
+//	Div10Test();
+
+//	RLE_EncodingTest(RLE_DATA);
+
+	BezierTest();
+
+	File = new XFile();
+
+	FrameCounter_Init ("framecounter");	
+
+	SpectrumInit ("zxcontainer");
+	
+	LoadB64Array (mm_b64_file);		// load test .sna file
+//	LoadB64Array (sw_b64_file);
+
+	MyZ80.mem[43848] = 201;		// sabre wulf immunity poke :-D
+
+//	console.log (0x38 * 0x8);
+
+
+//	console.log (((Math.PI * 65536) & 0xFF0000) >> 16);
+//	console.log (((Math.PI * 65536) & 0x00FFFF));
+}
+
+</script>
+
+<body onload="DoInits();">
+
+<div id="menu">
+	<input type="button" value="Toggle screen zoom" onclick="Togglezoom();">
+	&nbsp;&nbsp;
+	<input type="button" value="Load Sna File" onclick="LoadSna();">
+	<input type="button" value="Load Tap File" onclick="LoadTap();">
+</div>
+
+<div class="center_div">
+<div class="zx_container" id="zxcontainer"></div>
+</div>
+<!--<canvas class="spectrum_canvas" id="cvs" width="256" height="192"></canvas>-->
+<br>
+<input type="button" value="load source code" onclick="LoadSourceCode();">
+<input type="button" value="edit" onclick="EnableEditing();">
+<input type="button" value="assemble" onclick="Assemble();">
+<input type="button" value="run" onclick="RunCode();">
+<br>
+<textarea id="source" rows="10" cols="80" >Source goes here.</textarea>
+<br>
+<input type="button" value="regs" onclick="ViewRegisters();">
+<input type="button" value="mem" onclick="ViewRegisters();">
+<br>
+<textarea id="info" rows="10" cols="80">Info goes here.</textarea>
+<br>
+<input type="text" id="num1" name="00">
+<input type="button" value=" -> to hex ->" onclick="ToHex();">
+<input type="text" id="hex1">
+<br>
+<input type="text" id="hex2">
+<input type="button" value=" -> to dec ->" onclick="ToDec();">
+<input type="text" id="num2">
+<br>
+
+
+<div class="framecounter" id="framecounter">fps</div>
+
+
+</body>
+</html>

@@ -1,0 +1,8 @@
+var RETCODE_ERROR = -10;
+var RETCODE_OK = -20;
+var RETCODE_FALSE = -30;
+var RETCODE_TRUE = -40;
+
+var ORG_UNDEFINED = -50;
+
+
