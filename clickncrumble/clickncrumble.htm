@@ -1,0 +1,2118 @@
+<!DOCTYPE html>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!--
+
+	Title	:	Click n Crumble
+	
+	Info	:	Version 0.0	4th May 2023
+
+	Author	:	Nick Fleming
+	
+	Updated	:	4th January 2023
+
+	 Notes:
+	--------
+
+
+
+
+	 18th May 2023
+	----------------
+		Code tests almost done... I'm able to hit 60fps on the slow
+	pc desktop with this code with alpha fx so I am really happy with
+	it so far.
+
+		Working on adding some animation code to animate a set of points
+	on a time basis rather than a fixed frame basis for variable frame
+	rates.
+
+	 23rd May 2023
+	---------------
+		Got loading animation working.. not sure its actually useful
+	yet, but I've added a 3 second timer before stopping it (*lol*)
+
+	 26th May 2023
+	---------------
+		Friday ! Experimenting with graphics fx.
+
+	 27th May 2023
+	---------------
+		Doing some audio stuff.
+	
+	 28th May 2023
+	---------------
+		Oddly.. I can play beeps and stuff without needing permission
+	from the browser, but to hear audio stuff (mp3 files etc) the 
+	user needs to click somewhere on the browser.
+
+		.. so going to make it a feature.. first option will be do 
+	you want sound y/n  ? .. most of the time the answer will probably
+	be know.. need to be able to turn it on again at some point.
+
+
+	 29th May 2023
+	---------------
+		Changed loads today - changed gfx data to base 64 encoded png
+	files to save bandwidth, at the expense of extra decoding at the
+	client side (fair tradeoff I think).
+
+		Also decided first game state should just be a play button,
+	rather than complicate the first screen.
+
+	 30th May 2023
+	----------------
+		Moved a few bits of code around.. mostly so that scrbuffer.js
+	handles most of the gfx drawing code where that makes sense.
+
+	 1st June 2023
+	---------------
+		Main purpose of start loop is to get the user to click on the
+	canvas. This should then enable audio. Without doing this, the
+	browser throws up a *lot* of audio errors.
+
+
+	ascii characters: (as a string, need to modify ' and \ if using in a string.
+
+	 !"#$%&'()*+,-./
+	0123456789:;<=>?
+	@ABCDEFGHIJKLMNO
+	PQRSTUVWXYZ[\]^_
+	`abcdefghijklmno
+	pqrstuvwxyz{|}~
+	 
+	(the 32 characters 0x80 to 0x9F are unprintable control characters)
+	 
+	 latin suppliment (chars from 0xA0)
+	 
+	 <nbsp no break space>
+¡¢£¤¥¦§
+¨©ª«¬
+<soft hyphen>
+®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ
+
+
+
+	possible title font(s):
+
+	POETSON ONE
+
+
+quote of the week :
+
+"Not legal, even in Devon"
+"Don't go to the zoo and compare your horse to the zebras"
+"Mental illness is a prerequisite for teaching physics"
+"Too many things taste like chicken"
+"Sandra, I haven't shot your cat, I'm just not hungry right now."
+"A parachute’s only necessary if you want to skydive more than once"
+"Every song I’ve heard by Meghan Trainor was against my will"
+"Can confirm you’ve found yourself a free-range fair-dinkum fuck-knuckle."
+
+
+	 14th June 2023
+	-----------------
+	Doing main title page, complete with logo graphic.
+
+	 4th January 2024
+	-------------------
+This project has been lingering around for far too long.
+
+
+	 7th Jan 2024
+	--------------
+	Adding some more alternative background images (which is quite a 
+long process !!)
+
+-->
+
+<html lang="en" dir="ltr">
+<head>
+<title>Click 'n' Crumble</title>
+<style>
+
+.framecounter
+{
+	position:absolute;
+	left:0;
+	top:0;
+	z-index:100;
+	background-color:wheat;
+}
+
+.container
+{
+	overscroll-behavior: contain;	/* stops page refresh when vertically scrolling on mobile */
+
+	position:absolute;
+	left:0;
+	top:0;
+	margin:0;
+	padding:0;
+	width:100vw;
+	height:100vh;
+	overflow:hidden;
+	text-align:center;
+
+/*	background-image: linear-gradient(to bottom, #CEF, #ACE, #DEa, #BA7, #C89);	*/
+
+	background-color: #444;
+}
+
+.cvs
+{
+	background-color:#fef;
+	width:96vw;
+	height:96vh;
+	image-rendering: optimizeSpeed;             /* Older versions of FF          */
+	image-rendering: -moz-crisp-edges;          /* FF 6.0+                       */
+	image-rendering: -webkit-optimize-contrast; /* Safari                        */
+	image-rendering: -o-crisp-edges;            /* OS X & Windows Opera (12.02+) */
+	image-rendering: pixelated;                 /* Awesome future-browsers       */
+	-ms-interpolation-mode: nearest-neighbor;
+
+	position:absolute;			/* vertical centering */
+	top:50%;
+	left:50%;
+	transform:translate(-50%,-50%);
+
+}
+
+@media screen and (orientation:landscape)
+{
+	.cvs
+	{
+		width:96vh;
+		height:96vh;
+	}
+}
+
+@media screen and (orientation:portrait)
+{
+	.cvs
+	{
+		width:96vw;
+		height:96vw;
+	}
+}
+
+</style>
+
+<script src="./../lib/scrbuffer.js"></script>
+<script src="./../lib/frame_counter.js"></script>
+<script src="./../lib/ink.js"></script>
+<!-- <script src="./../lib/font ascii tiny 1d.js"></script> -->
+<!--<script src="./../lib/font poetson one 24x24 1c.js"></script>-->
+<script src="./../lib/inkeys.js"></script>
+<script src="./../lib/joystick.js"></script>
+
+<script src="./js/bitmapfont.js"></script>
+
+<!-- <script src="./js/font 8x8 ascii extended.js"></script> -->
+
+<script src="./js/text.js"></script>
+<script src="./js/pointer_events.js"></script>
+<script src="./js/lines.js"></script>
+<script src="./js/puzzle_array.js"></script> -->
+<script src="./js/samegame.js"></script>
+<script src="./js/gfx2.js"></script>
+<script src="./js/skyline.js"></script>
+<script src="./js/buttons.js"></script>
+<script src="./js/bounce.js"></script>
+<script src="./js/easing.js"></script>
+<script src="./js/boxanim.js"></script>
+<script src="./js/audio.js"></script>
+<script src="./js/samples.js"></script>
+<script src="./js/raw.js"></script>
+<script src="./js/particles.js"></script>
+<script src="./js/clouds.js"></script>
+
+<script>
+
+var skyline_array = 
+[
+	skyline_00,
+//	skyline_01,		// no
+//	skyline_02,		// no
+//	skyline_03,		// no
+	skyline_04,
+	skyline_05,
+	skyline_06,
+//	skyline_07,		// no
+	skyline_08,
+	skyline_09,
+//	skyline_10,		// no
+	skyline_11,
+	skyline_12,
+	skyline_13,
+	skyline_14,
+	skyline_15,
+	skyline_16,
+//	skyline_17,		// no
+	skyline_18,
+	skyline_19,
+//	skyline_20,		// no
+	skyline_21,
+//	skyline_22,		// no
+	skyline_23,
+	skyline_24,
+	skyline_25,
+//	skyline_26,		// no
+//	skyline_27,		// no
+	skyline_28,
+	skyline_29,
+	skyline_30,
+	skyline_31,
+	skyline_32
+];	
+
+var skyline_idx = 0;
+var skyline_raw = skyline_array[skyline_idx];
+
+
+var GAME_LOOP_STATE_START = 1;
+
+var LOADING_LOOP_DURATION = 2400;	//2980;	//3150;	// duration in ms
+
+var CURSOR_WIDTH = 32;
+var CURSOR_HEIGHT= 32;
+
+var FONT_CHAR_WIDTH = 10;
+var FONT_CHAR_HEIGHT = 12;
+
+var LEFT_PRESSED = 1;
+var RIGHT_PRESSED = 2;
+var UP_PRESSED = 4;
+var DOWN_PRESSED = 8;
+var ENTER_PRESSED = 16;
+
+var IsMobile = false;
+
+var InputInfo = 0;
+
+var SelectAudio = true;
+var AudioAvailable = false;		// default is to place nice and be quiet!
+
+var NoteNumber = 0;
+var NoteStartTime = null;
+var NoteLength = 0.25;			// value in seconds.
+
+var StartButton;
+
+var Joysticks = false;
+
+var Font;
+
+var triangle_point_buffer =
+[
+	-5,10,
+	30,30,
+	20,70
+];
+
+var TestExplosion = [];
+
+//var FONT_HEADER_SIZE = 1;
+//var FontM = new Image();
+//FontM.src = font_poetson_one_32x32;
+//FontM.src = font_poetson_one_24x24;
+//var FONT_SPACING = 2;
+
+/*
+function FontDrawCh (x, y, ascii_code, font_metrics)
+{
+	
+	console.log ("####################################################################################");
+	console.log ("####################################################################################");
+	console.log ("####################################################################################");
+	console.log ("####################################################################################");
+	console.log ("####################################################################################");
+	console.log ("####################################################################################");
+	var font_height;
+	var height;
+	var width;
+	var tx;
+	var ty;
+	var ascent;
+	var descent;
+	var screen_y;
+
+	var idx;
+	idx = ascii_code - " ".charCodeAt(0);
+	
+	idx = FONT_HEADER_SIZE + (idx * 5);
+	
+	font_height = font_metrics[0];
+
+	tx = font_metrics [idx + 0];			// (tx,ty) = (left,top) of character data.
+	ty = font_metrics [idx + 1];
+	width = font_metrics [idx + 2];		// width in pixels.
+	ascent = font_metrics [idx + 3];		// ascent from base line
+	descent= font_metrics [idx + 4];		// descent from base line.
+	
+	screen_y = y + font_height - ascent;
+	
+	ty += (font_height - ascent);
+	
+	height = ascent + descent + 1;
+	
+	Ctx.drawImage (FontM, tx,ty,width,height, x, screen_y,width,height);
+}
+
+function DrawString (left_x, top_y, str)
+{
+	var x;
+	var y;
+	var ch_width;
+	var ch_code;
+	var spacing;
+	var i;
+	var idx;
+	
+	var font_metrics;
+
+	
+	font_metrics = font_poetson_one_24x24_char_info;
+	spacing = FONT_SPACING;
+	x = left_x;
+	y = top_y;
+	for (i = 0; i < str.length; i++)
+	{
+		ch_code = str.charCodeAt(i);
+		
+		FontDrawCh (x,y, ch_code, font_metrics);
+		
+		idx = FONT_HEADER_SIZE + ((ch_code-32) * 5);
+		ch_width = font_metrics [ idx + 2];
+//		ch_width = MedFontInfo [ idx + 2];
+		x += ch_width + spacing;
+	}
+}
+
+function CalcStringWidth(str)
+{
+	var w;
+	var ch;
+	var i;
+	var idx;
+	var font_metrics;
+	
+	if (str.length < 1)
+	{
+		return 0;
+	}
+
+	font_metrics = font_poetson_one_24x24_char_info;
+
+	w = 0;
+	for (i = 0; i < str.length; i++)
+	{
+		ch = str.charCodeAt(i) - " ".charCodeAt(0);
+		idx = FONT_HEADER_SIZE + (ch * 5);
+		
+		w = w + font_metrics [idx + 2];
+	}
+	
+	w = w + (FONT_SPACING * (str.length-1));
+	
+	return w;
+}
+
+function DrawCenteredString (y, str)
+{
+	var w;
+	var x;
+
+	w = CalcStringWidth (str);
+	x = Math.floor ((Cvs.width - w)/2);
+	
+	DrawString (x,y, str);
+}
+*/
+
+//var StartLoopButtonMenu;
+
+//var GameLoopState = GAME_LOOP_STATE_START;
+
+// Wild Rover
+// https://musescore.com/user/15038351/scores/5919827
+// creative commons copyright waiver. (cc0 1.0, public domain dedication).
+
+
+var tune0 =		// WILD ROVER.
+[
+	"D4",		// 1
+
+	"D4",
+	"E4",
+	"D4",
+
+	"B3",
+	"A3",
+	"F4",
+
+	"F4",
+	"E4",
+	"F4",
+
+	"G4",
+
+	"G4",
+	"F4",
+	"A4",
+
+	"A4",			// 6
+	"F4",
+	"A4",
+	
+	"G4",
+	"E4",
+	"C4",
+	
+	"A3",
+	"F4",
+	"E4",
+	
+	"D4",
+
+	"D4",
+	"D4",
+	
+	"D4",
+	"E4",
+	"D4",
+	
+	"B3",			// 12
+	"A3",
+	"F4",
+	
+	"F4",
+	"E4",
+	"F4",
+	
+	"G4",
+	
+	"G4",
+	"F4",
+	"A4",
+	
+	"A4",
+	"F4",
+	"A4",
+	
+	"G4",			// 17
+	"E4",
+	"C4",
+	
+	"A3",
+	"F4",
+	"E4",
+	
+	"E4",
+
+	"E4",
+	
+	"C4",
+	"A3",
+	"A3",
+
+	"A3",
+	
+	"E4",
+	"E4",
+	
+	"F4",	//	25
+	"E4",
+	"F4",
+	
+	"G4",
+
+	"G4",
+	"F4",
+	"A4",
+	
+	"A4",
+
+	"A4",
+	"D4",
+	"D4",
+
+	"C4",
+	"B3",
+	
+	"B3",
+	"A3",
+	
+	"A3",
+	"F4",
+	"F4",
+	
+	"F4",
+	"E4",
+	
+	"D4",	// 34
+	
+		// my bit o notes at the end !! :-D lol.
+
+	"D4",
+	"C4",
+	"B3",
+
+	"C4",
+	"B3",
+	"A3",
+
+	"C4",
+	"B3",
+	"A3",
+
+
+	"D4",
+	"C4",
+	"B3",
+	"A3",
+	
+];
+
+var Cvs;
+var Ctx;
+var Scr;
+var Busy;
+
+var RainbowInk = new INK_STRUCT();
+
+	// initial pose
+var box_frame_0 =
+[
+	-0.5,	1,
+	0.5,	1,
+	0.5,	0,
+	-0.5,		0
+];
+	// squash
+var box_frame_1 =
+[
+	-1,	0.5,
+	1,	0.5,
+	1,	0,
+	-1,	0
+];
+	// stretch (jump)
+var box_frame_2 = 
+[
+	-0.25,	2,
+	0.25,	2,
+	0.25,	1,
+	-0.25,	1
+];
+
+var box_frame_3 = 
+[
+	-0.4,	2.5,
+	0.4,	2.5,
+	0.4,	1.5,
+	-0.4,	1.5
+];
+
+var box_frames =
+[
+		// point info, time offset (milliseconds)
+	box_frame_0, 0,
+	box_frame_1, 250,
+	box_frame_2, 500,
+	box_frame_3, 750,
+	box_frame_0, 1000	// repeat frame for looped animation tweening
+];
+
+var BoxAnim;
+var LoadingAnimStartTime = null;
+
+/*
+function DrawFontChar (x,y, chcode)
+{
+//		Ctx.drawImage (FontM, tx,ty,width,height, x, screen_y,width,height);
+
+	var tx;
+	var ty;
+	var tw;
+	var th;
+	var w;
+	var h;
+	
+	var chars_per_row;
+	var ch;
+	
+	ch = chcode - 32;
+	if (ch == 0)	return;
+	
+	chars_per_row = 16;
+
+	tw = FONT_CHAR_WIDTH;
+	th = FONT_CHAR_HEIGHT;
+	
+	tx = tw * Math.floor (ch&15);
+	ty = th * Math.floor (ch/chars_per_row);
+
+	w = tw;
+	h = th;
+	
+	Ctx.drawImage (Font, tx,ty,tw,th, x,y, w, h);
+}
+
+function FontStringLength (str)
+{
+	var chw;
+	var sl;
+
+	chw = FONT_CHAR_WIDTH;
+	sl = str.length * chw;
+	
+	return sl;
+}
+
+function DrawString (left, top,str)
+{
+	var x;
+	var y;
+	var k;
+	var ch;
+	
+	x = left;
+	y = top;
+	for (k = 0; k < str.length; k++)
+	{
+		x = left + (k*10);
+		ch = str.charCodeAt(k);
+		if (ch >= 0)
+		{
+			DrawFontChar (x,y, ch);
+		}
+	}
+}
+
+function DrawCenteredString (y, str)
+{
+	var x;
+	var s;
+
+	n = FontStringLength (str);
+
+	x = Math.floor ((Scr.canvas.width - n)/2);
+
+	DrawString (x,y,str);
+}
+*/
+
+/*
+function DrawTest()
+{
+	var x;
+	var y;
+	var t;
+
+	for (y = 16; y < 160; y += 32)
+	{
+		for (x = 16; x < 160; x += 32)
+		{
+			t = 1 + (x % 5);
+			FastAlphaShadow(TileGfxTable[t], 32, 32, x+4,y+4);
+		}
+	}
+
+	for (y = 16; y < 160; y += 32)
+	{
+		for (x = 16; x < 160; x += 32)
+		{
+			t = 1 + (x % 5);
+			Scr.drawImgA (x, y, 32, 32, TileGfxTable[t]);
+		}
+	}
+}
+*/
+
+function AlphaTest()
+{
+	var x;
+	var y;
+	
+	var r;
+	var g;
+	var b;
+	var a;
+	
+	r = 255;
+	g = 255;
+	b = 255;
+	a = 255;
+
+	for (y = 64; y < 128; y++)
+	{
+		for (x = 64; x < 128; x++)
+		{
+			Scr.alphaSetPixel (x, y, r,g,b,a);
+		}
+		a -= 4;
+	}
+}
+
+var rx = [32,128,32,64];
+var ry = [16,48,128,96];
+var ix = [1,1,-1,-1];
+var iy = [1,1,1,1];
+
+function Boing()
+{
+	for (i = 0; i < 4; i++)
+	{
+		rx[i] += ix[i];
+		ry[i] += iy[i];
+		if (rx[i]<0)
+		{
+			rx[i] = 0;
+			ix[i] *= -1;
+		}
+		if (rx[i]>128)
+		{
+			rx[i] = 128;
+			ix[i] *= -1;
+		}
+
+		if (ry[i]<0)
+		{
+			ry[i] = 0;
+			iy[i] *= -1;
+		}
+		if (ry[i]>128)
+		{
+			ry[i] = 128;
+			iy[i] *= -1;
+		}
+
+		FastAlphaRect (rx[i],ry[i], 64,64, 255,192,0);
+	}
+}
+
+
+function KeyboardStuff()
+{
+
+	var w;
+	var h;
+	
+	w = 32;
+	h = 32;
+	
+	InputInfo = 0;
+	if (KeyPressed(KEY_LEFT) == true)
+	{
+//		MoveCursorLeft();
+		InputInfo |= LEFT_PRESSED;
+	}
+
+	if (KeyPressed(KEY_RIGHT) == true)
+	{
+//		MoveCursorRight();
+		InputInfo |= RIGHT_PRESSED;
+	}
+	if (KeyPressed(KEY_UP) == true)
+	{
+//		MoveCursorUp();
+
+		console.log ("UP");
+
+		if (skyline_idx < 32)
+		{
+			skyline_idx++;
+			skyline_raw = skyline_array[skyline_idx];
+			KeyClear (KEY_UP);
+			console.log ("skyline:" + skyline_idx);
+		}
+
+		InputInfo |= UP_PRESSED;
+	}
+	if (KeyPressed(KEY_DOWN) == true)
+	{
+//		MoveCursorDown();
+		InputInfo |= DOWN_PRESSED;
+
+		if (skyline_idx > 0)
+		{
+			skyline_idx--;
+			skyline_raw = skyline_array[skyline_idx];
+			KeyClear (KEY_DOWN);
+			console.log ("skyline:" + skyline_idx);
+		}
+
+
+	}
+	
+	if (KeyPressed (KEY_ENTER) == true)
+	{
+		InputInfo |= ENTER_PRESSED;
+	}
+
+	if (KeyPressed (KEY_ESC) == true)
+	{
+		console.log ("esc pressed");
+	}
+}
+
+function JoystickStuff()
+{
+	var joystick_idx;
+
+	Joystick_Update();
+	
+	joystick_idx = 0;
+	
+	if (Joystick_GetButton (joystick_idx, JOYSTICK_LBC_TOP) != 0)
+	{
+//		MoveCursorUp();
+		InputInfo |= UP_PRESSED;
+	}
+
+	if (Joystick_GetButton (joystick_idx, JOYSTICK_LBC_LEFT) != 0)
+	{
+//		MoveCursorLeft();
+		InputInfo |= LEFT_PRESSED;
+	}
+
+	if (Joystick_GetButton (joystick_idx, JOYSTICK_LBC_RIGHT) != 0)
+	{
+//		MoveCursorRight();
+		InputInfo |= RIGHT_PRESSED;
+	}
+	
+	if (Joystick_GetButton (joystick_idx, JOYSTICK_LBC_BOTTOM) != 0)
+	{
+//		MoveCursorDown();
+		InputInfo |= DOWN_PRESSED;
+	}
+
+	if (Joystick_GetButton (joystick_idx, JOYSTICK_RBC_TOP) != 0)
+	{
+		console.log ("jstk:RBC:top");
+	}
+	if (Joystick_GetButton (joystick_idx, JOYSTICK_RBC_LEFT) != 0)
+	{
+		console.log ("jstk:RBC:left");
+	}
+	if (Joystick_GetButton (joystick_idx, JOYSTICK_RBC_RIGHT) != 0)
+	{
+		console.log ("jstk:RBC:right");
+	}
+	if (Joystick_GetButton (joystick_idx, JOYSTICK_RBC_BOTTOM) != 0)
+	{
+		console.log ("jstk:RBC:bottom");
+		InputInfo |= ENTER_PRESSED;
+	}
+}
+
+var ggjj = 32;
+var igg = 0;
+function ScaledImageTest()
+{
+	var imgdata;
+	var sy;
+	var w;
+	var h;
+	var hh;
+	var sx;
+	var offset;
+
+	if (Raw_GetImageData(0) == null)	return;
+
+	w = Raw_GetImageData(0).width;
+	hh = Raw_GetImageData(0).height;
+	sx = 10;
+	sy = 100;
+
+	imgdata = Raw_GetImageData(0).data.data;
+	igg += 4;
+	if (igg >= 360)
+	{
+		igg = 0;
+	}
+
+//	ggjj = Math.abs (w * Math.sin(igg * Math.PI / 180));
+	ggjj = (w * Math.sin(igg * Math.PI / 180));
+
+	offset = 0;
+	for (h = 0; h < hh; h++)
+	{
+		sx = Math.floor ((Cvs.width - Math.abs(ggjj))/2);
+		Scr.ScaledImageLine (sx,sy, Math.floor (ggjj), imgdata, offset, w);
+
+//		FastAlphaScaledShadow (sx+4,sy+2, Math.floor (ggjj), imgdata, offset, w);
+		sy++;
+		offset += w*4;	//128;
+	}
+}
+
+function ImageTest2()
+{
+		// scaled using sine between min and max width values.
+	var imgdata;
+	var sx;
+	var sy;
+	var w;
+	var h;
+	var hh;
+	var offset;
+	
+	var idx;
+	
+	var min_w;
+	var max_w;
+	
+	var r;
+	var a;
+	var ww;
+	
+	idx = 0;
+
+	if (Raw_GetImageData(idx) == null)	return;
+
+	w = Raw_GetImageData(idx).width;
+	hh = Raw_GetImageData(idx).height;
+	imgdata = Raw_GetImageData(idx).data.data;
+
+	min_w = Math.floor (w/2);
+	max_w = Math.floor (w);
+
+	sy = 120;
+	
+//	r = Math.floor ((max_w - min_w)/2);
+	r = ((max_w - min_w)/2);
+
+	igg += 8;
+	if (igg >= 360)
+	{
+		igg = 0;
+	}
+
+	a = igg * Math.PI / 180;
+
+	offset = 0;
+	for (h = 0; h < hh; h++)
+	{
+		ww = min_w + r + Math.floor (Math.sin(a) * r);
+		sx = Math.floor ((Cvs.width - Math.abs(ww))/2);
+		Scr.ScaledImageLine (sx,sy, ww, imgdata, offset, w);
+		sy++;
+		offset += w*4;
+	}
+}
+
+function ImageTest3()
+{
+		// scaled using sine between min and max width values.
+		// , wavey side edges.
+	var imgdata;
+	var sx;
+	var sy;
+	var w;
+	var h;
+	var hh;
+	var offset;
+	
+	var idx;
+	
+	var min_w;
+	var max_w;
+	
+	var r;
+	var a;
+	var ww;
+	
+	idx = 0;
+
+	if (Raw_GetImageData(idx) == null)	return;
+
+	w = Raw_GetImageData(idx).width;
+	hh = Raw_GetImageData(idx).height;
+	imgdata = Raw_GetImageData(idx).data.data;
+
+	min_w = Math.floor (w/2);
+	max_w = Math.floor (w);
+
+	sy = 20;
+	
+//	r = Math.floor ((max_w - min_w)/2);
+	r = ((max_w - min_w)/2);
+
+	igg += 8;
+	if (igg >= 360)
+	{
+		igg = 0;
+	}
+
+	a = igg * Math.PI / 180;
+
+	offset = 0;
+	
+	sx = 20;
+	for (h = 0; h < hh; h++)
+	{
+		a = igg + (360 * h/hh);
+		a = a * Math.PI / 180;
+
+		ww = min_w + r + Math.floor (Math.sin(a) * r);
+		sx = Math.floor ((Cvs.width - Math.abs(ww))/2);
+		Scr.ScaledImageLine (sx,sy, ww, imgdata, offset, w);
+		sy++;
+
+		offset += w*4;
+	}
+}
+
+function ImageTest4()
+{
+		// scaled using sine between min and max width values.
+		// , wavey top and bottom edges, like a flag waving.
+
+	var imgdata;
+	var sx;
+	var sy;
+	var w;
+	var h;
+
+	var offset;
+	var lp;
+	
+	var idx;
+	
+	var min_w;
+	var max_w;
+
+	var min_h;
+	var max_h;
+	
+	var r;
+	var a;
+	var ww;
+	
+	idx = 0;
+
+	if (Raw_GetImageData(idx) == null)	return;
+	
+	w = Raw_GetImageData(idx).width;
+	h = Raw_GetImageData(idx).height;
+	imgdata = Raw_GetImageData(idx).data.data;
+
+//	console.log (w);
+//	min_w = Math.floor (w/2);
+//	max_w = Math.floor (w);
+
+	min_h = Math.floor (h/2);
+	max_h = Math.floor (h);
+
+	sx = Math.floor ((Cvs.width - Math.abs(w))/2);
+
+	r = ((max_h - min_h)/4);
+
+	igg += 8;
+	if (igg >= 360)
+	{
+		igg = 0;
+	}
+
+	a = igg * Math.PI / 180;
+
+	offset = 0;
+
+	for (lp = 0; lp < w; lp++)
+	{
+		a = igg + (360 * lp/h);
+		a = a * Math.PI / 180;
+
+		ww = min_h + Math.floor (Math.sin(a) * r);
+
+		sy = 20 - Math.floor (ww/2);
+
+		Scr.ScaledHeightImageLine (sx,sy, ww, imgdata, w * 4, offset, h);
+
+		sx++;
+
+		offset += 4;
+	}
+}
+
+
+function InitBounceAnim()
+{
+	BounceAnim = new BOUNCE_STRUCT 
+			(
+				100,	// initial_cx, 
+				100,	// initial_cy,
+				32,		// width, 
+				32,		// height,
+				4,		//min_width, 
+				48,		//max_width,
+				1		//speed
+			);
+}
+
+var ooop = 0;
+function DoBounce()
+{
+//	if ((ooop & 15) == 0)
+	{
+		BounceAnim.doBounce();
+	}
+		ooop++;
+	
+	var x;
+	var y;
+	var w;
+	var h;
+	
+	x = BounceAnim.cx - Math.floor (BounceAnim.width/2);
+	y = BounceAnim.cy - Math.floor (BounceAnim.height/2);
+	w = BounceAnim.width;
+	h = BounceAnim.height;
+
+	Scr.drawRect (x,y,w,h, 255,255,255);
+
+	Scr.drawRect (BounceAnim.cx,BounceAnim.cy,2,2, 0,0,0);
+	
+	if (y < 70) BounceAnim.reset();
+}
+
+var amn = 0;
+
+function InitBoxAnim(startTime)
+{
+	var i;
+	var start_time;
+	var duration;
+	
+	start_time = startTime;
+	duration = box_frames[box_frames.length-1];
+	BoxAnim = new ANIM_FRAMELIST_STRUCT (start_time, duration, box_frames, true);
+}
+
+function DoBoxAnim (current_time)
+{
+	var a;
+	var dt;
+
+	BoxAnim.update (current_time);
+	DrawBoxAnim(BoxAnim);
+}
+
+function DrawBoxAnim (a)
+{
+	var i;
+	var ox;
+	var oy;
+	var s;		// scale 
+	var px;
+	var py;
+	
+	var x0;
+	var y0;
+	var x1;
+	var y1;
+	
+	var r;
+	var g;
+	var b;
+	
+	r = 255;
+	g = 255;
+	b = 255;
+
+	s = 16;
+	ox = Math.floor (Ctx.canvas.width/2);
+	oy = 100;
+	
+	if (amn == 0)
+	{
+		console.log (a);
+		amn++;
+	}
+
+	x0 = Math.floor (ox + (a.tween_frame.px[0] * s));
+	y0 = Math.floor (oy - (a.tween_frame.py[0] * s));
+	for (i = 1; i < a.tween_frame.px.length; i++)
+	{
+		x1 = Math.floor (ox + (a.tween_frame.px[i] * s));
+		y1 = Math.floor (oy - (a.tween_frame.py[i] * s));
+
+		Scr.drawLine (x0,y0, x1,y1, r,g,b);
+
+		x0 = x1;
+		y0 = y1;
+	}
+	x1 = Math.floor (ox + (a.tween_frame.px[0] * s));
+	y1 = Math.floor (oy - (a.tween_frame.py[0] * s));
+	Scr.drawLine (x0,y0, x1,y1, r,g,b);
+}
+
+var GainEnvelope = null;
+
+function PlayTune (timestamp)
+{
+	var note;
+	var hz;
+	var dt;
+	var note_duration;		// time between playing notes.
+
+	if (NoteNumber >= tune0.length)
+	{
+//		NoteNumber = 0;
+		return;
+	}
+
+	note_duration = 0.1875;	//0.375;	//0.25+0.125;		// value in seconds.
+
+/*	GainEnvelope = 	audioEnvelope (
+					0,		// delay,
+					1,		// peak_level, [0..1]
+					0.8,	// sustain_level [0..1]
+					0.01,	// attack,
+					0.01,	// decay,
+					0.1,	// sustain, 
+					0.15	// release
+				);
+*/
+
+	GainEnvelope = 	audioEnvelope (
+					0,		// delay,
+					0.6,		// peak_level, [0..1]
+					0.3,	// sustain_level [0..1]
+					0.01,	// attack,
+					0.025,	// decay,
+					0.25,	// sustain, 
+					0.01	// release
+				);
+
+
+
+	if (NoteStartTime == null)
+	{
+		NoteStartTime = timestamp;
+		NoteNumber = 0;
+		note = tune0 [NoteNumber];
+
+		hz = Audio_Note_To_Hz (note);
+		AudioBeep (hz,0, NoteLength, GainEnvelope);
+
+
+		return;
+	}
+
+	dt = timestamp - NoteStartTime;
+	dt = dt / 1000;						// convert milliseconds to seconds.
+	if (dt < note_duration)
+	{
+		return;
+	}
+
+		// play next note.
+	NoteStartTime = timestamp;
+	NoteNumber++;
+	if (NoteNumber >= tune0.length)
+	{
+		return;
+//		NoteNumber = 0;	// loop round tune
+	}
+	note = tune0 [NoteNumber];
+	hz = Audio_Note_To_Hz (note);
+
+	AudioBeep (hz,0, NoteLength, GainEnvelope);
+
+	if ((NoteNumber & 9) == 0)
+	{
+//		hz = Audio_Note_To_Hz ("G3");
+//		if ((NoteNumber & 8) == 0)
+//		{
+			hz = Audio_Note_To_Hz ("C3");
+//		}
+		AudioBeep (hz,0, NoteLength, GainEnvelope);
+		
+		AudioPlaySample (0);
+	}
+}
+
+function MainLoop(loop_timestamp)
+{
+	if (Busy == true)
+	{
+		return;
+	}
+	Busy = true;
+	
+	FrameCounter_Update();
+
+//	KeyboardStuff();
+
+
+	PlayTune (loop_timestamp);
+
+//	Scr.clear(50,90,120);
+//	DrawSkyline();
+	
+	DrawTwinkles();
+
+/*	if (loop_timestamp < LoadingTimer)
+	{
+		Scr.clear (224,240,255);
+		DrawLoadingMsg();
+		DoBoxAnim (loop_timestamp);
+		Scr.drawBuffer();
+		Busy = false;
+		requestAnimationFrame (MainLoop);
+//		console.log (LoadingTimer);
+		return;
+	}
+*/	
+//	DoBounce();
+
+	Scr.drawRect (8,4, 176,8, 255,192,128);
+//	Scr.drawRect (16,10, 128,8, 128,128,128);
+
+/*
+
+	MoveCursor();
+
+//	DrawTest();
+	
+	Scr.drawLine (4,176, 188,176, 255,0,0);
+	
+	DrawLine (Scr.screenImgData,
+				Scr.canvas.width,
+				Scr.canvas.height,
+				10,10,
+				100,100,
+				255,0,0,255,
+				255,0,255,255);
+	
+	RainbowRectangle (CursorX, CursorY,32,32, RainbowIdx);
+	RainbowIdx--;
+	if (RainbowIdx < 0)
+	{
+		RainbowIdx = NUM_RAINBOW_INKS-1;
+	}
+
+
+	ScaledImageTest();
+
+
+//	AlphaTest();
+
+//	Boing();
+//	FastAlphaRect (0,0, 64,64, 0,0,0);
+//	FastAlphaRect (128,0, 64,64, 0,0,0);
+//	FastAlphaRect (0,128, 64,64, 0,0,0);
+//	FastAlphaRect (128,128, 64,64, 0,0,0);
+
+	KeyboardStuff();
+	JoystickStuff();
+
+//	ButtonRect (32,50, 128, 19, 244,224,192);
+	DrawButton (Scr,32,50, 128, 19, 244,224,192);
+
+//	DrawButton (Scr,32,80, 50, 30, 244,224,192);
+	DrawButton (Scr,32,80, 50, 30, 255,252,224);
+
+	DrawButton (Scr,110,80, 50, 30, 255,252,224);
+*/
+	Scr.drawBuffer();
+
+//	DrawCenteredString (55, AnimDeltaTime);
+
+//	DrawString (34,55,"" + AnimDeltaTime);
+//	DrawString (34,55,"" + loop_timestamp);
+	
+	
+//	DrawString (8,5,"`~HELLO"+String.fromCharCode(127));
+
+	Busy = false;
+	requestAnimationFrame (MainLoop);
+}
+
+var Bx = 4;
+var By = 4;
+var Bs = 8;
+var BorderData =
+[
+		// just a list of lines for top left corner.
+	Bx,By,		Bx+Bs,By,
+	Bx,By, 		Bx,By+Bs,
+	Bx,By+Bs,	Bx+Bs,By
+];
+
+function DrawBorder ()
+{
+	var i;
+	var x0;
+	var y0;
+	var x1;
+	var y1;
+	var w;
+	var h;
+	var bd;
+
+	var r;
+	var g;
+	var b;
+	
+	bd = BorderData;
+
+	w = Scr.canvas.width;
+	h = Scr.canvas.height;
+	
+	r = 255; g = 255; b = 255;
+
+	for (i = 0; i < BorderData.length; i += 4)
+	{
+		x0 = bd[i+0];
+		y0 = bd[i+1];
+		x1 = bd[i+2];
+		y1 = bd[i+3];
+
+		Scr.drawLine (x0,y0,x1,y1, r,g,b);
+		Scr.drawLine (w-x0,y0,w-x1,y1, r,g,b);
+		Scr.drawLine (x0,h-y0,x1,h-y1, r,g,b);
+		Scr.drawLine (w-x0,h-y0,w-x1,h-y1, r,g,b);
+
+	}
+}
+
+
+
+
+/*
+function DrawLoadingMsg()
+{
+	var x;
+	var y;
+	var w;
+	var h;
+	
+	w = 94;
+	h = 19;
+	
+	y = 30;
+	x = Math.floor ((Cvs.width-w)/2);
+
+	Scr.drawImgA (x,y,w,h, loading_raw);
+}
+*/
+
+function InitAudio()
+{
+//	AudioAvailable = IsAudioAvailable();
+	if (AudioAvailable == false)
+	{
+		return;
+	}
+	console.log ("Audio available");
+
+	AudioInit();
+
+	AudioLoadSample (snaredrum);
+	AudioLoadSample (kickdrum);
+
+//	AudioBeep (Audio_Note_To_Hz("C3"),0,  0.125, null);
+//	AudioBeep (Audio_Note_To_Hz("C4"),0.125,  0.125, null);
+	AudioBeep (Audio_Note_To_Hz("C5"),0.25,  0.125, null);
+//	AudioBeep (Audio_Note_To_Hz("C6"),0.5,  0.125, null);
+//	AudioBeep (Audio_Note_To_Hz("C7"),0.75,  0.125, null);
+//	AudioBeep (880, 0.0625);
+}
+
+
+function MainLoop (timestamp)
+{
+	if (Busy == true)
+	{
+		return;
+	}
+	Busy = true;
+
+	MainGameLoop(timestamp);
+
+	KeyboardStuff();
+
+
+	Busy = false;
+	requestAnimationFrame (MainLoop);
+}
+
+function InitMainLoop()
+{
+	InitGame (Scr);
+	requestAnimationFrame (MainLoop);
+}
+
+function LoadingLoop (loop_timestamp)
+{
+	var dt;
+	var w;
+	var h;
+	var x;
+	var y;
+	var r;
+	var g;
+	var b;
+	var k;
+
+	if (Busy == true)	{ return; }
+	Busy = true;
+	
+	if (LoadingAnimStartTime == null)
+	{
+		LoadingAnimStartTime = loop_timestamp;
+	}
+	
+	FrameCounter_Update();
+
+	Scr.clear (128,160,192);
+
+	DoBoxAnim (loop_timestamp);
+	
+	dt = loop_timestamp - LoadingAnimStartTime;
+	w = 100;
+	h = 4;
+	x = Math.floor ((Scr.canvas.width - w)/2);
+	y = 104;
+	r = 192;
+	g = 192;
+	b = 192;
+
+	Scr.drawLine (x,y,x+w,y,r,g,b);
+	Scr.drawLine (x,y+h,x+w,y+h,r,g,b);
+	Scr.drawLine (x-1,y,x-1,y+h,r,g,b);
+	Scr.drawLine (x+w,y,x+w,y+h,r,g,b);
+	
+	w = Math.floor (w * dt / LOADING_LOOP_DURATION);
+
+	for (k = 0; k < w; k++)
+	{
+		RainbowInk.h = (k/100);
+		RainbowInk.HSVtoRGB();
+		r = RainbowInk.r;
+		g = RainbowInk.g;
+		b = RainbowInk.b;
+
+		Scr.drawLine (x+k,y+1,x+k,y+3,r,g,b);
+	}
+	
+/*
+	x = 2;
+	y = 20;
+	Scr.drawText (x,y, 255,255,255,255, "!\"#$%&'()*+,-./");
+	y += 24;
+	Scr.drawText (x,y, 255,255,255,255, "0123456789:;<=>");
+	y += 24;
+	Scr.drawText (x,y, 255,255,255,255, "?ABCDEFGHIJKL");
+	y += 24;
+	Scr.drawText (x,y, 255,255,255,255, "MNOPQRSTUVW");
+	y += 24;
+	Scr.drawText (x,y, 255,255,255,255, "XYZ[\]^_`");
+	y += 24;
+	Scr.drawText (x,y, 255,255,255,255, "abcdefghijklmn");
+	y += 24;
+	Scr.drawText (x,y, 255,255,255,255, "opqrstuvwxyz");
+	y += 24;
+	Scr.drawText (x,y, 255,255,255,255, "{|}~");
+*/	
+	
+	
+//	DrawCenteredTextBox (20, "Hello", 255,255,255,
+//				0,0,255,
+//				255,0,255);
+
+//!"#$%&'()*+,-./0123456789:;<=>?ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~
+
+//	Scr.drawCh (x,y, "A".charCodeAt(0), 255,255,255,255);
+//	x += 20;
+//	Scr.drawCh (x,y, "f".charCodeAt(0), 255,255,255,255);
+//	x += 20;
+//	Scr.drawCh (x,y, "g".charCodeAt(0), 255,255,255,255);
+
+
+	Scr.drawBuffer();
+	
+	
+//	Scr.ctx.fillText("Hegllo world", x,y);
+	
+	Busy = false;
+
+	if (dt >= LOADING_LOOP_DURATION)
+	{
+		InitMainLoop();
+		return;
+	}
+	
+	if (dt <= LOADING_LOOP_DURATION)
+	{
+		requestAnimationFrame (LoadingLoop);
+	}
+}
+
+
+
+function InitLoadingLoop(currentTime)
+{
+	console.log ("Init loading loop");
+
+	RainbowInk.r = 255;
+	RainbowInk.g = 255;
+	RainbowInk.b = 255;
+	RainbowInk.h = 0;
+	RainbowInk.s = 1;
+	RainbowInk.v = 1;
+
+
+	InitAudio();
+
+	InitBoxAnim(currentTime);
+	
+	requestAnimationFrame (LoadingLoop);
+}
+
+function TestParticles(current_time)
+{
+	var i;
+	var x;
+	var y;
+
+	UpdateParticleArray (TestExplosion, current_time);
+	
+	for (i = 0; i < TestExplosion.length; i++)
+	{
+		x = TestExplosion[i].x;
+		y = TestExplosion[i].y;
+		Scr.drawRect (x,y,2,2, 255,255,255);
+	}
+}
+
+function LogoImgTest()
+{
+	var img;
+	var w;
+	var h;
+	var d;
+	var sw;
+	var sh;
+	
+	img = Raw_GetImageData(0);
+	if (img == null)	return;
+	
+	RawDrawImage (Scr, 0, 0,0);
+
+	w = img.width;
+	h = img.height;
+	d = img.data.data;		// d = raw image data.
+}
+
+function ScaleTest2()
+{
+	var img;
+	var w;
+	var h;
+	var d;
+
+	img = Raw_GetImageData(1);
+	if (img == null)	return;
+
+	w = img.width;
+	h = img.height;
+	d = img.data.data;		// d = raw image data.
+
+	Scr.drawScaledImage (
+				20,100,100,50,	// sx,sy,sw,sh,
+				0,0,36,22,		// tx,ty,tw,th,
+				d,w,h);			// raw_img_data, img_width, img_height
+}
+
+function PolygonTest()
+{
+	var plist;
+	var r;
+	var g;
+	var b;
+
+
+	plist = [];
+
+	Scr.clear(50,90,120);
+
+	r = 224;
+	g = 224;
+	b = 224;
+
+/*
+	plist[0] = 5;
+	plist[1] = 20;
+	plist[2] = 10;
+	plist[3] = 10;
+	plist[4] = 20;
+	plist[5] = 10;
+	plist[6] = 30;
+	plist[7] = 20;
+*/
+
+	plist[0] = 5;
+	plist[1] = 20;
+	plist[2] = 10;
+	plist[3] = 10;
+	plist[4] = 20;
+	plist[5] = 10;
+	plist[6] = 30;
+	plist[7] = 20;
+
+//	Scr.drawPolygon (plist, 255,0,0, false);
+	Scr.drawPolygon (plist, r,g,b, true);
+
+	Scr.setPixel (plist[0],plist[1], 255,255,255);
+	Scr.setPixel (plist[2],plist[3], 255,255,255);
+	Scr.setPixel (plist[4],plist[5], 255,255,255);
+//	Scr.setPixel (plist[6],plist[7], 255,255,255);
+
+	Scr.drawLine (plist[0],plist[1],plist[2],plist[3], 0,0,0);
+	Scr.drawLine (plist[2],plist[3],plist[4],plist[5], 0,0,0);
+//	Scr.drawLine (plist[4],plist[5],plist[6],plist[7], 0,0,0);
+
+	Scr.drawBuffer();
+
+}
+
+function BlendTest()
+{
+	Scr.clear(0,0,0);
+	
+	Scr.drawRect (10,10, 100,100, 255,0,0);
+	Scr.copyToBuffer();
+
+	Scr.clear(0,0,0);
+	Scr.drawRect (75,75, 50,50, 0,0,255);
+	
+	Scr.blendBuffer (64);
+
+	Scr.drawBuffer();
+}
+
+
+
+function StartLoop(loop_timestamp)
+{
+	var x0;
+	var x1;
+	var y0;
+	var y1;
+	var w;
+	var h;
+	
+	var a;
+	
+	var r;
+	var g;
+	var b;
+	
+	var x2;
+	var y2;
+	
+	var exit_loop;
+
+	if (Busy == true)
+	{
+		return;
+	}
+	Busy = true;
+	
+	FrameCounter_Update();
+	
+	Scr.clear(50,90,120);
+
+	RainbowInk.h = ((loop_timestamp%15000)/15000);
+
+	RainbowInk.HSVtoRGB();
+	r = RainbowInk.r;
+	g = RainbowInk.g;
+	b = RainbowInk.b;
+
+	w = 48;
+	h = 24;
+
+	x0 = Math.floor ((Ctx.canvas.width - w)/2);
+	y0 = Math.floor ((Ctx.canvas.height - h)/2);
+
+	StartButton.r = r;
+	StartButton.g = g;
+	StartButton.b = b;
+//	DrawButton (Scr, StartButton);
+
+	x1 = x0 + (w/2);
+	y1 = y0 + (h/2);
+
+	triangle_point_buffer[0] = x1-4;
+	triangle_point_buffer[1] = y1-8;
+	triangle_point_buffer[2] = x1+4;
+	triangle_point_buffer[3] = y1;
+	triangle_point_buffer[4] = x1-4;
+	triangle_point_buffer[5] = y1+8;
+
+	Scr.drawPolygon (triangle_point_buffer, 128,128,128, true);
+	Scr.drawPolygon (triangle_point_buffer, 255,255,255, false);
+
+
+		//Scr.drawText (10,10, "Hello World", 255,255,255,255);
+		
+//	Scr.drawCh (10,10, "A".charCodeAt(0), 255,255,255,255);
+
+	Scr.drawBuffer();
+
+	Busy = false;
+
+		// check mouse, keyboard and joystick for input
+	exit_loop = false;
+	
+	exit_loop = true;		// just override first button
+	
+	if (_Mouse_LBN == true)
+	{
+		exit_loop = true;
+	}
+	if ((KeyPressed (KEY_ENTER) == true) ||
+		(KeyPressed (KEY_SPACE) == true))
+	{
+		exit_loop = true;
+	}
+	if (Joystick_Available() == true)
+	{
+		Joystick_Update();
+		if ((Joystick_GetButton (0, JOYSTICK_RBC_LEFT) != 0) ||
+			(Joystick_GetButton (0, JOYSTICK_RBC_RIGHT) != 0) ||
+			(Joystick_GetButton (0, JOYSTICK_RBC_TOP) != 0) ||
+			(Joystick_GetButton (0, JOYSTICK_RBC_BOTTOM) != 0))
+		{
+			exit_loop = true;
+		}
+	}
+
+	if (exit_loop == false)
+	{
+		requestAnimationFrame (StartLoop);
+	}
+	else
+	{
+		InitLoadingLoop(loop_timestamp);
+	}
+}
+
+function InitStartButton()
+{
+	var x;
+	var y;
+	var w;
+	var h;
+
+	w = 64;
+	h = 24;
+
+	x = Math.floor ((Ctx.canvas.width - w)/2);
+	y = Math.floor ((Ctx.canvas.height - h)/2);
+
+	StartButton = new STRUCT_BUTTON (
+			0,					// button_id, 
+			BUTTON_TYPE_TEXT,	//button_type, 
+			"",					//button_data,
+			x,y,				// x, y, 
+			w,h);				//width, height
+}
+
+function InitStartLoop()
+{
+	var bw;
+	var bh;
+	var bx;
+	var by;
+
+	RainbowInk.r = 255;
+	RainbowInk.g = 255;
+	RainbowInk.b = 255;
+	RainbowInk.h = 0;
+	RainbowInk.s = 1;
+	RainbowInk.v = 1;
+
+	bw = 48;
+	bh = 32;
+
+	bx = Math.floor ((Ctx.canvas.width - bw)/2);
+	by = Math.floor ((Ctx.canvas.height - bh)/2);
+
+	InitStartButton();
+/*	StartLoopButtonMenu	= new STRUCT_BUTTON_MENU();
+	
+	StartLoopButtonMenu.addButton
+		(
+			BUTTON_ID_START,
+			BUTTON_TYPE_TEXT,
+			"",
+			bx,
+			by,
+			bw,
+			bh
+		);
+*/
+	requestAnimationFrame (StartLoop);
+
+}
+
+function CheckMobile()
+{
+	var a;
+	
+	a = document.documentElement.classList.contains('mobile-device');
+}
+
+function GenerateTextMet()
+{
+		// textmetrics for 8x8 character font.
+		// descent = 0, ascent = 8
+	var s;
+	var x;
+	var y;
+	var w;
+	var h;
+	var k;
+	
+	s = "";
+	x = 0;
+	y = 0;
+	w = 8;
+	h = 8;
+	
+	k = 0;
+	for (y = 0; y < 256; y += h)
+	{
+		for (x = 0; x < 64; x += w)
+		{
+			s = s + x + "," + y + ", 8, 8,0, " + "&nbsp&nbsp&nbsp&nbsp // &nbsp&nbsp&nbsp&nbsp" + k + " &nbsp&nbsp";
+			if (k > 32)
+			{
+				s = s + String.fromCharCode(k);
+			}
+			k++;
+			s = s  + " <br>";
+		}
+	}
+	
+	document.getElementById("test").innerHTML = s;
+}
+
+function FontTest()
+{
+//	Font = new BITMAP_FONT_STRUCT (Font8x8AsciiExtendedMetrics, 0, Font8x8AsciiExtended);
+
+	var r;
+	
+	r = document.fonts.check("12px zz");
+
+	console.log ("FONT:::::" + r);
+}
+
+
+function DoStuff()
+{
+	
+
+//	GenerateTextMet();
+//	FontTest();
+
+	Busy = false;
+	CheckMobile();
+
+	if (Joystick_Availability() == true)
+	{
+		Joystick_ListenForConnect();
+	}
+
+	Cvs = document.getElementById("cvs");
+	Ctx = Cvs.getContext("2d");
+
+//	InitPointerEvents("cvs", MouseDown, MouseMove, MouseUp, true);
+
+	Game_InitPointerEvents("cvs");
+
+	Scr = new ScrBuffer ("cvs");
+
+	Scr.loadFont(SCR_DEFAULT_FONT);
+//	Scr.loadFont(FontPoetsonOne24x24);
+
+	TestExplosion = [];
+	TestExplosion[0] = "hello";
+	ParticleExplosion (
+				TestExplosion,	// particle array 
+				192/2,60,			//		cx,cy,
+				0,				// start_time,
+				1000,			// duration_ms, 
+				1, 4,			// min_speed, max_speed, 
+				10, 200,			// min_particles, max_particles,
+				10,20			// 	val_range_min, val_range_max)
+		);
+	console.log ("TX");
+	console.log (TestExplosion);
+
+		// Start loading resources asynchronously asap.
+
+	LoadImageData (blockImages);
+	LoadImageData (logo_image);
+	LoadImageData (CloudsImg);
+	LoadImageData (Copyright_image);
+//	LoadImageData (grey_block_image);
+//	LoadImageData (pentagon_image);
+//	LoadImageData (triangle_image);
+//	LoadImageData (blue_block_image);
+//	LoadImageData (hexagon_image);
+//	LoadImageData (circle_image);
+
+
+	LoadImageData (start_image);
+	LoadImageData (twisty_border);
+	LoadImageData (star);
+	LoadImageData (digits);
+	LoadImageData (small_digits);
+	LoadImageData (restart_image);
+	LoadImageData (clear_image);
+	LoadImageData (little_fat_star);
+	LoadImageData (arrow_left);
+	LoadImageData (arrow_right);
+//	LoadImageData (Font8x8AsciiExtended);
+	LoadImageData (menu_burger);
+	
+	FrameCounter_Init ("fps");
+
+//	GameLoopState = GAME_LOOP_STATE_START;
+//	InitStartLoop();
+
+	InitLoadingLoop(0);
+
+	
+	
+	// ~~~ tests ~~~
+	InitClearScreen();
+	
+//	PolygonTest();
+
+//	BlendTest();
+
+}
+
+</script>
+</head>
+<body onload="DoStuff();">
+<div class="framecounter" id="fps">.....FPS</div>
+	<div class="container">
+		<canvas class="cvs" id="cvs" width="192" height="192"></canvas>
+	</div>
+	
+	<div id="test">test</div>
+</body>
+</html>
