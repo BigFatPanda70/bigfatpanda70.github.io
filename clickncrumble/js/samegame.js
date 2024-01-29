@@ -2,11 +2,11 @@
 
 	Title	:	Same Game
 
-	Info	:	Version 0.6			27th January 2024
+	Info	:	Version 0.7			29th January 2024
 
 	Author	:	Nick Fleming
 
-	Updated	:   27th January 2024
+	Updated	:   29th January 2024
 
 	 Notes:
 	--------
@@ -193,6 +193,9 @@
 		.. maybe save / load progress at some point ??
 	
 
+	 29th January 2024
+	--------------------
+		Adding skip level option to popup menu.
 
 			
 */
@@ -222,7 +225,7 @@ var LOCAL_STORAGE_NAME = "clickncrumble";
 
 var LEVEL_SELECT_OFFSET = 4;
 
-var MENU_MARGIN_VERTICAL = 10;
+var MENU_MARGIN_VERTICAL = 8;
 var MENU_MARGIN_HORIZONTAL = 10;
 
 var TEXT_HEIGHT = 8;		// for menu text 
@@ -280,6 +283,7 @@ var TwinkleBits = [];
 
 var MENU_ITEM_RESTART = 1000;
 var MENU_ITEM_CONTINUE = 1050;
+var MENU_ITEM_SKIP = 1080;
 var MENU_ITEM_QUIT = 1100;
 
 
@@ -595,12 +599,14 @@ function LoadLevelStars()
 var PopupMenuItems =
 [
 	MENU_ITEM_CONTINUE, "Continue",
-	MENU_ITEM_RESTART,	"Restart",
+	MENU_ITEM_RESTART,	"Retry",
+	MENU_ITEM_SKIP,		"Skip Level",
 	MENU_ITEM_QUIT,		"Quit",
 ];
 
 function POPUP_MENU_ITEM_INFO()
 {
+	this.id;
 	this.x;
 	this.y;
 	this.w;
@@ -631,6 +637,7 @@ function PopupMenu_GetItemInfo (item_index, menu_item_array, info)
 	x = Math.floor ((_Scr.width - w)/2);
 	y = y_spacing + ((y_spacing + h) * item_index);
 	
+	info.id = menu_item_array[ item_index * 2 ];
 	info.x = x;
 	info.y = y;
 	info.w = w;
@@ -729,16 +736,24 @@ function PopupMenu_Click (mx, my, menu_items)
 			(top < my) && (my < bottom))
 		{
 			console.log ("Clicked :" + info.str);
+
 			
-			switch (k)
+			switch (info.id)
 			{
-				case 0:		// continue 
+				case MENU_ITEM_CONTINUE:		// continue 
 					GameMode = GM_MAIN_GAME;	// back to main game.
 					break;
-				case 1:	
+
+				case MENU_ITEM_RESTART:	
 					DoRestartLevel();
 					break;
-				case 2:	// back to main menu.
+
+				case MENU_ITEM_SKIP:
+					SetNextLevel();
+					GameMode = GM_MAIN_GAME;	// back to main game.
+					break;
+
+				case MENU_ITEM_QUIT:	// back to main menu.
 					SetGameMode (GM_MAIN_MENU);
 					break;
 
