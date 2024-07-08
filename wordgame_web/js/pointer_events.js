@@ -197,6 +197,56 @@ function _PointerCancel(e)
 	return false;
 }
 
+function _TouchMove(e)
+{
+	var cvs;
+	var rect;
+	
+	var mx;
+	var my;
+
+	var tx;
+	var ty;
+	
+	tx = e.touches[0].clientX;
+	ty = e.touches[0].clientY;
+
+		// basically a hack, copied the mouse move code more or less.
+	cvs = e.currentTarget;	//document.getElementById (CvsID);
+
+	rect = cvs.getBoundingClientRect();
+
+	mx = tx - rect.left;	//e.clientX - rect.left;
+	my = ty - rect.top;		//e.clientY - rect.top;
+
+	rw = rect.right - rect.left;
+	rh = rect.bottom - rect.top;
+	mx = Math.floor (mx * cvs.width / rw);	// scale mx to the physical canvas width.
+	my = Math.floor (my * cvs.height / rh);
+
+	_MouseX = mx;
+	_MouseY = my;
+
+//	if (e.buttons > 0)
+	{
+		_Mouse_LBN = true;		// touch move is basically mouse down.
+	}
+
+	i = _getEventListIndex (cvs.id);
+	if (i == null)
+	{
+		console.log ("not found");
+		return;
+	}
+
+	_EventList[i].pm (mx, my, e);
+}
+
+function IsMouseDown()
+{
+	return _Mouse_LBN;
+}
+
 function InitPointerEvents(cvs_id, down_callback, move_callback, up_callback, enable_capture)
 {
 	// enable capture true = pointer will be captured on mouse down.
@@ -227,6 +277,9 @@ function InitPointerEvents(cvs_id, down_callback, move_callback, up_callback, en
 	cvs.addEventListener("pointermove", _PointerMove, false);
 	cvs.addEventListener("pointerup", _PointerUp, false);
 	cvs.addEventListener("pointercancel", _PointerCancel, false);
+
+	cvs.addEventListener("touchmove", _TouchMove, false);
+
 
 	i = _EventList.length;
 	_EventList[i] = new STRUCT_EVENT (
