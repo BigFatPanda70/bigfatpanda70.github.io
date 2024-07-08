@@ -25,7 +25,7 @@ word dictionary with obscure words down to something managable.
 
 <html lang="en" dir="ltr">
 <head>
-<title> Word Game V1.1 </title>
+<title> Word Game V1.2 </title>
 <style>
 
 
@@ -718,6 +718,8 @@ function MouseDown(mx,my,e)
 		Letters[ clicked_index ].selected = true;
 		IndexFirstLetterSelected = clicked_index;
 		IndexLastLetterSelected = clicked_index;
+		
+//		e.currentTarget.setPointerCapture (e.pointerId);
 	}
 
 	DrawLetterCircle();
@@ -732,6 +734,7 @@ function MouseMove(mx, my, e)
 	var dy;
 	var r_squared;
 	var k;
+		e.currentTarget.setPointerCapture (e.pointerId);
 
 	var clicked_index;
 	var offset_x;
@@ -984,7 +987,7 @@ function DoStuff()
 //	Ctx.font = "32px Courier New";	//    Courier New (monospace)
 //	Ctx.font = "32px Brush Script MT";	//    Brush Script MT (cursive)
 
-	InitPointerEvents("cvs", MouseDown, MouseMove, MouseUp, false);
+	InitPointerEvents("cvs", MouseDown, MouseMove, MouseUp, true);
 
 //	Puzzles = Puzzles5;
 	Puzzles = TestPuzzles;
