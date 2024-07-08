@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!--
+
+	Title	:	Untitled word game.
+
+	Info	:	Version 0.2	6th July 2024
+
+	Author	:	Nick Fleming
+
+	Updated	:	8th July 2024
+
+	 Notes:
+	---------
+
+	The puzzle generator appears to be working as expected. It has 
+actually took longer to create the word lists than to create the code
+that generates the puzzle. It takes a lot of work to reduce a 20,000
+word dictionary with obscure words down to something managable.
+
+
+-->
+
+<html lang="en" dir="ltr">
+<head>
+<title> Word Game V1.0 </title>
+<style>
+
+
+.framecounter
+{
+	position:absolute;
+	left:0;
+	top:0;
+	z-index:100;
+/*	background-color:wheat; */
+	background-color:teal;
+}
+
+.container
+{
+	overscroll-behavior: contain;	/* stops page refresh when vertically scrolling on mobile */
+
+	position:absolute;
+	left:0;
+	top:0;
+	margin:0;
+	padding:0;
+	width:100vw;
+	height:100vh;
+	overflow:hidden;
+	text-align:center;
+
+/*	background-image: linear-gradient(to bottom, #CEF, #ACE, #DEa, #BA7, #C89);	*/
+
+	background-color: #444;
+}
+
+
+.popup
+{
+	position:absolute;			/* vertical centering */
+	top:50%;
+	left:50%;
+	transform:translate(-50%,-50%);
+	z-index:50;
+	width:50%;
+	height:50%;
+
+	transform:translate(-50%,-50%);
+
+	padding:8px;
+
+	color:#fff;
+	background-image: linear-gradient(to bottom, #3aa, #477);
+	
+	overflow:auto;
+
+}
+
+.popup_center_div
+{
+	width:100%;
+	text-align:center;
+}
+
+.cvs
+{
+/*	background-color:#fef;*/
+	background-color:#58b;
+	width:96vw;
+	height:96vh;
+
+
+	image-rendering: optimizeSpeed;             /* Older versions of FF          */
+	image-rendering: -moz-crisp-edges;          /* FF 6.0+                       */
+	image-rendering: -webkit-optimize-contrast; /* Safari                        */
+	image-rendering: -o-crisp-edges;            /* OS X & Windows Opera (12.02+) */
+	image-rendering: pixelated;                 /* Awesome future-browsers       */
+	-ms-interpolation-mode: nearest-neighbor;
+
+	position:absolute;			/* vertical centering */
+	top:50%;
+	left:50%;
+	transform:translate(-50%,-50%);
+
+
+	fontWeight:normal;
+
+}
+
+@media screen and (orientation:landscape)
+{
+	.cvs
+	{
+		width:98vh;
+		height:98vh;
+	}
+}
+
+@media screen and (orientation:portrait)
+{
+	.cvs
+	{
+		width:98vw;
+		height:98vw;
+	}
+}
+
+</style>
+
+<script src="./../lib/scrbuffer.js"></script>
+<script src="./../lib/frame_counter.js"></script>
+
+
+<script src="./js/pointer_events.js"></script>
+<script src="./js/arial font ATOZ 32.js"></script>
+<script src="./js/permutation.js"></script>
+<script src="./js/shuffle_img.js"></script>
+<script src="./js/exit_img.js"></script>
+<script src="./js/puzzles.js"></script>
+
+<script>
+	
+	
+var gm = 0;
+var GAME_MODE_INIT = gm++;
+var GAME_MODE_MAIN_SCREEN = gm++;
+var GAME_MODE_MAIN_GAME = gm++;
+var GAME_MODE_PLACE_WORD = gm++;
+var GAME_MODE_NEXT_PUZZLE = gm++;
+var GAME_MODE_LEVEL_COMPLETE = gm++;
+var GAME_MODE_QUIT = gm++;
+
+var HORIZONTAL = 0;
+var VERTICAL = 1;
+
+var LETTER_CIRCLE_RADIUS = 26;
+
+var Cvs;
+var Ctx;
+var Scr;
+var Busy;
+
+var CircleX;
+var CircleY;
+var CircleRadius;
+
+var ImgATOZ = new Image();
+ImgATOZ.src = Font_ATOZ_ARIEL_32;
+
+var ShuffleImg = new Image();
+ShuffleImg.src = ShuffleImgData;
+ShuffleImgX = 0;
+ShuffleImgY = 0;
+ShuffleImgW = 32;
+ShuffleImgH = 32;
+
+
+var ExitImg = new Image();
+ExitImg.src = ExitImgData;
+ExitImgX = 0;
+ExitImgY = 0;
+ExitImgW = 64;
+ExitImgH = 64;
+
+var Puzzles;
+var PuzzleIndex;
+var RandomPuzzles = false;
+
+//var PuzzleComplete = false;
+
+var LetterString = "";
+
+var Letters = [];
+var IndexFirstLetterSelected = null;
+var IndexLastLetterSelected = null;
+
+var PuzzleWords = [];
+
+function LETTER_STRUCT (x,y,ch, tx,ty,tu,tv)
+{
+	this.selected = false;
+	this.x = x;
+	this.y = y;
+	this.ch = ch;
+	
+	this.tx = tx;
+	this.ty = ty;
+	this.tu = tu;
+	this.tv = tv;
+	
+	this.next_index = null;		// null = not connected.
+}
+
+function PUZZLE_WORD (x,y, direction, str)
+{
+	this.found = false;
+	this.x = x;
+	this.y = y;
+	this.dir = direction;
+	this.str = str;
+}
+
+function DrawPuzzleGrid()
+{
+	var pw;
+	
+	var x;
+	var y;
+	var w;
+	var h;
+	
+	var k;
+	var q;
+	
+	var offset_x;
+	var offset_y;
+	
+	var dx;
+	var dy;
+	
+	var cx;
+	var cy;
+	
+	var left;
+	var right;
+	var top;
+	var bottom;
+	
+	var letter_width;
+	var letter_height;
+	
+	var tile_width = 32;
+	var tile_height= 32;
+
+	letter_width = 16;
+	letter_height = 16;
+	
+		// calculate puzzle size for centering.
+	left = 5000;
+	right = 0;
+	top = 5000;
+	bottom = 0;
+	for (k = 0; k < PuzzleWords.length; k++)
+	{
+		x = PuzzleWords[k].x;
+		y = PuzzleWords[k].y;
+		
+		if (x < left)	left = x;
+		if (y < top)	top = y;
+		
+		if (PuzzleWords[k].dir == HORIZONTAL)
+		{
+			x += PuzzleWords[k].str.length;
+		}
+		else
+		{
+			y += PuzzleWords[k].str.length;
+		}
+		if (right < x)	right = x;
+		if (bottom < y)	bottom = y;
+	}
+
+	offset_x = Math.floor ((Cvs.width - ((right-left) * tile_width))/2);
+	offset_y = Math.floor (((Cvs.height*0.60) - ((bottom-top) * tile_height))/2);
+	
+	Ctx.strokeStyle="#fff";
+	Ctx.fillStyle="#fff";
+	
+	offset_y = 16;
+	
+	
+	for (k = 0; k < PuzzleWords.length; k++)
+	{
+		x = offset_x + (PuzzleWords[k].x * tile_width);
+		y = offset_y + (PuzzleWords[k].y * tile_height);
+
+		for (q = 0; q < PuzzleWords[k].str.length; q++)
+		{
+			Ctx.beginPath();
+			Ctx.lineWidth=2;
+			Ctx.moveTo (x,y);
+			Ctx.lineTo (x+tile_width,y);
+			Ctx.lineTo (x+tile_width,y+tile_height);
+			Ctx.lineTo (x,y+tile_height);
+			Ctx.lineTo (x,y);
+			Ctx.stroke();
+			
+			if (PuzzleWords[k].found == true)
+			{
+				// draw letter.
+				cx = x + Math.floor ((tile_width-letter_width)/2);
+				cy = y + tile_height - Math.floor ((tile_height-letter_height)/2);		// cy is the bottom of the letter, not the top.
+				Ctx.lineWidth=1;
+
+				cx -= 4;
+				cy += 2;
+
+				Ctx.fillText (PuzzleWords[k].str.charAt(q), cx,cy);
+			}
+			
+			if (PuzzleWords[k].dir == HORIZONTAL)
+			{
+				x += tile_width;
+			}
+			else
+			{
+				y += tile_height;
+			}
+		}
+	}
+}
+
+function FontTest1()
+{
+	var x;
+	var y;
+	var tx;
+	var ty;
+	var tu;
+	var tv;
+	
+	var ch;
+	
+	for (ch = 0; ch < 13; ch++)
+	{
+		tx = ch * 32;
+		ty = 0;
+		tu = 32;
+		tv = 31;
+	
+		x = ch * 38;
+		y = ch * 32;
+		
+		Ctx.drawImage (ImgATOZ, tx,ty,tu,tv, x,y, tu,tv);
+
+
+		Ctx.drawImage (ImgATOZ, tx,ty+32,tu,tv, x,y+128, tu,tv);
+	}
+}
+
+function DrawLetterCircle()
+{
+	var x;
+	var y;
+	var r;
+
+	x = Math.floor (Cvs.width/2);
+	y = Math.floor (Cvs.height * 0.75);
+	r = CircleRadius;	//Math.floor (0.75 * (Cvs.height*0.25));
+	
+	Ctx.fillStyle="#acd";
+	Ctx.beginPath();
+	Ctx.arc (x,y, r, 0, 2 * Math.PI);
+	Ctx.fill();
+
+	Ctx.strokeStyle="#8ac";
+	Ctx.lineWidth=3;
+	Ctx.arc (x,y, r, 0, 2 * Math.PI);
+	Ctx.stroke();
+	Ctx.beginPath();
+	Ctx.arc (x,y, r+6, 0, 2 * Math.PI);
+	Ctx.stroke();
+}
+
+function DrawLetters()
+{
+	// draws the letters in the letter circle.
+	
+	var k;
+	
+	for (k = 0; k < Letters.length; k++)
+	{
+		Ctx.drawImage (ImgATOZ,
+			Letters[k].tx,
+			Letters[k].ty,
+			Letters[k].tu,
+			Letters[k].tv,
+
+			Letters[k].x,
+			Letters[k].y,
+			Letters[k].tu,
+			Letters[k].tv);
+	}
+}
+
+function DrawLinks()
+{
+	var k;
+	var x0;
+	var x1;
+	var x2;
+	var y2;
+	var w;
+	var r;
+	var ink;
+	var offset_x;
+	var offset_y;
+	
+	var i;
+
+	offset_x = 16;
+	offset_y = 16;
+	
+	ink ="#6ad";
+	
+	if (IndexFirstLetterSelected == null)	return;
+
+	k = IndexFirstLetterSelected;
+	while ((k < Letters.length) && (Letters[k].next_index != null))
+	{
+		x0 = Letters[k].x + offset_x;
+		y0 = Letters[k].y + offset_y;
+		
+		i = Letters[k].next_index;
+		x1 = Letters[i].x + offset_x;
+		y1 = Letters[i].y + offset_y;
+		
+//		console.log ("x0:" + x0 + " y0:" + y0 + " x1:" + x1 + " y1:" + y1);
+
+		Ctx.lineWidth=8;
+		Ctx.beginPath();
+		Ctx.strokeStyle=ink
+		Ctx.moveTo (x0,y0);
+		Ctx.lineTo (x1,y1);
+		Ctx.stroke();
+		
+		k = Letters[k].next_index;
+	}
+	
+		// draw circles for all selected letters
+	r = LETTER_CIRCLE_RADIUS;
+	for (k = 0; k < Letters.length; k++)
+	{
+		if (Letters[k].selected == true)
+		{
+			x0 = Letters[k].x + offset_x;
+			y0 = Letters[k].y + offset_y;
+			Ctx.beginPath();
+			Ctx.fillStyle=ink;
+			Ctx.arc (x0, y0, r, 0, 2 * Math.PI);
+			Ctx.fill();
+		}
+	}
+}
+
+function InitLetters(letter_string)
+{
+	var a;
+	var k;
+	var r;
+	var x;
+	var y;
+	var cx;
+	var cy;
+
+	var tx;
+	var ty;
+	var tu;
+	var tv;
+	
+	var ch;
+	
+	var offset_x;
+	var offset_y;
+
+	Letters = [];
+
+
+
+	tx = 0;
+	ty = 0;
+	tu = 32;
+	tv = 32;
+	
+	offset_x = 16;
+	offset_y = 16;
+	
+	cx = Math.floor (Cvs.width/2);
+	cy = Math.floor (Cvs.height * 0.75);
+	r = Math.floor (0.5 * (Cvs.height*0.25));
+
+	CircleX = cx;
+	CircleY = cy;
+	
+	CircleRadius = Math.floor (0.75 * (Cvs.height*0.25));
+	
+	ShuffleImgX = Cvs.width - ShuffleImgW - 8;
+	ShuffleImgY = CircleY - CircleRadius;
+
+	for (k = 0; k < letter_string.length; k++)
+	{
+		a = 360 * k / letter_string.length;
+		a = a * Math.PI / 180;					// to radians
+		
+		x = cx + Math.floor (Math.sin (a) * r);
+		y = cy + Math.floor (Math.cos (a) * r);
+		
+		x = x - offset_x;
+		y = y - offset_y;
+		
+		ch = letter_string.charAt(k).toUpperCase();
+		ch = ch.charCodeAt(0) - "A".charCodeAt(0);
+//		console.log (ch);
+		
+		tx = tu * ch;
+		ty = 0;
+		if (ch > 12)
+		{
+			tx = tu * (ch-13);
+			ty = tv;
+		}
+
+		ch = letter_string.charAt(k).toUpperCase();
+		Letters[k] = new LETTER_STRUCT (x,y,ch, tx,ty,tu,tv);
+	}
+	
+	IndexFirstLetterSelected = null;
+	IndexLastLetterSelected = null;
+}
+
+function GetClickedIndex (mx, my)
+{
+	var offset_x;
+	var offset_y;
+	var k;
+
+	offset_x = 16;
+	offset_y = 16;
+
+	for (k = 0; k < Letters.length; k++)
+	{
+		dx = mx - (Letters[k].x + offset_x);
+		dy = my - (Letters[k].y + offset_y);
+		r_squared = (dx*dx)+(dy*dy);
+		
+		if (r_squared < (LETTER_CIRCLE_RADIUS * LETTER_CIRCLE_RADIUS))
+		{
+			return k;
+		}
+	}
+	return null;
+}
+
+function ShuffleLetters()
+{
+	// permutations don't look shuffled enough, so just using a random
+	// reordering of the letters. 
+
+	var tmp_str;
+	var k;
+	var i;
+
+	tmp_str = LetterString;
+	
+	LetterString="";
+	while (tmp_str.length > 0)
+	{
+		i = Math.floor (Math.random() * tmp_str.length);
+		LetterString += tmp_str.charAt (i);
+		
+		tmp_str = tmp_str.substr(0,i) + tmp_str.substr (i+1);
+	}
+
+	InitLetters (LetterString);
+
+	DrawLetterCircle();
+	DrawLinks();
+	DrawLetters ();
+}
+
+
+function UncoverWord()
+{
+	var str;
+	var i;
+	var k;
+	
+	if (IndexFirstLetterSelected == null)
+	{
+		return;		// nothing selected
+	}
+
+	str = "";
+	i = IndexFirstLetterSelected;
+	while (i != null)
+	{
+//		console.log ("i:" + Letters[i].ch);
+		str = str + Letters[i].ch;	//String.fromCharCode (Letters[i].ch);
+		i = Letters[i].next_index;
+	}
+
+	str = str.toLowerCase();
+
+	console.log ("guessing:" + str);
+
+	for (k = 0; k < PuzzleWords.length; k++)
+	{
+		if (PuzzleWords[k].str == str)
+		{
+//			console.log ("found :" + str);
+			PuzzleWords[k].found = true;
+
+			DrawPuzzleGrid();
+			return;
+			
+		}
+	}
+}
+
+function GetNextPuzzle()
+{
+	if (RandomPuzzles == false)
+	{
+		PuzzleIndex++;
+	}
+	else
+	{
+		PuzzleIndex = Math.floor (Puzzles.length * Math.random());
+	}
+	StartPuzzle();
+	
+	Ctx.beginPath();
+	Ctx.clearRect (0,0, Cvs.width, ShuffleImgY);
+
+	DrawLetterCircle();
+	DrawLinks();
+	DrawLetters ();
+	DrawShuffleImg();
+	DrawPuzzleGrid();
+}
+
+
+function MouseDown(mx,my,e)
+{
+	var dx;
+	var dy;
+	var r_squared;
+	var k;
+	
+	var clicked_index;
+	var offset_x;
+	var offset_y;
+
+		// is mouse click within letter circle ?
+	dx = mx - CircleX;
+	dy = my - CircleY;
+	r_squared = (dx*dx)+(dy*dy);
+	if (r_squared > (CircleRadius * CircleRadius))
+	{
+
+		return;
+	}
+
+		// clear all currently selected letters.
+
+	IndexFirstLetterSelected = null;
+	IndexLastLetterSelected = null;
+
+	for (k = 0; k < Letters.length; k++)
+	{
+		Letters[k].selected = false;
+		Letters[k].next_index = null;
+	}
+	
+		// see if any letter has been clicked on.
+
+	clicked_index = GetClickedIndex (mx, my);
+	if (clicked_index != null)
+	{
+		Letters[ clicked_index ].selected = true;
+		IndexFirstLetterSelected = clicked_index;
+		IndexLastLetterSelected = clicked_index;
+	}
+
+	DrawLetterCircle();
+	DrawLinks();
+	DrawLetters ();
+}
+
+function MouseMove(mx, my, e)
+{
+	var dx;
+	var dy;
+	var r_squared;
+	var k;
+
+	var clicked_index;
+	var offset_x;
+	var offset_y;
+	
+	if (e.buttons != 1)
+	{
+		// only interested if left mouse button is held down.
+		return;
+	}
+
+	if (IndexFirstLetterSelected  == null)
+	{
+			// havent clicked on a letter to start with
+		return;
+	}
+
+		// is mouse within letter circle ?
+	dx = mx - CircleX;
+	dy = my - CircleY;
+	r_squared = (dx*dx)+(dy*dy);
+	if (r_squared > (CircleRadius * CircleRadius))
+	{
+		return;
+	}
+
+	clicked_index = GetClickedIndex (mx, my);
+	if (clicked_index == null)
+	{
+		return;
+	}
+	if (Letters[ clicked_index ].selected == true)
+	{
+		// if already selected, do nothing.
+		return;
+	}
+
+	
+	Letters[ clicked_index ].selected = true;
+
+	Letters[IndexLastLetterSelected].next_index = clicked_index;
+	IndexLastLetterSelected = clicked_index;
+
+
+//	console.log ("-----------------");
+//	console.log ("mx:" + mx + " my:" + my + " button:" + e.buttons);
+//	console.log ("clicked:" + clicked_index + " last:" + IndexLastLetterSelected);
+
+//	for (k = IndexFirstLetterSelected; k != null; k = Letters[k].next_index)
+	{
+//		console.log ("k:" + k + " " + Letters[k].next_index);
+	}
+//	console.log ("-----------------");
+		
+	DrawLetterCircle();
+	DrawLinks();
+	DrawLetters ();
+}
+
+function MouseUp(mx,my,e)
+{
+	// if outside circle, deselect everything
+	// if inside circle, assume selection complete, do checks to see
+	// if valid word etc.
+
+	var k;
+	var dx;
+	var dy;
+	var r_squared;
+
+//	console.log ("MOUSE UP");
+	
+
+	dx = mx - CircleX;
+	dy = my - CircleY;
+	r_squared = (dx*dx)+(dy*dy);
+	if (r_squared < (CircleRadius * CircleRadius))
+	{
+		// got a word to try and uncover.
+		UncoverWord();
+		if (PuzzleComplete() == true)
+		{
+			GetNextPuzzle();
+			return;
+		}
+	}
+
+		// clear all currently selected letters.
+
+	IndexFirstLetterSelected = null;
+	IndexLastLetterSelected = null;
+
+	for (k = 0; k < Letters.length; k++)
+	{
+		Letters[k].selected = false;
+		Letters[k].next_index = null;
+	}
+
+	if ((mx >= ShuffleImgX) && (mx < (ShuffleImgX+ShuffleImgW)) &&
+		(my >= ShuffleImgY) && (my < (ShuffleImgY+ShuffleImgH)))
+	{
+		// shuffle pressed
+		ShuffleLetters();
+		return;
+		
+	}
+
+	DrawLetterCircle();
+	DrawLinks();
+	DrawLetters ();
+
+//	console.log ("mx:" + mx + " my:" + my);
+}
+
+function DrawShuffleImg()
+{
+	Ctx.drawImage (ShuffleImg, ShuffleImgX, ShuffleImgY, ShuffleImgW, ShuffleImgH);
+}
+
+
+function StartPuzzle()
+{
+	var tmp;
+	var x;
+	var y;
+	var dir;
+	var str;
+	var idx;
+	var p;
+	
+	var groups;
+	
+	var longest_word;
+
+//	PuzzleComplete = false;
+	
+	groups = Puzzles [PuzzleIndex].split(":");		// group 0 = puzzle words, group 1 = bonus words.
+	
+	tmp = groups[0].split(",");
+	
+	console.log (groups);
+	console.log (tmp);
+
+	PuzzleWords = [];
+	p = 0;
+	longest_word="";
+	for (idx = 0; idx < tmp.length; idx += 4)
+	{
+		x = parseInt (tmp [idx + 0]);
+		y = parseInt (tmp [idx + 1]);
+		dir = parseInt (tmp [idx + 2]);
+		str = tmp [idx+3];
+		if (str.length > longest_word.length)
+		{
+			longest_word = str;
+		}
+		
+		PuzzleWords[p++] = new PUZZLE_WORD (x, y, dir, str);
+	}
+
+	Permutation_Init (longest_word.length);
+
+	InitLetters (longest_word);
+
+	LetterString = longest_word;
+	console.log (PuzzleWords);
+	
+	ShuffleLetters();
+}
+
+function PuzzleComplete()
+{
+	var k;
+
+	for (k = 0; k < PuzzleWords.length; k++)
+	{
+		if (PuzzleWords[k].found == false)
+		{
+			return false;
+		}
+	}
+	
+	return true;
+}
+
+function MainLoop()
+{
+	if (Busy == true)	return;
+	
+	Busy = true;
+	
+	
+	Busy = false;
+	requestAnimationFrame (MainLoop);
+}
+
+function CloseInstructions(game_type)
+{
+	var popup;
+	
+	popup = document.getElementById("instructions");
+	popup.remove();
+	
+	RandomPuzzles = false;
+	switch (game_type)
+	{
+		case 0:	// easy puzzles.
+				PuzzleIndex = Math.floor (Math.random() * 20);
+				break;
+		case 1:
+				PuzzleIndex = 25 + Math.floor (Math.random() * 25);
+				break;
+		
+		case 2:
+				RandomPuzzles = true;
+				break;
+		default:
+				console.log ("unknown game type");
+				return;
+	}
+
+	GetNextPuzzle();
+}
+
+function DoStuff()
+{
+	Cvs = document.getElementById("cvs");
+	Ctx = Cvs.getContext("2d");
+
+	Ctx.font = "32px Arial";		//    Arial (sans-serif)
+//	Ctx.font = "32px Verdana";		//    Verdana (sans-serif)
+//	Ctx.font = "32px Tahoma";		//    Tahoma (sans-serif)
+//	Ctx.font = "32px Trebuchet";	//    Trebuchet MS (sans-serif)
+//	Ctx.font = "32px Times";		//    Times New Roman (serif)
+//	Ctx.font = "32px Georgia";		//    Georgia (serif)
+//	Ctx.font = "32px Garamond";		//    Garamond (serif)
+//	Ctx.font = "32px Courier New";	//    Courier New (monospace)
+//	Ctx.font = "32px Brush Script MT";	//    Brush Script MT (cursive)
+
+	InitPointerEvents("cvs", MouseDown, MouseMove, MouseUp, false);
+
+//	Puzzles = Puzzles5;
+	Puzzles = TestPuzzles;
+
+	Busy = false;
+//	MainLoop();
+
+	PuzzleIndex = 0;
+	StartPuzzle();
+
+
+	DrawLetterCircle();
+	DrawLinks();
+	DrawLetters ();
+	DrawShuffleImg();
+
+
+	DrawPuzzleGrid();
+
+
+}
+
+
+</script>
+</head>
+<body onload="DoStuff();">
+<div class="framecounter" id="fps">.....FPS</div>
+	<div class="container">
+		<canvas class="cvs" id="cvs" width="512" height="730"></canvas>
+	</div>
+	
+	<div id="test">test</div>
+	
+<div class="popup" id="instructions">
+	<h3><u>How to play:</u></h3>
+	Each puzzle consists of a number of words arranged in a crossword 
+	style grid.<br><br>
+	Each word is made from the letters that appear in the circle at the 
+	bottom of the screen.<br><br>
+	Click on a letter and drag to link letters together to form a word.
+	<br><br>
+	The words are automatically placed once you have found them.
+	<br><br>Good luck !
+
+	<div class="popup_center_div">
+		<br>
+		<button onclick="CloseInstructions(0);">&nbsp;Easy Start&nbsp;</button>
+		<button onclick="CloseInstructions(1);">&nbsp;Normal Start&nbsp;</button>
+		<button onclick="CloseInstructions(2);">&nbsp;Random Puzzles&nbsp;</button>
+		<br>
+	</div>
+
+</div>	
+	
+</body>
+</html>
