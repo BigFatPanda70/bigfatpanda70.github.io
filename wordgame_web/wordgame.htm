@@ -656,6 +656,20 @@ function GetNextPuzzle()
 	DrawPuzzleGrid();
 }
 
+function MouseTest(str, mx, my, e)
+{
+	Ctx.beginPath();
+	Ctx.clearRect (0,0, 512, 64);
+	Ctx.fillText (str + " mx:" + mx + " my:" + my, 0, 32);
+
+	if (e.buttons == 1)
+	{
+		Ctx.fillText ("mouse down", 0, 64);
+	}
+
+	Ctx.fill();
+}
+
 
 function MouseDown(mx,my,e)
 {
@@ -668,6 +682,10 @@ function MouseDown(mx,my,e)
 	var offset_x;
 	var offset_y;
 
+	e.preventDefault();
+	MouseTest("mouse down", mx, my, e);
+
+
 		// is mouse click within letter circle ?
 	dx = mx - CircleX;
 	dy = my - CircleY;
@@ -678,7 +696,6 @@ function MouseDown(mx,my,e)
 		return;
 	}
 
-	e.preventDefault();
 
 		// clear all currently selected letters.
 
@@ -706,20 +723,6 @@ function MouseDown(mx,my,e)
 	DrawLetters ();
 }
 
-function MouseTest(mx, my, e)
-{
-	Ctx.beginPath();
-	Ctx.clearRect (0,0, 256, 64);
-	Ctx.fillText ("mx:" + mx + " my:" + my, 0, 32);
-	
-	if (e.buttons == 1)
-	{
-		Ctx.fillText ("mouse down", 0, 64);
-	}
-		
-
-	Ctx.fill();
-}
 
 function MouseMove(mx, my, e)
 {
@@ -732,7 +735,8 @@ function MouseMove(mx, my, e)
 	var offset_x;
 	var offset_y;
 
-	MouseTest(mx, my, e);
+	e.preventDefault();
+	MouseTest("mouse move", mx, my, e);
 
 	if (e.buttons != 1)
 	{
@@ -760,7 +764,7 @@ function MouseMove(mx, my, e)
 		return;
 	}
 
-	e.preventDefault();
+//	e.preventDefault();
 
 
 	clicked_index = GetClickedIndex (mx, my);
@@ -808,8 +812,9 @@ function MouseUp(mx,my,e)
 	var r_squared;
 
 //	console.log ("MOUSE UP");
-	
 	e.preventDefault();
+	MouseTest("mouse up", mx, my, e);
+
 
 	dx = mx - CircleX;
 	dy = my - CircleY;
