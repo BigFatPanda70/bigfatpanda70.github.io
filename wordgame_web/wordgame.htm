@@ -678,6 +678,8 @@ function MouseDown(mx,my,e)
 		return;
 	}
 
+	e.preventDefault();
+
 		// clear all currently selected letters.
 
 	IndexFirstLetterSelected = null;
@@ -704,6 +706,21 @@ function MouseDown(mx,my,e)
 	DrawLetters ();
 }
 
+function MouseTest(mx, my, e)
+{
+	Ctx.beginPath();
+	Ctx.clearRect (0,0, 256, 64);
+	Ctx.fillText ("mx:" + mx + " my:" + my, 0, 32);
+	
+	if (e.buttons == 1)
+	{
+		Ctx.fillText ("mouse down", 0, 64);
+	}
+		
+
+	Ctx.fill();
+}
+
 function MouseMove(mx, my, e)
 {
 	var dx;
@@ -714,12 +731,19 @@ function MouseMove(mx, my, e)
 	var clicked_index;
 	var offset_x;
 	var offset_y;
-	
+
+	MouseTest(mx, my, e);
+
 	if (e.buttons != 1)
 	{
 		// only interested if left mouse button is held down.
+		// doesnt work on mobile ???
 		return;
 	}
+	
+	
+//	function MouseTest(mx, my)
+
 
 	if (IndexFirstLetterSelected  == null)
 	{
@@ -785,6 +809,7 @@ function MouseUp(mx,my,e)
 
 //	console.log ("MOUSE UP");
 	
+	e.preventDefault();
 
 	dx = mx - CircleX;
 	dy = my - CircleY;
