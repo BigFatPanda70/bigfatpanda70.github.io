@@ -733,6 +733,9 @@ function MouseMove(mx, my, e)
 		return;
 	}
 
+	e.preventDefault();
+
+
 	clicked_index = GetClickedIndex (mx, my);
 	if (clicked_index == null)
 	{
