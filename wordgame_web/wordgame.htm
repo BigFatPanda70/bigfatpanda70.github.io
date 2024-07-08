@@ -25,7 +25,7 @@ word dictionary with obscure words down to something managable.
 
 <html lang="en" dir="ltr">
 <head>
-<title> Word Game V1.2 </title>
+<title> Word Game V1.3 </title>
 <style>
 
 
@@ -743,13 +743,13 @@ function MouseMove(mx, my, e)
 	e.preventDefault();
 	MouseTest("mouse move", mx, my, e);
 
-	if (e.buttons != 1)
+//	if (e.buttons != 1)
+	if (IsMouseDown() != true)
 	{
 		// only interested if left mouse button is held down.
 		// doesnt work on mobile ???
 		return;
 	}
-	
 	
 //	function MouseTest(mx, my)
 
