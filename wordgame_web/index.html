@@ -17,7 +17,7 @@
 
 <html lang="en" dir="ltr">
 <head>
-<title> Untitled word game 0.0 </title>
+<title> Untitled word game 1.5 </title>
 <style>
 
 .para1
@@ -27,6 +27,16 @@
 
 </style>
 <script>
+
+var ClickCounter = 0;
+
+function RejectCookies()
+{
+	ClickCounter++;
+	
+	document.getElementById("button_click_counter").innerHTML=ClickCounter;
+}
+	
 </script>
 <body>
 	<h1>Untitled word game (work in progress).</h1>
@@ -40,5 +50,9 @@ It more or less works, but if you find any issues, please let me know. <br><br>C
 <br><br>
 <a href="./wordgame.htm">Click to play untitled word game.</a>
 
+<br><br>
+Cookie Policy : I'm not tracking anything, so I'm not using them, but
+feel free to click the reject button if it helps : <button onclick="RejectCookies();">Reject Cookies</button>
+<div id="button_click_counter">0</div>
 </body>
 </html>
