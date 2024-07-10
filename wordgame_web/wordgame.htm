@@ -6,11 +6,11 @@
 
 	Title	:	Untitled word game.
 
-	Info	:	Version 0.2	6th July 2024
+	Info	:	Version 1.6	10th July 2024
 
 	Author	:	Nick Fleming
 
-	Updated	:	8th July 2024
+	Updated	:	10th July 2024
 
 	 Notes:
 	---------
@@ -21,11 +21,23 @@ that generates the puzzle. It takes a lot of work to reduce a 20,000
 word dictionary with obscure words down to something managable.
 
 
+	10th July 2024
+   -----------------
+   Added 3 more buttons:
+   
+   restart	- 	just completely restarts the puzzle. Felt like something
+				you might want.
+	
+	solve	-	Life is short, so click solve if you give up.
+
+
+	Next puzzle	- you don't have to complete the puzzle to progress.
+
 -->
 
 <html lang="en" dir="ltr">
 <head>
-<title> Word Game V1.5 </title>
+<title> Word Game V1.6 </title>
 <style>
 
 
@@ -92,7 +104,11 @@ word dictionary with obscure words down to something managable.
 
 
 /*	background-color:#fef;*/
-	background-color:#58b;
+/*	background-color:#58b;*/
+
+/*	background-image: linear-gradient(to bottom, #CEF, #ACE, #DEa, #BA7, #C89);	*/
+	background-image: linear-gradient(to bottom, #58b, #368, #025);
+
 	width:96vw;
 	height:96vh;
 
@@ -145,6 +161,10 @@ word dictionary with obscure words down to something managable.
 <script src="./js/permutation.js"></script>
 <script src="./js/shuffle_img.js"></script>
 <script src="./js/exit_img.js"></script>
+<script src="./js/restart_img.js"></script>
+<script src="./js/solve_img.js"></script>
+<script src="./js/next_puzzle_img.js"></script>
+<script src="./js/buttons.js"></script>
 <script src="./js/puzzles.js"></script>
 
 <script>
@@ -158,6 +178,17 @@ var GAME_MODE_PLACE_WORD = gm++;
 var GAME_MODE_NEXT_PUZZLE = gm++;
 var GAME_MODE_LEVEL_COMPLETE = gm++;
 var GAME_MODE_QUIT = gm++;
+
+var bid = 0;
+var BUTTON_ID_SHUFFLE = bid++;
+var BUTTON_ID_RESTART = bid++;
+var BUTTON_ID_SOLVE = bid++;
+var BUTTON_ID_HOME = bid++;
+var BUTTON_ID_NEXT = bid++;
+var BUTTON_ID_BURGER = bid++;
+
+var LETTER_WIDTH = 40;
+var LETTER_HEIGHT = 40;
 
 var HORIZONTAL = 0;
 var VERTICAL = 1;
@@ -180,8 +211,30 @@ var ShuffleImg = new Image();
 ShuffleImg.src = ShuffleImgData;
 ShuffleImgX = 0;
 ShuffleImgY = 0;
-ShuffleImgW = 32;
-ShuffleImgH = 32;
+ShuffleImgW = 64;
+ShuffleImgH = 64;
+
+var RestartImg = new Image();
+RestartImg.src = RestartImageData;
+RestartImgX = 0;
+RestartImgY = 0;
+RestartImgW = 64;
+RestartImgH = 64;
+
+var SolveImg = new Image();
+SolveImg.src = SolveImageData;
+SolveImgX = 0;
+SolveImgY = 0;
+SolveImgW = 64;
+SolveImgH = 64;
+
+var NextPuzzleImg = new Image();
+NextPuzzleImg.src = NextPuzzleImageData;
+NextPuzzleImgX = 0;
+NextPuzzleImgY = 0;
+NextPuzzleImgW = 64;
+NextPuzzleImgH = 64;
+
 
 
 var ExitImg = new Image();
@@ -190,6 +243,8 @@ ExitImgX = 0;
 ExitImgY = 0;
 ExitImgW = 64;
 ExitImgH = 64;
+
+var Buttons;
 
 var Puzzles;
 var PuzzleIndex;
@@ -407,8 +462,8 @@ function DrawLetters()
 
 			Letters[k].x,
 			Letters[k].y,
-			Letters[k].tu,
-			Letters[k].tv);
+			LETTER_WIDTH,		//Letters[k].tu,
+			LETTER_HEIGHT);		//Letters[k].tv);
 	}
 }
 
@@ -427,8 +482,8 @@ function DrawLinks()
 	
 	var i;
 
-	offset_x = 16;
-	offset_y = 16;
+	offset_x = Math.floor (LETTER_WIDTH/2);		//16;
+	offset_y = Math.floor (LETTER_HEIGHT/2);	//16;
 	
 	ink ="#6ad";
 	
@@ -501,8 +556,8 @@ function InitLetters(letter_string)
 	tu = 32;
 	tv = 32;
 	
-	offset_x = 16;
-	offset_y = 16;
+	offset_x = Math.floor (LETTER_WIDTH / 2);
+	offset_y = Math.floor (LETTER_HEIGHT / 2);
 	
 	cx = Math.floor (Cvs.width/2);
 	cy = Math.floor (Cvs.height * 0.75);
@@ -515,6 +570,15 @@ function InitLetters(letter_string)
 	
 	ShuffleImgX = Cvs.width - ShuffleImgW - 8;
 	ShuffleImgY = CircleY - CircleRadius;
+	
+	RestartImgX = 8;
+	RestartImgY = ShuffleImgY;
+	
+	SolveImgX = 8;
+	SolveImgY = Cvs.height - 32 - SolveImgH;
+	
+	NextPuzzleImgX = ShuffleImgX;
+	NextPuzzleImgY = SolveImgY;
 
 	for (k = 0; k < letter_string.length; k++)
 	{
@@ -553,8 +617,8 @@ function GetClickedIndex (mx, my)
 	var offset_y;
 	var k;
 
-	offset_x = 16;
-	offset_y = 16;
+	offset_x = Math.floor (LETTER_WIDTH/2);
+	offset_y = Math.floor (LETTER_HEIGHT/2);
 
 	for (k = 0; k < Letters.length; k++)
 	{
@@ -620,7 +684,7 @@ function UncoverWord()
 
 	str = str.toLowerCase();
 
-	console.log ("guessing:" + str);
+//	console.log ("guessing:" + str);
 
 	for (k = 0; k < PuzzleWords.length; k++)
 	{
@@ -641,6 +705,10 @@ function GetNextPuzzle()
 	if (RandomPuzzles == false)
 	{
 		PuzzleIndex++;
+		if (PuzzleIndex >= Puzzles.length)
+		{
+			PuzzleIndex = 0;
+		}
 	}
 	else
 	{
@@ -654,7 +722,33 @@ function GetNextPuzzle()
 	DrawLetterCircle();
 	DrawLinks();
 	DrawLetters ();
-	DrawShuffleImg();
+	DrawButtons();			//	DrawShuffleImg();
+	DrawPuzzleGrid();
+}
+
+function RestartPuzzle()
+{
+	StartPuzzle();
+	
+	Ctx.beginPath();
+	Ctx.clearRect (0,0, Cvs.width, ShuffleImgY);
+
+	DrawLetterCircle();
+	DrawLinks();
+	DrawLetters ();
+	DrawButtons();			//	DrawShuffleImg();
+	DrawPuzzleGrid();
+}
+
+
+function SolvePuzzle()
+{
+	var k;
+
+	for (k = 0; k < PuzzleWords.length; k++)
+	{
+		PuzzleWords[k].found = true;
+	}
 	DrawPuzzleGrid();
 }
 
@@ -817,6 +911,8 @@ function MouseUp(mx,my,e)
 	var dx;
 	var dy;
 	var r_squared;
+	
+	var button_id;
 
 //	console.log ("MOUSE UP");
 	e.preventDefault();
@@ -830,11 +926,11 @@ function MouseUp(mx,my,e)
 	{
 		// got a word to try and uncover.
 		UncoverWord();
-		if (PuzzleComplete() == true)
-		{
-			GetNextPuzzle();
-			return;
-		}
+//		if (PuzzleComplete() == true)
+//		{
+//			GetNextPuzzle();
+//			return;
+//		}
 	}
 
 		// clear all currently selected letters.
@@ -848,14 +944,41 @@ function MouseUp(mx,my,e)
 		Letters[k].next_index = null;
 	}
 
-	if ((mx >= ShuffleImgX) && (mx < (ShuffleImgX+ShuffleImgW)) &&
-		(my >= ShuffleImgY) && (my < (ShuffleImgY+ShuffleImgH)))
+	button_id = Buttons.getButtonIdFromPointer (mx, my);
+	if (button_id != null)
 	{
-		// shuffle pressed
-		ShuffleLetters();
-		return;
-		
+		switch (button_id)
+		{
+			case BUTTON_ID_SHUFFLE:
+						ShuffleLetters();
+						return;
+
+			case BUTTON_ID_RESTART:
+						RestartPuzzle();
+						return;
+
+			case BUTTON_ID_SOLVE:		// to do.
+						SolvePuzzle();
+						return;
+
+			case BUTTON_ID_NEXT:
+						GetNextPuzzle();
+						return;
+	
+			case BUTTON_ID_HOME:
+					default:
+							break;
+		}
 	}
+
+
+//			if ((mx >= ShuffleImgX) && (mx < (ShuffleImgX+ShuffleImgW)) &&
+//		(my >= ShuffleImgY) && (my < (ShuffleImgY+ShuffleImgH)))
+	//{
+		// shuffle pressed
+//		ShuffleLetters();
+//		return;
+//	}
 
 	DrawLetterCircle();
 	DrawLinks();
@@ -864,9 +987,35 @@ function MouseUp(mx,my,e)
 //	console.log ("mx:" + mx + " my:" + my);
 }
 
-function DrawShuffleImg()
+//function DrawShuffleImg()
+function DrawButtons()
 {
-	Ctx.drawImage (ShuffleImg, ShuffleImgX, ShuffleImgY, ShuffleImgW, ShuffleImgH);
+	var k;
+	var b;
+	
+	for (k = 0; k < Buttons.button_list.length; k++)
+	{
+		b = Buttons.button_list[k];
+		switch (b.button_type)
+		{
+			case BUTTON_TYPE_IMAGE:
+				Ctx.drawImage (
+				b.button_data,	// ShuffleImg,
+				b.x,			// ShuffleImgX,
+				b.y,			// ShuffleImgY,
+				b.width,		// ShuffleImgW,
+				b.height		// ShuffleImgH);
+				);
+				break;
+			default:
+				break;
+		}
+	}
+
+//	Ctx.drawImage (RestartImg, RestartImgX, RestartImgY, RestartImgW, RestartImgH);
+
+//	Ctx.drawImage (SolveImg, SolveImgX, SolveImgY, SolveImgW, SolveImgH);
+
 }
 
 
@@ -890,8 +1039,8 @@ function StartPuzzle()
 	
 	tmp = groups[0].split(",");
 	
-	console.log (groups);
-	console.log (tmp);
+//	console.log (groups);
+//	console.log (tmp);
 
 	PuzzleWords = [];
 	p = 0;
@@ -915,7 +1064,7 @@ function StartPuzzle()
 	InitLetters (longest_word);
 
 	LetterString = longest_word;
-	console.log (PuzzleWords);
+//	console.log (PuzzleWords);
 	
 	ShuffleLetters();
 }
@@ -974,6 +1123,59 @@ function CloseInstructions(game_type)
 	GetNextPuzzle();
 }
 
+function InitButtons()
+{
+	Buttons = new BUTTON_SET_STRUCT();
+	
+	Buttons.addButton (
+			BUTTON_ID_SHUFFLE,	// button_id, 
+			BUTTON_TYPE_IMAGE,	// button_type, 
+			ShuffleImg, 		// data
+			ShuffleImgX,		// x
+			ShuffleImgY,		// y
+			ShuffleImgW,		// width
+			ShuffleImgH,		// height
+			null,				// callback,
+			null,				//drawing_fn)
+			);
+
+	Buttons.addButton (
+			BUTTON_ID_RESTART,	// button_id, 
+			BUTTON_TYPE_IMAGE,	// button_type, 
+			RestartImg, 		// data
+			RestartImgX,		// x
+			RestartImgY,		// y
+			RestartImgW,		// width
+			RestartImgH,		// height
+			null,				// callback,
+			null,				//drawing_fn)
+			);
+
+	Buttons.addButton (
+			BUTTON_ID_SOLVE,	// button_id, 
+			BUTTON_TYPE_IMAGE,	// button_type, 
+			SolveImg, 		// data
+			SolveImgX,		// x
+			SolveImgY,		// y
+			SolveImgW,		// width
+			SolveImgH,		// height
+			null,				// callback,
+			null,				//drawing_fn)
+			);
+
+	Buttons.addButton (
+			BUTTON_ID_NEXT,	// button_id, 
+			BUTTON_TYPE_IMAGE,	// button_type, 
+			NextPuzzleImg, 		// data
+			NextPuzzleImgX,		// x
+			NextPuzzleImgY,		// y
+			NextPuzzleImgW,		// width
+			NextPuzzleImgH,		// height
+			null,				// callback,
+			null,				//drawing_fn)
+			);
+}
+
 function DoStuff()
 {
 	Cvs = document.getElementById("cvs");
@@ -1004,7 +1206,10 @@ function DoStuff()
 	DrawLetterCircle();
 	DrawLinks();
 	DrawLetters ();
-	DrawShuffleImg();
+
+	InitButtons();
+
+	DrawButtons();
 
 
 	DrawPuzzleGrid();
