@@ -6,7 +6,7 @@
 
 	Title	:	Untitled word game.
 
-	Info	:	Version 1.6	10th July 2024
+	Info	:	Version 1.7	10th July 2024
 
 	Author	:	Nick Fleming
 
@@ -33,11 +33,19 @@ word dictionary with obscure words down to something managable.
 
 	Next puzzle	- you don't have to complete the puzzle to progress.
 
+	 12th July 2024
+	-----------------
+		Using a small canvas to generate the data for the letters 
+	rather than storing a large bitmap in order to save memory.
+
+		Also removed the canvas low-quality stuff to improve overall
+	rendering of letters. Seems to work ok, letters look nice.
+
 -->
 
 <html lang="en" dir="ltr">
 <head>
-<title> Word Game V1.6 </title>
+<title> Word Game V1.7 </title>
 <style>
 
 
@@ -113,21 +121,13 @@ word dictionary with obscure words down to something managable.
 	height:96vh;
 
 
-	image-rendering: optimizeSpeed;             /* Older versions of FF          */
-	image-rendering: -moz-crisp-edges;          /* FF 6.0+                       */
-	image-rendering: -webkit-optimize-contrast; /* Safari                        */
-	image-rendering: -o-crisp-edges;            /* OS X & Windows Opera (12.02+) */
-	image-rendering: pixelated;                 /* Awesome future-browsers       */
-	-ms-interpolation-mode: nearest-neighbor;
 
 	position:absolute;			/* vertical centering */
 	top:50%;
 	left:50%;
 	transform:translate(-50%,-50%);
 
-
 	fontWeight:normal;
-
 }
 
 @media screen and (orientation:landscape)
@@ -157,7 +157,7 @@ word dictionary with obscure words down to something managable.
 
 
 <script src="./js/pointer_events.js"></script>
-<script src="./js/arial font ATOZ 32.js"></script>
+<!--<script src="./js/arial font ATOZ 32.js"></script>-->
 <script src="./js/permutation.js"></script>
 <script src="./js/shuffle_img.js"></script>
 <script src="./js/exit_img.js"></script>
@@ -187,8 +187,12 @@ var BUTTON_ID_HOME = bid++;
 var BUTTON_ID_NEXT = bid++;
 var BUTTON_ID_BURGER = bid++;
 
-var LETTER_WIDTH = 40;
-var LETTER_HEIGHT = 40;
+var LETTER_WIDTH_TU = 42;
+var LETTER_WIDTH_TV = 42;
+
+var LETTER_WIDTH = 42;		// writing looks better if its not scaled.
+var LETTER_HEIGHT = 42;
+
 
 var HORIZONTAL = 0;
 var VERTICAL = 1;
@@ -200,12 +204,15 @@ var Ctx;
 var Scr;
 var Busy;
 
+var TextCanvas = null;
+var TextCtx;
+
 var CircleX;
 var CircleY;
 var CircleRadius;
 
-var ImgATOZ = new Image();
-ImgATOZ.src = Font_ATOZ_ARIEL_32;
+//var ImgATOZ = new Image();
+//ImgATOZ.src = Font_ATOZ_ARIEL_32;
 
 var ShuffleImg = new Image();
 ShuffleImg.src = ShuffleImgData;
@@ -234,8 +241,6 @@ NextPuzzleImgX = 0;
 NextPuzzleImgY = 0;
 NextPuzzleImgW = 64;
 NextPuzzleImgH = 64;
-
-
 
 var ExitImg = new Image();
 ExitImg.src = ExitImgData;
@@ -415,10 +420,8 @@ function FontTest1()
 		x = ch * 38;
 		y = ch * 32;
 		
-		Ctx.drawImage (ImgATOZ, tx,ty,tu,tv, x,y, tu,tv);
-
-
-		Ctx.drawImage (ImgATOZ, tx,ty+32,tu,tv, x,y+128, tu,tv);
+//		Ctx.drawImage (ImgATOZ, tx,ty,tu,tv, x,y, tu,tv);
+//		Ctx.drawImage (ImgATOZ, tx,ty+32,tu,tv, x,y+128, tu,tv);
 	}
 }
 
@@ -451,10 +454,13 @@ function DrawLetters()
 	// draws the letters in the letter circle.
 	
 	var k;
+	var s;
+	
+	s = LETTER_WIDTH_TU;
 	
 	for (k = 0; k < Letters.length; k++)
 	{
-		Ctx.drawImage (ImgATOZ,
+/*		Ctx.drawImage (ImgATOZ,
 			Letters[k].tx,
 			Letters[k].ty,
 			Letters[k].tu,
@@ -464,6 +470,20 @@ function DrawLetters()
 			Letters[k].y,
 			LETTER_WIDTH,		//Letters[k].tu,
 			LETTER_HEIGHT);		//Letters[k].tv);
+*/
+
+		Ctx.drawImage (TextCanvas,
+			k*LETTER_WIDTH_TU,
+			0,
+			LETTER_WIDTH_TU,
+			LETTER_WIDTH_TV,
+
+			Letters[k].x,
+			Letters[k].y,
+			LETTER_WIDTH,		//Letters[k].tu,
+			LETTER_HEIGHT);		//Letters[k].tv);
+
+
 	}
 }
 
@@ -549,12 +569,13 @@ function InitLetters(letter_string)
 
 	Letters = [];
 
+	CreateTextCanvas (LetterString);
 
 
 	tx = 0;
 	ty = 0;
-	tu = 32;
-	tv = 32;
+	tu = LETTER_WIDTH_TU;
+	tv = LETTER_WIDTH_TV;
 	
 	offset_x = Math.floor (LETTER_WIDTH / 2);
 	offset_y = Math.floor (LETTER_HEIGHT / 2);
@@ -565,7 +586,7 @@ function InitLetters(letter_string)
 
 	CircleX = cx;
 	CircleY = cy;
-	
+
 	CircleRadius = Math.floor (0.75 * (Cvs.height*0.25));
 	
 	ShuffleImgX = Cvs.width - ShuffleImgW - 8;
@@ -594,14 +615,17 @@ function InitLetters(letter_string)
 		ch = letter_string.charAt(k).toUpperCase();
 		ch = ch.charCodeAt(0) - "A".charCodeAt(0);
 //		console.log (ch);
-		
-		tx = tu * ch;
+	
+		tx = k * tu;
 		ty = 0;
-		if (ch > 12)
-		{
-			tx = tu * (ch-13);
-			ty = tv;
-		}
+
+//		tx = tu * ch;
+//		ty = 0;
+//		if (ch > 12)
+//		{
+//			tx = tu * (ch-13);
+//			ty = tv;
+//		}
 
 		ch = letter_string.charAt(k).toUpperCase();
 		Letters[k] = new LETTER_STRUCT (x,y,ch, tx,ty,tu,tv);
@@ -655,7 +679,6 @@ function ShuffleLetters()
 	}
 
 	InitLetters (LetterString);
-
 	DrawLetterCircle();
 	DrawLinks();
 	DrawLetters ();
@@ -1176,10 +1199,90 @@ function InitButtons()
 			);
 }
 
+function CreateTextCanvas(word_str)
+{
+	var ch;
+	var str;
+	var tm;
+	var x;
+	var chx;
+	var y;
+	var w;
+	var h;
+	var k;
+	var ascent;
+	var descent;
+	var top;
+	var text_grd;
+	
+	var tmp;
+
+	str = word_str.toUpperCase();
+
+	h = 42;		// font height
+	w = h;
+
+	x = 0;
+	y = h-1;
+
+	if (TextCanvas == null)
+	{
+		TextCanvas = document.createElement("canvas");
+		TextCanvas.width="256";
+		TextCanvas.height="64";
+		TextCtx = TextCanvas.getContext("2d");
+
+		TextCtx.font = "bold " + h + "px" + " Arial";
+		TextCtx.lineWidth="2px";
+
+		text_grd = TextCtx.createLinearGradient(x,y-h, x, y);
+		text_grd.addColorStop(0, "#fff");
+		text_grd.addColorStop(1, "#fff");
+		TextCtx.fillStyle=text_grd;
+
+//		outline_grd = ctx.createLinearGradient(x,y-font_height, x, y);	//y-font_height,128,y);
+//		outline_grd.addColorStop(0, og1);
+//		outline_grd.addColorStop(1, og2);
+		TextCtx.strokeStyle="#000";	//outline_grd;
+	}
+	
+	TextCtx.clearRect (0,0, TextCanvas.width, TextCanvas.height);
+
+	x = 0;
+	for (k = 0; k < str.length; k++)
+	{
+		ch = str.charAt(k);
+		tm = TextCtx.measureText(ch.charAt(0));
+		chx = x + Math.floor ((w-tm.width)/2);
+		TextCtx.fillText (ch, chx, y);
+		TextCtx.strokeText (ch, chx, y);
+		x += w;
+	}
+
+//	ascent = Math.floor (tm.emHeightAscent + 0.5);
+//	descent = Math.floor (tm.emHeightDescent + 0.5);
+
+//	TextCtx.fillStyle="#fff";
+//	TextCtx.beginPath();
+//	TextCtx.fillRect (0,0, 5,80);
+	
+//	TextCtx.fillStyle="#acd";
+//	TextCtx.beginPath();
+//	TextCtx.arc (100,64, 64, 0, 2 * Math.PI);
+	//TextCtx.fill();
+
+	
+//	Ctx.drawImage (TextCanvas,0,0);
+//	TextCtx.fill();
+}
+
 function DoStuff()
 {
 	Cvs = document.getElementById("cvs");
 	Ctx = Cvs.getContext("2d");
+	
+	CreateTextCanvas("PAINED");
+
 
 	Ctx.font = "32px Arial";		//    Arial (sans-serif)
 //	Ctx.font = "32px Verdana";		//    Verdana (sans-serif)
